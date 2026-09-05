@@ -11,7 +11,7 @@ import { AuthService } from '../core/services/auth.service';
     <section class="auth-page" aria-labelledby="register-title">
       <div class="auth-card">
         <p class="eyebrow">Únete a FashionStore</p>
-        <h1 id="register-title">Crea tu cuenta</h1>
+        <h1 id="register-title">Crea tu cuenta!</h1>
         <p class="intro">Regístrate para guardar tus favoritos y comprar con facilidad.</p>
 
         <form [formGroup]="registerForm" (ngSubmit)="submit()" novalidate>
