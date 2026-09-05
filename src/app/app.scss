@@ -1,9 +1,4 @@
-:host {
-  display: block;
-  min-height: 100vh;
-  background: #f4f0e9;
-  color: #1d2925;
-}
+:host { display: block; }
 
 .page-shell {
   width: min(1180px, calc(100% - 48px));
