@@ -20,7 +20,7 @@ const CONFIG: Record<string, { title: string; resource: string; fields: Field[] 
     { name: 'address', label: 'Dirección', required: true }, { name: 'fitting_rooms', label: 'Probadores', type: 'number' }
   ]},
   suppliers: { title: 'Proveedores', resource: 'suppliers', fields: [
-    { name: 'name', label: 'Nombre', required: true }, { name: 'tax_id', label: 'RUC/NIT', required: true },
+    { name: 'name', label: 'Nombre', required: true }, { name: 'tax_id', label: 'CI', required: true },
     { name: 'contact_name', label: 'Contacto' }, { name: 'email', label: 'Correo', type: 'email' }, { name: 'phone', label: 'Teléfono' }
   ]},
   categories: { title: 'Categorías', resource: 'parameters/categories', fields: [
