@@ -7,36 +7,34 @@ export const routes: Routes = [
   {
     path: 'auth',
     children: [
-      { path: 'login', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) },
-      { path: 'register', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) }
+      { path: 'login', loadComponent: () => import('./pages/login.page').then((m) => m.LoginPage) },
+      { path: 'register', loadComponent: () => import('./pages/register.page').then((m) => m.RegisterPage) }
     ]
   },
   {
     path: 'profile',
     canActivate: [authGuard],
-    loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage)
+    loadComponent: () => import('./pages/profile.page').then((m) => m.ProfilePage)
   },
   {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { roles: [Role.Administrador, Role.Encargado] },
     children: [
-      { path: 'users', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) },
-      { path: 'branches', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) },
-      { path: 'catalog', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) },
-      { path: 'parameters', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) },
-      { path: 'suppliers', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) },
-      { path: 'inventory', loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage) }
+      { path: 'inventory', loadComponent: () => import('./pages/inventory.page').then((m) => m.InventoryPage) },
+      { path: 'products/:id', loadComponent: () => import('./pages/product-detail.page').then((m) => m.ProductDetailPage) },
+      { path: 'parameters/:module', loadComponent: () => import('./pages/management.page').then((m) => m.ManagementPage) },
+      { path: ':module', loadComponent: () => import('./pages/management.page').then((m) => m.ManagementPage) }
     ]
   },
   {
     path: 'catalog',
-    loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage)
+    loadComponent: () => import('./pages/catalog.page').then((m) => m.CatalogPage)
   },
   {
     path: 'forbidden',
-    loadComponent: () => import('./pages/placeholder.page').then((m) => m.PlaceholderPage)
+    loadComponent: () => import('./pages/forbidden.page').then((m) => m.ForbiddenPage)
   },
-  { path: '', pathMatch: 'full', redirectTo: 'catalog' },
+  { path: '', pathMatch: 'full', loadComponent: () => import('./pages/home.page').then((m) => m.HomePage) },
   { path: '**', redirectTo: 'catalog' }
 ];
