@@ -4,3 +4,6 @@ export * from './inventory.model';
 export * from './product.model';
 export * from './supplier.model';
 export * from './user.model';
+export * from './commerce.model';
+export * from './finance.model';
+export * from './operations.model';

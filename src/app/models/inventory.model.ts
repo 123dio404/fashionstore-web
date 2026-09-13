@@ -1,52 +1,62 @@
-import { UUID } from './common.model';
+import { ID } from './common.model';
 
 export enum MovementType {
   Ingreso = 'ingreso',
   Transferencia = 'transferencia',
-  Ajuste = 'ajuste'
+  Ajuste = 'ajuste',
+  Venta = 'venta',
+  Reserva = 'reserva'
 }
 
 export interface StockResponse {
-  id: UUID;
-  branch_id: UUID;
-  variant_id: UUID;
+  id: ID;
+  branch_id: ID;
+  variant_id: ID;
+  size_id: ID | null;
   physical_stock: number;
   reserved_stock: number;
   available_stock: number;
 }
 
 export interface StockAdjustment {
-  branch_id: UUID;
-  variant_id: UUID;
+  branch_id: ID;
+  variant_id: ID;
   quantity: number;
   reason?: string;
 }
 
 export interface MovementCreate {
   movement_type?: MovementType;
-  variant_id: UUID;
-  source_branch_id?: UUID;
-  destination_branch_id?: UUID;
+  variant_id: ID;
+  source_branch_id?: ID;
+  destination_branch_id?: ID;
   quantity: number;
   reason?: string;
 }
 
 export interface TransferRequest {
-  variant_id: UUID;
-  source_branch_id: UUID;
-  destination_branch_id: UUID;
+  variant_id: ID;
+  source_branch_id: ID;
+  destination_branch_id: ID;
   quantity: number;
   reason?: string;
 }
 
 export interface MovementResponse {
-  id: UUID;
+  id: ID;
   movement_type: MovementType;
-  variant_id: UUID;
-  source_branch_id: UUID | null;
-  destination_branch_id: UUID | null;
+  inventory_id: ID;
+  variant_id: ID;
   quantity: number;
   reason: string | null;
-  performed_by_id: UUID;
   created_at: string;
+}
+
+export interface AvailabilityResponse {
+  product_id: ID;
+  variant_id: ID;
+  branch_id: ID;
+  physical_stock: number;
+  reserved_stock: number;
+  available_stock: number;
 }
