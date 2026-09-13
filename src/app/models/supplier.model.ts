@@ -1,4 +1,4 @@
-import { UUID } from './common.model';
+import { ID } from './common.model';
 
 export interface SupplierCreate {
   name: string;
@@ -12,12 +12,13 @@ export interface SupplierCreate {
 
 export type SupplierUpdate = Partial<SupplierCreate>;
 
-export interface SupplierResponse extends Omit<SupplierCreate, 'contact_name' | 'email' | 'phone' | 'address' | 'notes'> {
-  id: UUID;
+export interface SupplierResponse {
+  id: string;
+  name: string;
+  tax_id: string;
   contact_name: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
   notes: string | null;
-  created_at: string;
 }

@@ -1,3 +1,18 @@
 import { Component } from '@angular/core';
-@Component({ standalone: true, template: `<main style="padding:5rem;text-align:center"><h1>Acceso restringido</h1><p>No tienes permisos para ver esta página.</p><a href="/">Volver al inicio</a></main>` })
+import { RouterLink } from '@angular/router';
+
+@Component({
+  standalone: true,
+  imports: [RouterLink],
+  template: `
+    <div class="container page text-center">
+      <div class="empty" style="max-width:420px;margin:60px auto">
+        <div class="empty-icon">🔒</div>
+        <h3>Acceso restringido</h3>
+        <p>No tienes permisos para ver esta página.</p>
+        <a class="btn btn-primary mt-1" routerLink="/">Volver al inicio</a>
+      </div>
+    </div>
+  `
+})
 export class ForbiddenPage {}

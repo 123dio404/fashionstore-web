@@ -1,56 +1,52 @@
-import { UUID } from './common.model';
+import { ID } from './common.model';
 
 export interface ParameterCreate {
   name: string;
-  description?: string;
-  hex_code?: string;
 }
 
 export type ParameterUpdate = Partial<ParameterCreate>;
 
 export interface CategoryResponse {
-  id: UUID;
+  id: ID;
   name: string;
-  description: string | null;
 }
 
 export interface SeasonResponse {
-  id: UUID;
+  id: ID;
   name: string;
 }
 
 export interface SizeResponse {
-  id: UUID;
+  id: ID;
   name: string;
 }
 
 export interface ColorResponse {
-  id: UUID;
+  id: ID;
   name: string;
-  hex_code: string;
 }
 
 export interface VariantCreate {
-  size_id: UUID;
-  color_id: UUID;
-  barcode?: string;
+  size_id: ID;
+  color_id: ID;
+  codigo: string;
+  price?: number;
 }
 
-export interface VariantResponse extends Omit<VariantCreate, 'barcode'> {
-  id: UUID;
-  product_id: UUID;
-  barcode: string | null;
+export interface VariantResponse {
+  id: ID;
+  product_id: ID;
+  size_id: ID | null;
+  color_id: ID | null;
+  codigo: string;
+  price: number | null;
+  is_active: boolean;
 }
 
 export interface ProductCreate {
-  category_id: UUID;
-  season_id?: UUID;
-  supplier_id?: UUID;
+  category_id: ID;
   name: string;
-  sku: string;
-  description?: string;
-  technical_metadata?: string;
-  model_3d_url?: string;
+  brand?: string;
   price: number;
   is_active?: boolean;
   variants?: VariantCreate[];
@@ -58,25 +54,19 @@ export interface ProductCreate {
 
 export type ProductUpdate = Partial<Omit<ProductCreate, 'variants'>>;
 
-export interface ProductResponse extends Omit<
-  ProductCreate,
-  'variants' | 'season_id' | 'supplier_id' | 'description' | 'technical_metadata' | 'model_3d_url'
-> {
-  id: UUID;
-  season_id: UUID | null;
-  supplier_id: UUID | null;
-  description: string | null;
-  technical_metadata: string | null;
-  model_3d_url: string | null;
+export interface ProductResponse {
+  id: ID;
+  category_id: ID;
+  name: string;
+  brand: string | null;
+  price: number;
   is_active: boolean;
   variants: VariantResponse[];
 }
 
-export interface AvailabilityResponse {
-  product_id: UUID;
-  variant_id: UUID;
-  branch_id: UUID;
-  physical_stock: number;
-  reserved_stock: number;
-  available_stock: number;
+export interface ProductStockView {
+  stockId: ID;
+  variantId: ID;
+  branchId: ID;
+  availableStock: number;
 }

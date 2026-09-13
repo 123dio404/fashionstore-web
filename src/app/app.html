@@ -1,1 +1,57 @@
-<router-outlet></router-outlet>
+<div class="site">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Ir al inicio">
+        Fashion<span class="brand-accent">Store</span>
+      </a>
+
+      <button
+        class="nav-toggle"
+        [class.open]="menuOpen"
+        (click)="menuOpen = !menuOpen"
+        aria-label="Abrir menú"
+        [attr.aria-expanded]="menuOpen"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="site-nav" [class.open]="menuOpen" aria-label="Navegación principal">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Inicio</a>
+        <a routerLink="/catalog" routerLinkActive="active" (click)="closeMenu()">Catálogo</a>
+
+        @if (user) {
+          <a routerLink="/cart" routerLinkActive="active" (click)="closeMenu()" class="nav-link nav-cart">
+            Carrito
+            @if (count > 0) {
+              <span class="cart-badge">{{ count }}</span>
+            }
+          </a>
+
+          @if (isStaff) {
+            <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()">Panel</a>
+          }
+
+          <a routerLink="/account" routerLinkActive="active" (click)="closeMenu()">Mi cuenta</a>
+          <button type="button" class="btn btn-ghost btn-sm nav-logout" (click)="logout()">Salir</button>
+        } @else {
+          <a routerLink="/auth/login" class="btn btn-outline btn-sm nav-login" (click)="closeMenu()">Iniciar sesión</a>
+          <a routerLink="/auth/register" class="btn btn-primary btn-sm" (click)="closeMenu()">Registrarme</a>
+        }
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <router-outlet />
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">Fashion<span class="brand-accent">Store</span></span>
+      <span class="footer-tag">Moda con intención · Explora · Elige · Disfruta</span>
+      <span class="footer-copy">© 2026 FashionStore</span>
+    </div>
+  </footer>
+</div>
