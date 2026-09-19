@@ -1,4 +1,4 @@
-import { ID } from './common.model';
+import { Id } from './common.model';
 
 export enum MovementType {
   Ingreso = 'ingreso',
@@ -9,54 +9,45 @@ export enum MovementType {
 }
 
 export interface StockResponse {
-  id: ID;
-  branch_id: ID;
-  variant_id: ID;
-  size_id: ID | null;
+  id: Id;
+  branch_id: Id;
+  variant_id: Id;
+  size_id: Id | null;
   physical_stock: number;
   reserved_stock: number;
   available_stock: number;
 }
 
 export interface StockAdjustment {
-  branch_id: ID;
-  variant_id: ID;
+  branch_id: Id;
+  variant_id: Id;
   quantity: number;
-  reason?: string;
+  reason?: string | null;
 }
 
 export interface MovementCreate {
   movement_type?: MovementType;
-  variant_id: ID;
-  source_branch_id?: ID;
-  destination_branch_id?: ID;
+  variant_id: Id;
+  source_branch_id?: Id | null;
+  destination_branch_id?: Id | null;
   quantity: number;
-  reason?: string;
+  reason?: string | null;
 }
 
 export interface TransferRequest {
-  variant_id: ID;
-  source_branch_id: ID;
-  destination_branch_id: ID;
+  variant_id: Id;
+  source_branch_id: Id;
+  destination_branch_id: Id;
   quantity: number;
-  reason?: string;
+  reason?: string | null;
 }
 
 export interface MovementResponse {
-  id: ID;
+  id: Id;
   movement_type: MovementType;
-  inventory_id: ID;
-  variant_id: ID;
+  inventory_id: Id;
+  variant_id: Id;
   quantity: number;
   reason: string | null;
   created_at: string;
-}
-
-export interface AvailabilityResponse {
-  product_id: ID;
-  variant_id: ID;
-  branch_id: ID;
-  physical_stock: number;
-  reserved_stock: number;
-  available_stock: number;
 }

@@ -1,72 +1,100 @@
-import { ID } from './common.model';
+import { Id } from './common.model';
 
 export interface ParameterCreate {
   name: string;
+  start_date?: string | null;
+  end_date?: string | null;
 }
 
-export type ParameterUpdate = Partial<ParameterCreate>;
+export interface ParameterUpdate {
+  name?: string;
+  start_date?: string | null;
+  end_date?: string | null;
+}
 
 export interface CategoryResponse {
-  id: ID;
+  id: Id;
   name: string;
 }
 
 export interface SeasonResponse {
-  id: ID;
+  id: Id;
   name: string;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 export interface SizeResponse {
-  id: ID;
+  id: Id;
   name: string;
 }
 
 export interface ColorResponse {
-  id: ID;
+  id: Id;
   name: string;
 }
 
 export interface VariantCreate {
-  size_id: ID;
-  color_id: ID;
+  size_id: Id;
+  color_id: Id;
   codigo: string;
-  price?: number;
+  price?: number | null;
 }
 
 export interface VariantResponse {
-  id: ID;
-  product_id: ID;
-  size_id: ID | null;
-  color_id: ID | null;
+  id: Id;
+  product_id: Id;
+  size_id: Id | null;
+  color_id: Id | null;
   codigo: string;
   price: number | null;
   is_active: boolean;
 }
 
 export interface ProductCreate {
-  category_id: ID;
+  category_id: Id;
+  season_id?: Id | null;
   name: string;
-  brand?: string;
+  brand?: string | null;
   price: number;
   is_active?: boolean;
+  model_3d_url?: string | null;
+  model_3d_format?: 'glb' | 'gltf' | null;
+  technical_metadata?: string | null;
   variants?: VariantCreate[];
 }
 
-export type ProductUpdate = Partial<Omit<ProductCreate, 'variants'>>;
+export interface ProductUpdate {
+  category_id?: Id;
+  season_id?: Id | null;
+  name?: string;
+  brand?: string | null;
+  price?: number;
+  is_active?: boolean;
+  model_3d_url?: string | null;
+  model_3d_format?: 'glb' | 'gltf' | null;
+  technical_metadata?: string | null;
+}
 
 export interface ProductResponse {
-  id: ID;
-  category_id: ID;
+  id: Id;
+  category_id: Id;
+  season_id: Id | null;
   name: string;
   brand: string | null;
   price: number;
   is_active: boolean;
+  model_3d_url: string | null;
+  model_3d_format: string | null;
+  technical_metadata: string | null;
   variants: VariantResponse[];
 }
 
-export interface ProductStockView {
-  stockId: ID;
-  variantId: ID;
-  branchId: ID;
-  availableStock: number;
+export interface AvailabilityResponse {
+  product_id: Id;
+  variant_id: Id;
+  branch_id: Id;
+  physical_stock: number;
+  reserved_stock: number;
+  available_stock: number;
 }

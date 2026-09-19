@@ -1,4 +1,4 @@
-import { ID } from './common.model';
+import { Id } from './common.model';
 
 export enum FeeType {
   Cuota = 'cuota',
@@ -29,27 +29,27 @@ export interface FeeCreate {
 export type FeeUpdate = Partial<FeeCreate>;
 
 export interface FeeResponse {
-  id: ID;
+  id: Id;
   fee_type: FeeType;
   period: string;
   concept: string;
   amount: number;
   due_date: string | null;
   description: string | null;
-  created_by_id: ID;
+  created_by_id: Id;
   created_at: string;
 }
 
 export interface PaymentCreate {
-  fee_id: ID;
+  fee_id: Id;
   amount: number;
   method?: PaymentMethod;
 }
 
 export interface PaymentResponse {
-  id: ID;
-  fee_id: ID;
-  user_id: ID;
+  id: Id;
+  fee_id: Id;
+  user_id: Id;
   amount: number;
   method: PaymentMethod;
   status: string;
@@ -59,8 +59,8 @@ export interface PaymentResponse {
 }
 
 export interface FineCreate {
-  user_id: ID;
-  fee_id?: ID;
+  user_id: Id;
+  fee_id?: Id;
   reason: string;
   amount: number;
 }
@@ -72,9 +72,9 @@ export interface FineUpdate {
 }
 
 export interface FineResponse {
-  id: ID;
-  user_id: ID;
-  fee_id: ID | null;
+  id: Id;
+  user_id: Id;
+  fee_id: Id | null;
   reason: string;
   amount: number;
   status: FineStatus;
@@ -84,7 +84,7 @@ export interface FineResponse {
 }
 
 export interface FeeLedgerItem {
-  id: ID;
+  id: Id;
   fee_type: FeeType;
   period: string;
   concept: string;

@@ -1,4 +1,4 @@
-import { ID } from './common.model';
+import { Id } from './common.model';
 
 export interface CityCreate {
   name: string;
@@ -9,27 +9,27 @@ export interface CityUpdate {
 }
 
 export interface CityResponse {
-  id: ID;
+  id: Id;
   name: string;
 }
 
 export interface BranchCreate {
-  city_id: ID;
+  city_id: Id;
   name: string;
   address: string;
   is_active?: boolean;
 }
 
 export interface BranchUpdate {
-  city_id?: ID;
+  city_id?: Id;
   name?: string;
   address?: string;
   is_active?: boolean;
 }
 
 export interface BranchResponse {
-  id: ID;
-  city_id: ID;
+  id: Id;
+  city_id: Id;
   name: string;
   address: string;
   is_active: boolean;

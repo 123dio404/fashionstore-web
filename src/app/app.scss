@@ -1,218 +1,37 @@
-:host {
-  display: block;
-  min-height: 100vh;
-}
-
-.site {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* ================= Header ================= */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(255, 250, 242, 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-}
-
-.header-inner {
+.topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  height: var(--header-h);
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .brand {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--ink);
-  text-decoration: none;
-  white-space: nowrap;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--brand-dark);
 }
 
-.brand-accent {
-  color: var(--accent);
-}
-
-.site-nav {
+.topbar nav {
   display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.site-nav a {
-  color: var(--ink);
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  transition: background 150ms ease, color 150ms ease;
-}
-
-.site-nav a:hover {
-  background: var(--sage-2);
-}
-
-.site-nav a.active {
-  color: var(--accent);
-}
-
-.site-nav a.nav-login,
-.site-nav a.btn-primary {
-  padding: 8px 16px;
-}
-
-.nav-cart {
-  position: relative;
-}
-
-.cart-badge {
-  display: inline-grid;
-  place-items: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-left: 4px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--white);
-  font-size: 0.68rem;
-  font-weight: 800;
-}
-
-.nav-logout {
-  margin-left: 4px;
-}
-
-/* Hamburger toggle (mobile only) */
-.nav-toggle {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 42px;
-  height: 42px;
-  padding: 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  background: var(--white);
-  cursor: pointer;
-}
-
-.nav-toggle span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  border-radius: 2px;
-  background: var(--ink);
-  transition: transform 200ms ease, opacity 200ms ease;
-}
-
-.nav-toggle.open span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-.nav-toggle.open span:nth-child(2) {
-  opacity: 0;
-}
-.nav-toggle.open span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
-
-/* ================= Main ================= */
-.site-main {
-  flex: 1;
-}
-
-/* ================= Footer ================= */
-.site-footer {
-  border-top: 1px solid var(--line);
-  background: var(--paper-2);
-  margin-top: 40px;
-}
-
-.footer-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  padding: 26px 0;
-  color: var(--muted-2);
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
 }
 
-.footer-brand {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--ink);
+.topbar nav a {
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
 }
 
-.footer-copy {
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-}
-
-/* ================= Responsive ================= */
-@media (max-width: 860px) {
-  .nav-toggle {
-    display: flex;
-  }
-
-  .site-nav {
-    position: absolute;
-    top: var(--header-h);
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-    padding: 12px 16px 18px;
-    background: var(--paper);
-    border-bottom: 1px solid var(--line);
-    box-shadow: var(--shadow-2);
-    transform-origin: top;
-    animation: nav-in 180ms ease;
-    display: none;
-  }
-
-  .site-nav.open {
-    display: flex;
-  }
-
-  .site-nav a,
-  .nav-logout {
-    padding: 12px 14px !important;
-    font-size: 1rem;
-    width: 100%;
-    text-align: left;
-  }
-}
-
-@keyframes nav-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 520px) {
-  .footer-inner {
-    flex-direction: column;
-    text-align: center;
-    gap: 8px;
-  }
+.topbar nav a:hover,
+.topbar nav a.active {
+  background: #ede9fe;
+  color: var(--brand-dark);
 }

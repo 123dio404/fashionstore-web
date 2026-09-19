@@ -1,4 +1,5 @@
-export type ID = number;
+export type UUID = string;
+export type Id = number;
 
 export interface ValidationError {
   loc: Array<string | number>;

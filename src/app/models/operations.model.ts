@@ -1,4 +1,4 @@
-import { ID } from './common.model';
+import { Id } from './common.model';
 
 export enum FacilityReservationStatus {
   Pendiente = 'pendiente',
@@ -33,7 +33,7 @@ export interface FacilityCreate {
 export type FacilityUpdate = Partial<FacilityCreate>;
 
 export interface FacilityResponse {
-  id: ID;
+  id: Id;
   name: string;
   description: string | null;
   location: string | null;
@@ -41,7 +41,7 @@ export interface FacilityResponse {
   is_active: boolean;
   open_time: string | null;
   close_time: string | null;
-  created_by_id: ID;
+  created_by_id: Id;
   created_at: string;
   updated_at: string;
 }
@@ -54,7 +54,7 @@ export interface TimeSlot {
 }
 
 export interface FacilityAvailabilityResponse {
-  facility_id: ID;
+  facility_id: Id;
   facility_name: string;
   date: string;
   open_time: string | null;
@@ -65,7 +65,7 @@ export interface FacilityAvailabilityResponse {
 }
 
 export interface FacilityReservationCreate {
-  facility_id: ID;
+  facility_id: Id;
   date: string;
   start_time: string;
   end_time: string;
@@ -81,9 +81,9 @@ export interface FacilityReservationUpdate {
 }
 
 export interface FacilityReservationResponse {
-  id: ID;
-  facility_id: ID;
-  user_id: ID;
+  id: Id;
+  facility_id: Id;
+  user_id: Id;
   date: string;
   start_time: string;
   end_time: string;
@@ -95,8 +95,8 @@ export interface FacilityReservationResponse {
 export interface MaintenanceCreate {
   title: string;
   description?: string;
-  facility_id?: ID;
-  assignee_id?: ID;
+  facility_id?: Id;
+  assignee_id?: Id;
   priority?: Priority;
   status?: TaskStatus;
   scheduled_date?: string;
@@ -105,30 +105,30 @@ export interface MaintenanceCreate {
 export interface MaintenanceUpdate {
   title?: string;
   description?: string;
-  facility_id?: ID;
-  assignee_id?: ID;
+  facility_id?: Id;
+  assignee_id?: Id;
   priority?: Priority;
   status?: TaskStatus;
   scheduled_date?: string;
 }
 
 export interface MaintenanceResponse {
-  id: ID;
+  id: Id;
   title: string;
   description: string | null;
-  facility_id: ID | null;
-  assignee_id: ID | null;
+  facility_id: Id | null;
+  assignee_id: Id | null;
   priority: Priority;
   status: TaskStatus;
   scheduled_date: string | null;
   completed_at: string | null;
-  created_by_id: ID;
+  created_by_id: Id;
   created_at: string;
   updated_at: string;
 }
 
 export interface FacilityUsageItem {
-  facility_id: ID;
+  facility_id: Id;
   facility_name: string;
   reservations_count: number;
   completed_count: number;

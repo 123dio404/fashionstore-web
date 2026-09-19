@@ -1,57 +1,46 @@
-<div class="site">
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Ir al inicio">
-        Fashion<span class="brand-accent">Store</span>
-      </a>
+<header class="topbar">
+  <a class="brand" routerLink="/catalog">FashionStore</a>
+  <nav>
+    <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
+    <a routerLink="/cart" routerLinkActive="active">Carrito</a>
+    @if (user()) {
+      <a routerLink="/purchase-history" routerLinkActive="active">Mis compras</a>
+      <a routerLink="/my-reservations" routerLinkActive="active">Mis reservas</a>
+      <a routerLink="/recommendations" routerLinkActive="active">Recomendaciones</a>
+      <a routerLink="/chatbot" routerLinkActive="active">Chatbot</a>
+    }
+    @if (isManager()) {
+      <a routerLink="/admin/products" routerLinkActive="active">Productos</a>
+      <a routerLink="/admin/parameters" routerLinkActive="active">Parámetros</a>
+      <a routerLink="/admin/branches" routerLinkActive="active">Sucursales</a>
+      <a routerLink="/admin/suppliers" routerLinkActive="active">Proveedores</a>
+      <a routerLink="/admin/inventory" routerLinkActive="active">Inventario</a>
+      <a routerLink="/admin/finance" routerLinkActive="active">Finanzas</a>
+      <a routerLink="/admin/operations" routerLinkActive="active">Operaciones</a>
+    }
+    @if (isAdmin()) {
+      <a routerLink="/admin/users" routerLinkActive="active">Usuarios</a>
+      <a routerLink="/admin/marketing" routerLinkActive="active">Marketing</a>
+      <a routerLink="/reports/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/reports/sales" routerLinkActive="active">Rep. ventas</a>
+      <a routerLink="/reports/inventory" routerLinkActive="active">Rep. inventario</a>
+      <a routerLink="/reports/analytical" routerLinkActive="active">Analítica IA</a>
+    }
+    @if (isStaff()) {
+      <a routerLink="/pos" routerLinkActive="active">POS</a>
+      <a routerLink="/reservations" routerLinkActive="active">Reservas</a>
+    }
+  </nav>
+  <span class="spacer"></span>
+  @if (user(); as current) {
+    <span class="muted">{{ current.full_name }} ({{ current.role }})</span>
+    <button class="btn" (click)="logout()">Salir</button>
+  } @else {
+    <a routerLink="/auth/login">Iniciar sesión</a>
+    <a routerLink="/auth/register">Registrarse</a>
+  }
+</header>
 
-      <button
-        class="nav-toggle"
-        [class.open]="menuOpen"
-        (click)="menuOpen = !menuOpen"
-        aria-label="Abrir menú"
-        [attr.aria-expanded]="menuOpen"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      <nav class="site-nav" [class.open]="menuOpen" aria-label="Navegación principal">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Inicio</a>
-        <a routerLink="/catalog" routerLinkActive="active" (click)="closeMenu()">Catálogo</a>
-
-        @if (user) {
-          <a routerLink="/cart" routerLinkActive="active" (click)="closeMenu()" class="nav-link nav-cart">
-            Carrito
-            @if (count > 0) {
-              <span class="cart-badge">{{ count }}</span>
-            }
-          </a>
-
-          @if (isStaff) {
-            <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()">Panel</a>
-          }
-
-          <a routerLink="/account" routerLinkActive="active" (click)="closeMenu()">Mi cuenta</a>
-          <button type="button" class="btn btn-ghost btn-sm nav-logout" (click)="logout()">Salir</button>
-        } @else {
-          <a routerLink="/auth/login" class="btn btn-outline btn-sm nav-login" (click)="closeMenu()">Iniciar sesión</a>
-          <a routerLink="/auth/register" class="btn btn-primary btn-sm" (click)="closeMenu()">Registrarme</a>
-        }
-      </nav>
-    </div>
-  </header>
-
-  <main class="site-main">
-    <router-outlet />
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <span class="footer-brand">Fashion<span class="brand-accent">Store</span></span>
-      <span class="footer-tag">Moda con intención · Explora · Elige · Disfruta</span>
-      <span class="footer-copy">© 2026 FashionStore</span>
-    </div>
-  </footer>
-</div>
+<main class="container">
+  <router-outlet />
+</main>

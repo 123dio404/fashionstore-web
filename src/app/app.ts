@@ -1,51 +1,35 @@
-import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from './core/services/auth.service';
-import { CartService } from './core/services/cart.service';
 import { Role } from './models';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive]
+  styleUrl: './app.scss'
 })
 export class App {
   private readonly auth = inject(AuthService);
-  private readonly cartSvc = inject(CartService);
-  private readonly router = inject(Router);
+  readonly user = this.auth.currentUser;
 
-  menuOpen = false;
+  readonly isStaff = computed(() => {
+    const role = this.user()?.role;
+    return role === Role.Administrador || role === Role.Encargado || role === Role.Cajero;
+  });
+  readonly isManager = computed(() => {
+    const role = this.user()?.role;
+    return role === Role.Administrador || role === Role.Encargado;
+  });
+  readonly isAdmin = computed(() => this.user()?.role === Role.Administrador);
 
   constructor() {
-    if (this.auth.hasToken()) {
-      this.auth.restoreSession().subscribe(() => this.cartSvc.refresh());
-    }
-  }
-
-  get user() {
-    return this.auth.currentUser();
-  }
-
-  get count() {
-    return this.cartSvc.count();
-  }
-
-  get isStaff(): boolean {
-    const role = this.auth.currentUser()?.role;
-    return role === Role.Administrador || role === Role.Encargado || role === Role.Cajero;
-  }
-
-  closeMenu(): void {
-    this.menuOpen = false;
+    this.auth.restoreSession().subscribe();
   }
 
   logout(): void {
     this.auth.logout();
-    this.cartSvc.reset();
-    this.menuOpen = false;
-    this.router.navigate(['/']);
   }
 }
+
