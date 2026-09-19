@@ -1,4 +1,4 @@
-import { UUID } from './common.model';
+import { Id } from './common.model';
 
 export enum Role {
   Administrador = 'Administrador',
@@ -9,7 +9,7 @@ export enum Role {
 }
 
 export interface UserResponse {
-  id: UUID;
+  id: Id;
   email: string;
   full_name: string;
   role: Role;

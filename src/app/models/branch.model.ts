@@ -1,41 +1,36 @@
-import { UUID } from './common.model';
+import { Id } from './common.model';
 
 export interface CityCreate {
   name: string;
-  country?: string;
 }
 
 export interface CityUpdate {
   name?: string;
-  country?: string;
 }
 
-export interface CityResponse extends CityCreate {
-  id: UUID;
-  country: string;
+export interface CityResponse {
+  id: Id;
+  name: string;
 }
 
 export interface BranchCreate {
-  city_id: UUID;
+  city_id: Id;
   name: string;
   address: string;
-  fitting_rooms?: number;
-  manager_id?: UUID;
   is_active?: boolean;
 }
 
 export interface BranchUpdate {
-  city_id?: UUID;
+  city_id?: Id;
   name?: string;
   address?: string;
-  fitting_rooms?: number;
-  manager_id?: UUID;
   is_active?: boolean;
 }
 
-export interface BranchResponse extends Omit<BranchCreate, 'manager_id' | 'fitting_rooms' | 'is_active'> {
-  id: UUID;
-  manager_id: UUID | null;
-  fitting_rooms: number;
+export interface BranchResponse {
+  id: Id;
+  city_id: Id;
+  name: string;
+  address: string;
   is_active: boolean;
 }

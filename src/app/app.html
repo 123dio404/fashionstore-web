@@ -1,4 +1,44 @@
-<main class="shell">
-  <h1>FashionStore</h1>
-  <p>Frontend conectado al API FastAPI.</p>
+<header class="topbar">
+  <a class="brand" routerLink="/catalog">FashionStore</a>
+  <nav>
+    <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
+    <a routerLink="/cart" routerLinkActive="active">Carrito</a>
+    @if (user()) {
+      <a routerLink="/purchase-history" routerLinkActive="active">Mis compras</a>
+      <a routerLink="/my-reservations" routerLinkActive="active">Mis reservas</a>
+      <a routerLink="/recommendations" routerLinkActive="active">Recomendaciones</a>
+      <a routerLink="/chatbot" routerLinkActive="active">Chatbot</a>
+    }
+    @if (isManager()) {
+      <a routerLink="/admin/products" routerLinkActive="active">Productos</a>
+      <a routerLink="/admin/parameters" routerLinkActive="active">Parámetros</a>
+      <a routerLink="/admin/branches" routerLinkActive="active">Sucursales</a>
+      <a routerLink="/admin/suppliers" routerLinkActive="active">Proveedores</a>
+      <a routerLink="/admin/inventory" routerLinkActive="active">Inventario</a>
+    }
+    @if (isAdmin()) {
+      <a routerLink="/admin/users" routerLinkActive="active">Usuarios</a>
+      <a routerLink="/admin/marketing" routerLinkActive="active">Marketing</a>
+      <a routerLink="/reports/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/reports/sales" routerLinkActive="active">Rep. ventas</a>
+      <a routerLink="/reports/inventory" routerLinkActive="active">Rep. inventario</a>
+      <a routerLink="/reports/analytical" routerLinkActive="active">Analítica IA</a>
+    }
+    @if (isStaff()) {
+      <a routerLink="/pos" routerLinkActive="active">POS</a>
+      <a routerLink="/reservations" routerLinkActive="active">Reservas</a>
+    }
+  </nav>
+  <span class="spacer"></span>
+  @if (user(); as current) {
+    <span class="muted">{{ current.full_name }} ({{ current.role }})</span>
+    <button class="btn" (click)="logout()">Salir</button>
+  } @else {
+    <a routerLink="/auth/login">Iniciar sesión</a>
+    <a routerLink="/auth/register">Registrarse</a>
+  }
+</header>
+
+<main class="container">
+  <router-outlet />
 </main>
