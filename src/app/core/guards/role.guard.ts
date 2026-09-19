@@ -17,13 +17,13 @@ export const roleGuard: CanActivateFn = (route) => {
   }
   const currentUser = auth.currentUser();
   if (currentUser) {
-    return allowedRoles.includes(currentUser.role)
+    return currentUser.role && allowedRoles.includes(currentUser.role)
       ? true
       : router.createUrlTree(['/forbidden']);
   }
   return auth.getCurrentUser().pipe(
-    map((user) => allowedRoles.includes(user.role)
+    map((user) => (user.role && allowedRoles.includes(user.role)
       ? true
-      : router.createUrlTree(['/forbidden']))
+      : router.createUrlTree(['/forbidden'])))
   );
 };

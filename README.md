@@ -59,6 +59,13 @@ The CORS configuration of the backend already allows `http://localhost:4200` and
 
 CU13 (reserva de probador físico) and CU17 (vestidor virtual con RA) are mobile-only per the specification.
 
+## Extra modules
+
+Beyond the use cases, the management area also includes two additional modules backed by the API:
+
+- **Finanzas** (`/admin/finance`): cuotas/expensas, pagos, multas y reporte financiero (`/finance`).
+- **Operaciones** (`/admin/operations`): instalaciones, mantenimiento, disponibilidad, reservas y reporte de uso (`/operations`).
+
 ## Project structure
 
 ```text

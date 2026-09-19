@@ -38,6 +38,8 @@ export const routes: Routes = [
   { path: 'admin/branches', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/branches.page').then((m) => m.BranchesPage) },
   { path: 'admin/suppliers', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/suppliers.page').then((m) => m.SuppliersPage) },
   { path: 'admin/inventory', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/inventory.page').then((m) => m.InventoryPage) },
+  { path: 'admin/finance', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/finance.page').then((m) => m.FinancePage) },
+  { path: 'admin/operations', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/operations.page').then((m) => m.OperationsPage) },
 
   // CU03 / CU20 - Admin only
   { path: 'admin/users', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/users.page').then((m) => m.UsersPage) },
