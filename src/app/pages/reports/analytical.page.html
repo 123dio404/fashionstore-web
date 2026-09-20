@@ -2,8 +2,7 @@
   <div>
     <h2 class="page-title">Reportes analíticos por voz / IA</h2>
     <p class="page-sub">
-      Consulta en lenguaje natural (texto o audio): el backend interpreta la intención y devuelve
-      métricas y un dictamen (CU24).
+      Pregunta en lenguaje natural (texto o audio) y obtén las métricas del negocio con su dictamen.
     </p>
   </div>
 </div>
@@ -53,8 +52,7 @@
         <p class="note">Transcripción: "{{ transcript() }}"</p>
       }
       <p class="note">
-        La transcripción la hace el backend (Google Speech). Si el proveedor está desactivado, la API
-        devuelve un error explícito.
+        La transcripción del audio se realiza automáticamente; si no se puede procesar verás un aviso.
       </p>
     </section>
 
@@ -86,7 +84,7 @@
 
         <details>
           <summary class="note" style="cursor: pointer">
-            Ver la respuesta completa del backend (JSON)
+            Ver detalle de la respuesta (JSON)
           </summary>
           <pre class="json-block">{{ response.result | json }}</pre>
         </details>
@@ -115,7 +113,7 @@
       </div>
     }
     <p class="note">
-      La API no persiste las consultas analíticas: este historial vive solo en la pestaña actual.
+      Este historial se mantiene mientras la pestaña esté abierta.
     </p>
     <a class="btn btn-block" routerLink="/reports/dashboard" style="margin-top: 0.75rem">
       Ir al dashboard gerencial

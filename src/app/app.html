@@ -49,9 +49,6 @@
                 <app-ui-icon [d]="item.icon" [size]="17" />
                 @if (!collapsed()) {
                   <span class="nav-label">{{ item.label }}</span>
-                  @if (item.cu) {
-                    <span class="nav-cu">{{ item.cu }}</span>
-                  }
                 }
                 @if (item.badge === 'cart' && cartCount() > 0 && !collapsed()) {
                   <span class="nav-badge">{{ cartCount() }}</span>
@@ -82,9 +79,6 @@
             <app-ui-icon [d]="icons.chevronRight" [size]="12" color="var(--muted-2)" />
           }
           <span class="crumb-current">{{ currentItem()?.label ?? 'Catálogo' }}</span>
-          @if (currentItem()?.cu; as cu) {
-            <span class="badge">{{ cu }}</span>
-          }
         </div>
 
         <div class="topbar-search">

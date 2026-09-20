@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <h2 class="page-title">Mi carrito</h2>
-    <p class="page-sub">Revisa tus prendas antes de confirmar la compra (CU10 · CU11).</p>
+    <p class="page-sub">Revisa tus prendas antes de confirmar la compra.</p>
   </div>
 </div>
 
@@ -58,7 +58,7 @@
             </tbody>
           </table>
         </div>
-        <p class="note">Los importes finales los calcula el backend al confirmar la compra.</p>
+        <p class="note">El total se confirma al procesar el pago.</p>
       </div>
 
       <aside class="aside-card">
@@ -94,7 +94,7 @@
         >
           {{ checkingOut() ? 'Procesando pago…' : 'Pagar con Stripe' }}
         </button>
-        <p class="note">El cobro lo procesa el backend (Stripe); aquí se muestra el estado que devuelve la API.</p>
+        <p class="note">El pago se procesa de forma segura con Stripe; verás el estado de la transacción al confirmarlo.</p>
 
         @if (message()) {
           <div class="alert alert-success" style="margin-top: 1rem">{{ message() }}</div>

@@ -21,7 +21,6 @@ export const ICONS = {
   settings:
     'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
   terminal: 'M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM12 12v.01',
-  wallet: 'M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 12h.01',
   activity: 'M22 12h-4l-3 9L9 3l-3 9H2',
   bell: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0',
   search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'M21 21l-4.35-4.35'],
@@ -39,9 +38,12 @@ export interface NavItem {
   /** Ruta real de la aplicación Angular */
   path: string;
   icon: string | string[];
-  /** Caso de uso del documento (`Parcial1-SI2.md`) al que corresponde la pantalla */
+  /**
+   * Trazabilidad interna: caso de uso del documento (`Parcial1-SI2.md`) al que corresponde la
+   * pantalla. **No se muestra en la interfaz** (el prototipo de Figma no incluye estos códigos).
+   */
   cu?: string;
-  /** Muestra el contador del carrito (CU10) */
+  /** Muestra el contador del carrito en la barra lateral */
   badge?: 'cart';
 }
 
@@ -101,13 +103,6 @@ const ADMIN_NAV: NavGroup[] = [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
       { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' }
     ]
-  },
-  {
-    label: 'Módulos',
-    items: [
-      { label: 'Finanzas', path: '/admin/finance', icon: ICONS.wallet },
-      { label: 'Operaciones', path: '/admin/operations', icon: ICONS.activity }
-    ]
   }
 ];
 
@@ -136,13 +131,6 @@ const MANAGER_NAV: NavGroup[] = [
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
       { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' }
-    ]
-  },
-  {
-    label: 'Módulos',
-    items: [
-      { label: 'Finanzas', path: '/admin/finance', icon: ICONS.wallet },
-      { label: 'Operaciones', path: '/admin/operations', icon: ICONS.activity }
     ]
   }
 ];

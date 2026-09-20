@@ -23,14 +23,22 @@ export class LoginPage {
   /** Cifras reales del catálogo para el panel de marca (no hay métricas inventadas). */
   readonly productCount = signal<number | null>(null);
   readonly branchCount = signal<number | null>(null);
+  readonly brandCount = signal<number | null>(null);
 
   email = '';
   password = '';
 
   constructor() {
     this.products.list().subscribe({
-      next: (items) => this.productCount.set(items.filter((item) => item.is_active).length),
-      error: () => this.productCount.set(null)
+      next: (items) => {
+        const active = items.filter((item) => item.is_active);
+        this.productCount.set(active.length);
+        this.brandCount.set(new Set(active.map((item) => item.brand).filter((brand): brand is string => !!brand)).size);
+      },
+      error: () => {
+        this.productCount.set(null);
+        this.brandCount.set(null);
+      }
     });
     this.branches.list().subscribe({
       next: (items) => this.branchCount.set(items.length),

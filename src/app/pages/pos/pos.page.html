@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <h2 class="page-title">Terminal de venta</h2>
-    <p class="page-sub">Venta presencial en caja: abre la caja, cobra y emite el comprobante (CU12).</p>
+    <p class="page-sub">Venta presencial en caja: abre la caja, cobra y emite el comprobante.</p>
   </div>
   <div class="page-actions">
     @if (sessionOpen()) {
@@ -48,8 +48,8 @@
       Abrir caja y cargar stock
     </button>
     <p class="note">
-      La apertura carga el stock de la sucursal en esta pantalla. El arqueo con monto inicial y el
-      cierre con cuadre son capacidades que el backend todavía no expone (ver backlog del diseño).
+      Al abrir la caja se cargan las prendas con stock en esta sucursal. Búscalas por código de
+      barras, SKU o nombre para agregarlas a la venta.
     </p>
   </div>
 } @else {
@@ -146,7 +146,7 @@
       >
         {{ submitting() ? 'Procesando…' : 'Cobrar y registrar' }}
       </button>
-      <p class="note">El cobro y el comprobante los genera el backend; aquí se muestra su respuesta.</p>
+      <p class="note">El comprobante se emite al confirmar el cobro.</p>
 
       @if (sale(); as completed) {
         <div class="summary-row" style="margin-top: 1rem">
@@ -221,7 +221,7 @@
         <span>Total</span>
         <span>{{ doc.total | currency: 'USD' }}</span>
       </div>
-      <p class="note">Comprobante generado por el backend · FashionStore</p>
+      <p class="note">¡Gracias por tu compra! · FashionStore</p>
     </section>
   }
 }
