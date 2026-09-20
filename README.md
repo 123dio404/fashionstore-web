@@ -116,8 +116,11 @@ Screens already aligned with the Figma prototype: the shell itself, **Login** an
 CU03), **Product catalog admin** (table + drawer with variants and 3D model, CU05),
 **Parameters** (tabs per entity + drawer, CU06), **Branches and cities** (tabs + drawers, CU04),
 **Suppliers** (table + drawer, CU07), **Inventory** (KPIs + movements drawer, CU09) and
-**Promotions & collections admin** (tabs + drawers, CU20). Still pending: reports (charts),
-dashboard charts, recommendations and chatbot layout.
+**Promotions & collections admin** (tabs + drawers, CU20), **Sales report** (KPIs + charts + CSV,
+CU21), **Inventory report** (KPIs + charts + CSV, CU22), **Management dashboard** (KPIs + charts,
+CU23), **Analytical reports** (natural language + metrics + session history, CU24),
+**Recommendations** (style panel + match score + reason chips, CU18) and **Chatbot**
+(3-column thread layout, CU19). All 22 web use cases now follow the prototype's composition.
 
 ## Code scaffolding
 
