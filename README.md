@@ -106,10 +106,14 @@ The shell (`app.html` + `app.scss`) is a replica of the **web layout of the Figm
 - **States** are implemented as reusable components (`app-ui-*`): skeletons, empty, error with
   retry, offline, service unavailable, access denied, confirmation modal, buttons, badges.
 
-Example screens already aligned with the Figma prototype: the shell itself, **Login** (brand panel +
-form, CU02), **Catalog** (filter sidebar + 4-column card grid, CU08), **Product detail** (gallery +
-purchase panel with size/colour, per-branch stock and cart, CU08/CU10) and
-**Collections & promotions** (hero banners + discounted products, CU20).
+Screens already aligned with the Figma prototype: the shell itself, **Login** and **Register**
+(two-panel layout, CU01/CU02), **Catalog** (filter sidebar + card grid, CU08), **Product detail**
+(gallery + purchase panel with size/colour, per-branch stock and cart, CU08/CU10), **Cart**
+(items table + summary/aside with Stripe checkout, CU10/CU11), **Profile**, **Purchase history**
+(KPIs + per-order detail, CU16) and **My reservations** (CU15), **Collections & promotions**
+(CU20), **POS** (open register → sale by barcode/SKU → payment → printable receipt, CU12),
+**Store reservations** (status board + fitting-room drawer, CU14), **Users** (table + role drawer,
+CU03) and **Product catalog admin** (table + drawer with variants and 3D model, CU05).
 
 ## Code scaffolding
 
