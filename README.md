@@ -122,6 +122,13 @@ CU23), **Analytical reports** (natural language + metrics + session history, CU2
 **Recommendations** (style panel + match score + reason chips, CU18) and **Chatbot**
 (3-column thread layout, CU19). All 22 web use cases now follow the prototype's composition.
 
+## Deployment
+
+See [DEPLOY.md](./DEPLOY.md) for the full guide (static hosting with SPA rewrites, GitHub Pages and
+Docker + Nginx). The only line to change before building is `apiUrl` in
+`src/environments/environment.production.ts`, and that same domain must be listed in the backend
+`CORS_ORIGINS`.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
