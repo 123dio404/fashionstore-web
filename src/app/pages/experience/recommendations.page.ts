@@ -1,138 +1,128 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { ExperienceService } from '../../core/services/experience.service';
-import { RecommendationResponse } from '../../models';
+import { ProductsService } from '../../core/services/products.service';
+import {
+  CategoryResponse,
+  ColorResponse,
+  RecommendationResponse,
+  SizeResponse
+} from '../../models';
+import { UiEmptyComponent } from '../../shared/ui/empty-state.component';
 
+/**
+ * CU18 — Recomendaciones personalizadas: preferencias del cliente, sugerencias con su motivo,
+ * cantidad disponible y estado del bloque.
+ */
 @Component({
   selector: 'app-recommendations-page',
-  imports: [CommonModule, FormsModule],
-  template: `
-    <h2>Recomendaciones personalizadas</h2>
-    <p class="muted">
-      Define tus preferencias y genera sugerencias de prendas con IA según tu historial.
-    </p>
-
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p class="success">{{ message() }}</p>
-    }
-
-    <div class="card">
-      <h3>Mis preferencias</h3>
-      <div class="grid-2">
-        <div>
-          <label for="brand">Marca preferida</label>
-          <input id="brand" [(ngModel)]="preferredBrand" />
-        </div>
-        <div>
-          <label for="colors">Colores (separados por coma)</label>
-          <input id="colors" [(ngModel)]="preferredColors" />
-        </div>
-        <div>
-          <label for="sizes">IDs de tallas (separados por coma)</label>
-          <input id="sizes" [(ngModel)]="preferredSizes" />
-        </div>
-        <div>
-          <label for="min">Precio mínimo</label>
-          <input id="min" type="number" min="0" [(ngModel)]="minPrice" />
-        </div>
-        <div>
-          <label for="max">Precio máximo</label>
-          <input id="max" type="number" min="0" [(ngModel)]="maxPrice" />
-        </div>
-      </div>
-      <br />
-      <button class="btn-primary" (click)="savePreferences()">Guardar preferencias</button>
-      <button class="btn" [disabled]="generating()" (click)="generate()">
-        {{ generating() ? 'Generando...' : 'Generar recomendaciones' }}
-      </button>
-    </div>
-
-    @if (result(); as recommendation) {
-      <div class="card">
-        <div class="row">
-          <h3 style="margin: 0">Sugerencias</h3>
-          <span class="badge">{{ recommendation.recommendation_type }}</span>
-        </div>
-        @if (recommendation.items.length === 0) {
-          <p class="muted">No se generaron recomendaciones.</p>
-        }
-        <table>
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Puntaje</th>
-              <th>Motivo</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of recommendation.items; track item.id) {
-              <tr>
-                <td>#{{ item.product_id }}</td>
-                <td>{{ item.score }}</td>
-                <td>{{ item.reason || '-' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  `
+  imports: [CommonModule, FormsModule, RouterLink, UiEmptyComponent],
+  templateUrl: './recommendations.page.html',
+  styleUrl: './recommendations.page.scss'
 })
 export class RecommendationsPage {
   private readonly experience = inject(ExperienceService);
+  private readonly products = inject(ProductsService);
 
-  preferredBrand = '';
-  preferredColors = '';
-  preferredSizes = '';
-  minPrice: number | null = null;
-  maxPrice: number | null = null;
   readonly result = signal<RecommendationResponse | null>(null);
+  readonly history = signal<RecommendationResponse[]>([]);
+  readonly categories = signal<CategoryResponse[]>([]);
+  readonly colors = signal<ColorResponse[]>([]);
+  readonly sizes = signal<SizeResponse[]>([]);
+  readonly categoryId = signal<number | null>(null);
+  readonly preferredColors = signal<string[]>([]);
+  readonly preferredSizes = signal<number[]>([]);
+  readonly preferredColorList = this.preferredColors.asReadonly();
+  readonly preferredSizeList = this.preferredSizes.asReadonly();
   readonly generating = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
 
+  preferredBrand = '';
+  minPrice: number | null = null;
+  maxPrice: number | null = null;
+
   constructor() {
-    this.experience.getPreferences().subscribe({
-      next: (prefs) => {
-        if (!prefs) return;
-        this.preferredBrand = prefs.preferred_brand ?? '';
-        this.preferredColors = (prefs.preferred_colors ?? []).join(', ');
-        this.preferredSizes = (prefs.preferred_sizes ?? []).join(', ');
-        this.minPrice = prefs.min_price;
-        this.maxPrice = prefs.max_price;
-      }
-    });
+    this.loadPreferences();
+    this.loadHistory();
+    this.products.listCategories().subscribe((items) => this.categories.set(items));
+    this.products.listColors().subscribe((items) => this.colors.set(items));
+    this.products.listSizes().subscribe((items) => this.sizes.set(items));
   }
 
-  private parseList(value: string): string[] {
-    return value
+  /** La API devuelve la puntuación 0-100; se muestra redondeada como coincidencia. */
+  score(value: number): number {
+    return Math.round(Number(value) || 0);
+  }
+
+  /** El backend guarda los motivos como una lista separada por comas. */
+  reasonChips(reason: string | null): string[] {
+    if (!reason) return [];
+    return reason
       .split(',')
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
   }
 
+  toggleColor(name: string): void {
+    this.preferredColors.update((colors) =>
+      colors.includes(name) ? colors.filter((item) => item !== name) : [...colors, name]
+    );
+  }
+
+  toggleSize(id: number): void {
+    this.preferredSizes.update((sizes) =>
+      sizes.includes(id) ? sizes.filter((item) => item !== id) : [...sizes, id]
+    );
+  }
+
+  loadPreferences(): void {
+    this.experience.getPreferences().subscribe({
+      next: (preferences) => {
+        if (!preferences) return;
+        this.preferredBrand = preferences.preferred_brand ?? '';
+        this.preferredColors.set(preferences.preferred_colors ?? []);
+        this.preferredSizes.set(preferences.preferred_sizes ?? []);
+        this.categoryId.set(preferences.category_id);
+        this.minPrice = preferences.min_price;
+        this.maxPrice = preferences.max_price;
+      },
+      error: (err: Error) => this.error.set(err.message)
+    });
+  }
+
+  loadHistory(): void {
+    this.experience.listRecommendations(10).subscribe({
+      next: (blocks) => {
+        this.history.set(blocks);
+        if (!this.result() && blocks.length > 0) {
+          this.result.set(blocks[0]);
+        }
+      },
+      error: (err: Error) => this.error.set(err.message)
+    });
+  }
+
   savePreferences(): void {
     this.error.set(null);
-    const colors = this.parseList(this.preferredColors);
-    const sizes = this.parseList(this.preferredSizes)
-      .map((value) => Number(value))
-      .filter((value) => !Number.isNaN(value));
-
+    this.message.set(null);
     this.experience
       .savePreferences({
+        category_id: this.categoryId(),
         preferred_brand: this.preferredBrand || null,
-        preferred_colors: colors,
-        preferred_sizes: sizes,
+        preferred_colors: this.preferredColors(),
+        preferred_sizes: this.preferredSizes(),
         min_price: this.minPrice,
         max_price: this.maxPrice
       })
       .subscribe({
-        next: () => this.message.set('Preferencias guardadas.'),
+        next: () => {
+          this.message.set('Preferencias guardadas.');
+          this.loadPreferences();
+        },
         error: (err: Error) => this.error.set(err.message)
       });
   }
@@ -140,15 +130,38 @@ export class RecommendationsPage {
   generate(): void {
     this.generating.set(true);
     this.error.set(null);
+    this.message.set(null);
     this.experience.generateRecommendations(10).subscribe({
-      next: (response) => {
-        this.result.set(response);
+      next: (block) => {
+        this.result.set(block);
+        this.message.set('Recomendaciones generadas.');
         this.generating.set(false);
+        this.loadHistory();
       },
       error: (err: Error) => {
         this.error.set(err.message);
         this.generating.set(false);
       }
+    });
+  }
+
+  markSeen(block: RecommendationResponse): void {
+    this.updateStatus(block.id, 'visto', 'Bloque marcado como visto.');
+  }
+
+  discard(block: RecommendationResponse): void {
+    this.updateStatus(block.id, 'descartado', 'Bloque descartado.');
+  }
+
+  private updateStatus(id: number, status: 'visto' | 'descartado', ok: string): void {
+    this.error.set(null);
+    this.experience.updateRecommendationStatus(id, status).subscribe({
+      next: (updated) => {
+        this.message.set(ok);
+        this.result.set(updated);
+        this.loadHistory();
+      },
+      error: (err: Error) => this.error.set(err.message)
     });
   }
 }

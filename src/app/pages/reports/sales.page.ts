@@ -1,137 +1,38 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { downloadCsv } from '../../core/export';
 import { ReportsService } from '../../core/services/reports.service';
 import { SalesReportResponse } from '../../models';
+import { ChartPoint, UiChartComponent } from '../../shared/ui/chart.component';
+import { UiErrorComponent } from '../../shared/ui/error-state.component';
+import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
 
+/** CU21 — Reporte de ventas: KPIs, gráficos por día/sucursal, detalle por canal y exportación. */
 @Component({
   selector: 'app-sales-report-page',
-  imports: [CommonModule, FormsModule],
-  template: `
-    <h2>Reporte de ventas</h2>
-
-    <div class="toolbar">
-      <div class="field">
-        <label for="start">Desde</label>
-        <input id="start" type="date" [(ngModel)]="startDate" />
-      </div>
-      <div class="field">
-        <label for="end">Hasta</label>
-        <input id="end" type="date" [(ngModel)]="endDate" />
-      </div>
-      <button class="btn-primary" (click)="load()">Generar reporte</button>
-    </div>
-
-    @if (loading()) {
-      <p class="muted">Cargando...</p>
-    }
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-
-    @if (data(); as report) {
-      <div class="grid-2" style="margin-bottom: 1rem">
-        <div class="stat">
-          <div class="value">{{ report.total_orders }}</div>
-          <div class="label">Órdenes</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.total_units }}</div>
-          <div class="label">Unidades</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.total_revenue | currency: 'USD' }}</div>
-          <div class="label">Ingresos</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.average_order_value | currency: 'USD' }}</div>
-          <div class="label">Ticket promedio</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Por canal</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Canal</th>
-              <th>Órdenes</th>
-              <th>Unidades</th>
-              <th>Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of report.by_channel; track row.key) {
-              <tr>
-                <td>{{ row.key }}</td>
-                <td>{{ row.orders }}</td>
-                <td>{{ row.units }}</td>
-                <td>{{ row.revenue | currency: 'USD' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h3>Por sucursal</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Sucursal</th>
-              <th>Órdenes</th>
-              <th>Unidades</th>
-              <th>Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of report.by_branch; track row.key) {
-              <tr>
-                <td>{{ row.key }}</td>
-                <td>{{ row.orders }}</td>
-                <td>{{ row.units }}</td>
-                <td>{{ row.revenue | currency: 'USD' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h3>Por día</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Día</th>
-              <th>Órdenes</th>
-              <th>Unidades</th>
-              <th>Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of report.by_day; track row.key) {
-              <tr>
-                <td>{{ row.key }}</td>
-                <td>{{ row.orders }}</td>
-                <td>{{ row.units }}</td>
-                <td>{{ row.revenue | currency: 'USD' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  `
+  imports: [CommonModule, FormsModule, UiChartComponent, UiErrorComponent, UiSkeletonComponent],
+  templateUrl: './sales.page.html',
+  styleUrl: './reports.scss'
 })
 export class SalesReportPage {
   private readonly reports = inject(ReportsService);
 
-  startDate = '';
-  endDate = '';
   readonly data = signal<SalesReportResponse | null>(null);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  startDate = '';
+  endDate = '';
+
+  readonly dayPoints = computed<ChartPoint[]>(() =>
+    (this.data()?.by_day ?? []).map((row) => ({ label: row.key, value: Number(row.revenue) }))
+  );
+
+  readonly branchPoints = computed<ChartPoint[]>(() =>
+    (this.data()?.by_branch ?? []).map((row) => ({ label: row.key, value: Number(row.revenue) }))
+  );
 
   constructor() {
     this.load();
@@ -143,6 +44,8 @@ export class SalesReportPage {
     this.reports.salesReport(this.startDate || undefined, this.endDate || undefined).subscribe({
       next: (report) => {
         this.data.set(report);
+        this.startDate = report.start_date;
+        this.endDate = report.end_date;
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -150,5 +53,26 @@ export class SalesReportPage {
         this.loading.set(false);
       }
     });
+  }
+
+  /** Atajos de rango: hoy, últimos 7 días y últimos 30 días. */
+  range(kind: 'today' | 'week' | 'month'): void {
+    const today = new Date();
+    const from = new Date(today);
+    if (kind === 'week') from.setDate(today.getDate() - 6);
+    if (kind === 'month') from.setDate(today.getDate() - 29);
+    this.startDate = from.toISOString().slice(0, 10);
+    this.endDate = today.toISOString().slice(0, 10);
+    this.load();
+  }
+
+  exportCsv(): void {
+    const report = this.data();
+    if (!report) return;
+    downloadCsv(`ventas_${report.start_date}_${report.end_date}`, [
+      ...report.by_day.map((row) => ({ seccion: 'dia', clave: row.key, ordenes: row.orders, unidades: row.units, ingresos: row.revenue })),
+      ...report.by_branch.map((row) => ({ seccion: 'sucursal', clave: row.key, ordenes: row.orders, unidades: row.units, ingresos: row.revenue })),
+      ...report.by_channel.map((row) => ({ seccion: 'canal', clave: row.key, ordenes: row.orders, unidades: row.units, ingresos: row.revenue }))
+    ]);
   }
 }

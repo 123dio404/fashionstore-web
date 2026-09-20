@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { ReportsService } from '../../core/services/reports.service';
-import { DashboardResponse } from '../../models';
+import { DashboardResponse, SalesReportResponse } from '../../models';
+import { ChartPoint, UiChartComponent } from '../../shared/ui/chart.component';
+import { UiErrorComponent } from '../../shared/ui/error-state.component';
+import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
 
 interface TopProduct {
   name: string;
@@ -11,115 +15,31 @@ interface TopProduct {
   revenue: number;
 }
 
+/** CU23 — Dashboard gerencial: KPIs, gráficos de ventas y tablas de productos y canales. */
 @Component({
   selector: 'app-dashboard-page',
-  imports: [CommonModule, FormsModule],
-  template: `
-    <h2>Dashboard gerencial</h2>
-
-    <div class="toolbar">
-      <div class="field">
-        <label for="start">Desde</label>
-        <input id="start" type="date" [(ngModel)]="startDate" />
-      </div>
-      <div class="field">
-        <label for="end">Hasta</label>
-        <input id="end" type="date" [(ngModel)]="endDate" />
-      </div>
-      <button class="btn-primary" (click)="load()">Actualizar</button>
-    </div>
-
-    @if (loading()) {
-      <p class="muted">Cargando...</p>
-    }
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-
-    @if (data(); as report) {
-      <div class="grid-2" style="margin-bottom: 1rem">
-        <div class="stat">
-          <div class="value">{{ report.total_orders }}</div>
-          <div class="label">Órdenes</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.total_units }}</div>
-          <div class="label">Unidades vendidas</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.total_revenue | currency: 'USD' }}</div>
-          <div class="label">Ingresos</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.average_order_value | currency: 'USD' }}</div>
-          <div class="label">Ticket promedio</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.inventory_value | currency: 'USD' }}</div>
-          <div class="label">Valor de inventario</div>
-        </div>
-        <div class="stat">
-          <div class="value">{{ report.low_stock_count }}</div>
-          <div class="label">Productos bajo mínimo</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Productos más vendidos</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Unidades</th>
-              <th>Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (product of topProducts(); track product.name) {
-              <tr>
-                <td>{{ product.name }}</td>
-                <td>{{ product.units }}</td>
-                <td>{{ product.revenue | currency: 'USD' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h3>Canales</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Canal</th>
-              <th>Órdenes</th>
-              <th>Unidades</th>
-              <th>Ingresos</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of report.channels; track row.key) {
-              <tr>
-                <td>{{ row.key }}</td>
-                <td>{{ row.orders }}</td>
-                <td>{{ row.units }}</td>
-                <td>{{ row.revenue | currency: 'USD' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  `
+  imports: [CommonModule, FormsModule, UiChartComponent, UiErrorComponent, UiSkeletonComponent],
+  templateUrl: './dashboard.page.html',
+  styleUrl: './reports.scss'
 })
 export class DashboardPage {
   private readonly reports = inject(ReportsService);
 
-  startDate = '';
-  endDate = '';
   readonly data = signal<DashboardResponse | null>(null);
+  private readonly sales = signal<SalesReportResponse | null>(null);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  startDate = '';
+  endDate = '';
+
+  readonly dayPoints = computed<ChartPoint[]>(() =>
+    (this.sales()?.by_day ?? []).map((row) => ({ label: row.key, value: Number(row.revenue) }))
+  );
+
+  readonly branchPoints = computed<ChartPoint[]>(() =>
+    (this.sales()?.by_branch ?? []).map((row) => ({ label: row.key, value: Number(row.revenue) }))
+  );
 
   readonly topProducts = computed<TopProduct[]>(() =>
     (this.data()?.top_products ?? []).map((item) => ({
@@ -136,9 +56,17 @@ export class DashboardPage {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.reports.dashboard(this.startDate || undefined, this.endDate || undefined).subscribe({
-      next: (report) => {
-        this.data.set(report);
+    forkJoin({
+      dashboard: this.reports.dashboard(this.startDate || undefined, this.endDate || undefined),
+      sales: this.reports
+        .salesReport(this.startDate || undefined, this.endDate || undefined)
+        .pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ dashboard, sales }) => {
+        this.data.set(dashboard);
+        this.sales.set(sales);
+        this.startDate = dashboard.start_date;
+        this.endDate = dashboard.end_date;
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -146,5 +74,14 @@ export class DashboardPage {
         this.loading.set(false);
       }
     });
+  }
+
+  range(days: number): void {
+    const today = new Date();
+    const from = new Date(today);
+    from.setDate(today.getDate() - (days - 1));
+    this.startDate = from.toISOString().slice(0, 10);
+    this.endDate = today.toISOString().slice(0, 10);
+    this.load();
   }
 }

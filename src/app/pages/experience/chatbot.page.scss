@@ -1,0 +1,146 @@
+:host {
+  display: block;
+}
+
+.chat-layout {
+  display: grid;
+  grid-template-columns: 16rem 1fr 15rem;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+/* Lista de conversaciones */
+.chat-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.chat-conv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+}
+
+.chat-conv:hover {
+  background: var(--bg);
+}
+
+.chat-conv.active {
+  background: var(--brand-soft);
+  border-color: var(--brand-soft);
+}
+
+.chat-conv-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chat-conv-meta {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+/* Hilo de mensajes */
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 34rem;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-thread {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: var(--space-4) 0;
+  overflow-y: auto;
+  max-height: 26rem;
+}
+
+.bubble {
+  max-width: 78%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 14px;
+  background: var(--surface-2);
+  align-self: flex-start;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: var(--text);
+  color: #fff;
+}
+
+.bubble.typing {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.bubble-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.bubble-meta {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.62rem;
+  opacity: 0.7;
+}
+
+.chat-input {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.chat-input input {
+  flex: 1;
+}
+
+/* Panel de contexto */
+.chat-context {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+@media (max-width: 1180px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-side {
+    max-height: 12rem;
+  }
+}
