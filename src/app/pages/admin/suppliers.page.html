@@ -1,0 +1,125 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Proveedores</h2>
+    <p class="page-sub">Registro de proveedores de mercadería y su estado (CU07).</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn-primary" (click)="openCreate()">Nuevo proveedor</button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0; min-width: 16rem">
+    <label for="s-search">Buscar</label>
+    <input id="s-search" placeholder="Nombre, CI/NIT o correo" [(ngModel)]="search" />
+  </div>
+  <span class="spacer"></span>
+  <span class="muted">{{ filtered.length }} de {{ list().length }} proveedores</span>
+</div>
+
+<div class="table-card">
+  <h3>Proveedores</h3>
+  @if (filtered.length === 0) {
+    <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+      Ningún proveedor coincide con el filtro.
+    </p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>CI / NIT</th>
+          <th>Contacto</th>
+          <th>Dirección</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (supplier of filtered; track supplier.id) {
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar-sm">{{ initial(supplier.name) }}</span>
+                <span class="cell-strong">{{ supplier.name }}</span>
+              </div>
+            </td>
+            <td><code>{{ supplier.ci }}</code></td>
+            <td>
+              <div class="cell-stack">
+                <span>{{ supplier.phone || 'Sin teléfono' }}</span>
+                <span class="cell-sub">{{ supplier.email || 'Sin correo' }}</span>
+              </div>
+            </td>
+            <td>{{ supplier.address || '—' }}</td>
+            <td>
+              <span class="badge" [class.ok]="supplier.is_active" [class.neutral]="!supplier.is_active">
+                {{ supplier.is_active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn-sm" (click)="openEdit(supplier)">Editar</button>
+                <button type="button" class="btn btn-sm" (click)="toggleActive(supplier)">
+                  {{ supplier.is_active ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button type="button" class="btn-danger btn-sm" (click)="remove(supplier)">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+<app-ui-drawer
+  [open]="drawerOpen()"
+  [title]="editing() ? 'Editar proveedor' : 'Nuevo proveedor'"
+  [subtitle]="editing() ? editing()!.ci : 'Datos fiscales y de contacto'"
+  (closed)="closeDrawer()"
+>
+  <div class="field">
+    <label for="d-sname">Nombre / Razón social</label>
+    <input id="d-sname" [(ngModel)]="form.name" />
+  </div>
+  <div class="field">
+    <label for="d-ci">CI / NIT</label>
+    <input id="d-ci" [(ngModel)]="form.ci" />
+  </div>
+  <div class="grid-2">
+    <div class="field">
+      <label for="d-phone">Teléfono</label>
+      <input id="d-phone" [(ngModel)]="form.phone" />
+    </div>
+    <div class="field">
+      <label for="d-email">Correo</label>
+      <input id="d-email" type="email" [(ngModel)]="form.email" />
+    </div>
+  </div>
+  <div class="field">
+    <label for="d-address">Dirección</label>
+    <input id="d-address" [(ngModel)]="form.address" />
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="form.is_active" />
+      Proveedor activo
+    </label>
+  </div>
+
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="closeDrawer()">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="save()">
+      {{ editing() ? 'Guardar cambios' : 'Crear proveedor' }}
+    </button>
+  </div>
+</app-ui-drawer>

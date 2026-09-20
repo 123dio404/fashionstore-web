@@ -1,187 +1,227 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { BranchesService } from '../../core/services/branches.service';
-import { BranchCreate, BranchResponse, CityResponse } from '../../models';
+import { BranchCreate, BranchResponse, CityCreate, CityResponse } from '../../models';
+import { ConfirmService } from '../../shared/ui/confirm.service';
+import { UiDrawerComponent } from '../../shared/ui/drawer.component';
+import { TabItem, UiTabsComponent } from '../../shared/ui/tabs.component';
 
+const EMPTY_BRANCH: BranchCreate = { city_id: 0, name: '', address: '', is_active: true };
+
+/** CU04 — Gestionar sucursales y ciudades: pestañas, tablas y drawers de alta/edición. */
 @Component({
   selector: 'app-branches-page',
-  imports: [CommonModule, FormsModule],
-  template: `
-    <h2>Sucursales y ciudades</h2>
-
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p class="success">{{ message() }}</p>
-    }
-
-    <div class="card">
-      <h3>Ciudades</h3>
-      <div class="row">
-        <input placeholder="Nueva ciudad" [(ngModel)]="newCity" style="max-width: 18rem" />
-        <button class="btn-primary" (click)="addCity()">Agregar</button>
-      </div>
-      <table style="margin-top: 1rem">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (city of cities(); track city.id) {
-            <tr>
-              <td>{{ city.id }}</td>
-              <td>{{ city.name }}</td>
-              <td><button class="btn-danger" (click)="removeCity(city)">Eliminar</button></td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h3>Sucursales</h3>
-      <div class="grid-2">
-        <div>
-          <label for="city">Ciudad</label>
-          <select id="city" [(ngModel)]="form.city_id">
-            <option [ngValue]="0">Selecciona una ciudad</option>
-            @for (city of cities(); track city.id) {
-              <option [ngValue]="city.id">{{ city.name }}</option>
-            }
-          </select>
-        </div>
-        <div>
-          <label for="name">Nombre</label>
-          <input id="name" [(ngModel)]="form.name" />
-        </div>
-        <div>
-          <label for="address">Dirección</label>
-          <input id="address" [(ngModel)]="form.address" />
-        </div>
-      </div>
-      <br />
-      <button class="btn-primary" (click)="addBranch()">Crear sucursal</button>
-
-      <table style="margin-top: 1rem">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Ciudad</th>
-            <th>Dirección</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (branch of branches(); track branch.id) {
-            <tr>
-              <td>{{ branch.id }}</td>
-              <td>{{ branch.name }}</td>
-              <td>{{ cityName(branch.city_id) }}</td>
-              <td>{{ branch.address }}</td>
-              <td>
-                <span class="badge" [class.ok]="branch.is_active">
-                  {{ branch.is_active ? 'Activa' : 'Inactiva' }}
-                </span>
-              </td>
-              <td>
-                <button class="btn" (click)="toggleBranch(branch)">
-                  {{ branch.is_active ? 'Desactivar' : 'Activar' }}
-                </button>
-                <button class="btn-danger" (click)="removeBranch(branch)">Eliminar</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  `
+  imports: [CommonModule, FormsModule, UiDrawerComponent, UiTabsComponent],
+  templateUrl: './branches.page.html'
 })
 export class BranchesPage {
   private readonly service = inject(BranchesService);
+  private readonly confirm = inject(ConfirmService);
 
   readonly cities = signal<CityResponse[]>([]);
   readonly branches = signal<BranchResponse[]>([]);
+  readonly activeTab = signal<'branches' | 'cities'>('branches');
+  readonly branchDrawer = signal(false);
+  readonly cityDrawer = signal(false);
+  readonly editingBranch = signal<BranchResponse | null>(null);
+  readonly editingCity = signal<CityResponse | null>(null);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
-  newCity = '';
-  form: BranchCreate = { city_id: 0, name: '', address: '', is_active: true };
+
+  branchForm: BranchCreate = { ...EMPTY_BRANCH };
+  cityNameValue = '';
+
+  readonly tabs = computed<TabItem[]>(() => [
+    { id: 'branches', label: 'Sucursales', count: this.branches().length },
+    { id: 'cities', label: 'Ciudades', count: this.cities().length }
+  ]);
 
   constructor() {
     this.loadCities();
     this.loadBranches();
   }
 
+  onTab(id: string): void {
+    this.activeTab.set(id as 'branches' | 'cities');
+    this.message.set(null);
+    this.error.set(null);
+  }
+
   cityName(id: number): string {
-    return this.cities().find((c) => c.id === id)?.name ?? `#${id}`;
+    return this.cities().find((city) => city.id === id)?.name ?? `#${id}`;
+  }
+
+  branchesIn(cityId: number): number {
+    return this.branches().filter((branch) => branch.city_id === cityId).length;
+  }
+
+  initial(name: string): string {
+    return name.charAt(0).toUpperCase();
   }
 
   loadCities(): void {
     this.service.listCities().subscribe({
       next: (data) => this.cities.set(data),
-      error: (err: Error) => this.error.set(err.message)
+      error: (err: Error) => this.fail(err)
     });
   }
 
   loadBranches(): void {
     this.service.list().subscribe({
       next: (data) => this.branches.set(data),
-      error: (err: Error) => this.error.set(err.message)
+      error: (err: Error) => this.fail(err)
     });
   }
 
-  addCity(): void {
-    if (!this.newCity.trim()) return;
-    this.service.createCity({ name: this.newCity.trim() }).subscribe({
-      next: () => {
-        this.newCity = '';
-        this.message.set('Ciudad creada.');
-        this.loadCities();
-      },
-      error: (err: Error) => this.error.set(err.message)
-    });
+  // --- Sucursales ---
+  openBranchCreate(): void {
+    this.editingBranch.set(null);
+    this.branchForm = { ...EMPTY_BRANCH };
+    this.branchDrawer.set(true);
   }
 
-  removeCity(city: CityResponse): void {
-    this.service.removeCity(city.id).subscribe({
-      next: () => this.loadCities(),
-      error: (err: Error) => this.error.set(err.message)
-    });
+  openBranchEdit(branch: BranchResponse): void {
+    this.editingBranch.set(branch);
+    this.branchForm = {
+      city_id: branch.city_id,
+      name: branch.name,
+      address: branch.address,
+      is_active: branch.is_active
+    };
+    this.branchDrawer.set(true);
   }
 
-  addBranch(): void {
-    if (!this.form.city_id || !this.form.name.trim() || !this.form.address.trim()) {
-      this.error.set('Ciudad, nombre y dirección son obligatorios.');
+  saveBranch(): void {
+    if (!this.branchForm.city_id || !this.branchForm.name.trim() || !this.branchForm.address.trim()) {
+      this.fail(new Error('Ciudad, nombre y dirección son obligatorios.'));
       return;
     }
-    this.service.create(this.form).subscribe({
+
+    const current = this.editingBranch();
+    if (current) {
+      this.service.update(current.id, this.branchForm).subscribe({
+        next: () => {
+          this.message.set('Sucursal actualizada.');
+          this.error.set(null);
+          this.branchDrawer.set(false);
+          this.loadBranches();
+        },
+        error: (err: Error) => this.fail(err)
+      });
+      return;
+    }
+
+    this.service.create(this.branchForm).subscribe({
       next: () => {
         this.message.set('Sucursal creada.');
-        this.form = { city_id: 0, name: '', address: '', is_active: true };
+        this.error.set(null);
+        this.branchDrawer.set(false);
         this.loadBranches();
       },
-      error: (err: Error) => this.error.set(err.message)
+      error: (err: Error) => this.fail(err)
     });
   }
 
   toggleBranch(branch: BranchResponse): void {
     this.service.update(branch.id, { is_active: !branch.is_active }).subscribe({
-      next: () => this.loadBranches(),
-      error: (err: Error) => this.error.set(err.message)
+      next: () => {
+        this.message.set(branch.is_active ? 'Sucursal desactivada.' : 'Sucursal activada.');
+        this.loadBranches();
+      },
+      error: (err: Error) => this.fail(err)
     });
   }
 
   removeBranch(branch: BranchResponse): void {
-    this.service.remove(branch.id).subscribe({
-      next: () => this.loadBranches(),
-      error: (err: Error) => this.error.set(err.message)
+    void this.confirm
+      .ask({
+        title: 'Eliminar sucursal',
+        message: `¿Eliminar "${branch.name}"? Si tiene stock o ventas asociadas el sistema lo impedirá.`,
+        confirmLabel: 'Sí, eliminar',
+        danger: true
+      })
+      .then((confirmed) => {
+        if (!confirmed) return;
+        this.service.remove(branch.id).subscribe({
+          next: () => {
+            this.message.set('Sucursal eliminada.');
+            this.loadBranches();
+          },
+          error: (err: Error) => this.fail(err)
+        });
+      });
+  }
+
+  // --- Ciudades ---
+  openCityCreate(): void {
+    this.editingCity.set(null);
+    this.cityNameValue = '';
+    this.cityDrawer.set(true);
+  }
+
+  openCityEdit(city: CityResponse): void {
+    this.editingCity.set(city);
+    this.cityNameValue = city.name;
+    this.cityDrawer.set(true);
+  }
+
+  saveCity(): void {
+    const name = this.cityNameValue.trim();
+    if (!name) {
+      this.fail(new Error('El nombre de la ciudad es obligatorio.'));
+      return;
+    }
+
+    const payload: CityCreate = { name };
+    const current = this.editingCity();
+    if (current) {
+      this.service.updateCity(current.id, payload).subscribe({
+        next: () => {
+          this.message.set('Ciudad actualizada.');
+          this.error.set(null);
+          this.cityDrawer.set(false);
+          this.loadCities();
+        },
+        error: (err: Error) => this.fail(err)
+      });
+      return;
+    }
+
+    this.service.createCity(payload).subscribe({
+      next: () => {
+        this.message.set('Ciudad creada.');
+        this.error.set(null);
+        this.cityDrawer.set(false);
+        this.loadCities();
+      },
+      error: (err: Error) => this.fail(err)
     });
+  }
+
+  removeCity(city: CityResponse): void {
+    void this.confirm
+      .ask({
+        title: 'Eliminar ciudad',
+        message: `¿Eliminar "${city.name}"? Si tiene sucursales asociadas el sistema lo impedirá.`,
+        confirmLabel: 'Sí, eliminar',
+        danger: true
+      })
+      .then((confirmed) => {
+        if (!confirmed) return;
+        this.service.removeCity(city.id).subscribe({
+          next: () => {
+            this.message.set('Ciudad eliminada.');
+            this.loadCities();
+          },
+          error: (err: Error) => this.fail(err)
+        });
+      });
+  }
+
+  private fail(err: Error): void {
+    this.error.set(err.message);
+    this.message.set(null);
   }
 }

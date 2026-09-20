@@ -1,0 +1,103 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Parámetros de prendas</h2>
+    <p class="page-sub">
+      Categorías, tallas, colores y temporadas que usan las prendas y sus variantes (CU06).
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn-primary" (click)="openCreate()">
+      Nuevo {{ singular().toLowerCase() }}
+    </button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<app-ui-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+<div class="table-card">
+  <h3>{{ singular() }}s</h3>
+
+  @if (current().length === 0) {
+    <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+      Todavía no hay registros de este tipo.
+    </p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          @if (isSeason()) {
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Vigente</th>
+          }
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of current(); track row.id) {
+          <tr>
+            <td class="cell-strong">{{ row.name }}</td>
+            @if (isSeason()) {
+              <td>{{ row.start_date || '—' }}</td>
+              <td>{{ row.end_date || '—' }}</td>
+              <td>
+                <span class="badge" [class.ok]="isActiveSeason(row)" [class.neutral]="!isActiveSeason(row)">
+                  {{ isActiveSeason(row) ? 'En curso' : 'Fuera de temporada' }}
+                </span>
+              </td>
+            }
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn-sm" (click)="openEdit(row)">Editar</button>
+                <button type="button" class="btn-danger btn-sm" (click)="remove(row)">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+<app-ui-drawer
+  [open]="drawerOpen()"
+  [title]="(editing() ? 'Editar ' : 'Nuevo ') + singular().toLowerCase()"
+  [subtitle]="isSeason() ? 'Define el rango de vigencia de la temporada' : 'Nombre visible en el catálogo'"
+  (closed)="closeDrawer()"
+>
+  <div class="field">
+    <label for="p-name">Nombre</label>
+    <input id="p-name" [(ngModel)]="form.name" placeholder="Ej. Blazers, M, Rojo, Otoño 2026" />
+  </div>
+
+  @if (isSeason()) {
+    <div class="grid-2">
+      <div class="field">
+        <label for="p-start">Inicio</label>
+        <input id="p-start" type="date" [(ngModel)]="form.start_date" />
+      </div>
+      <div class="field">
+        <label for="p-end">Fin</label>
+        <input id="p-end" type="date" [(ngModel)]="form.end_date" />
+      </div>
+    </div>
+    <p class="note">
+      La temporada en curso es la que el recomendador (CU18) usa para puntuar las sugerencias.
+    </p>
+  }
+
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="closeDrawer()">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="save()">
+      {{ editing() ? 'Guardar cambios' : 'Agregar' }}
+    </button>
+  </div>
+</app-ui-drawer>
