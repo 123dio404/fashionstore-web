@@ -8,214 +8,201 @@ import {
   ColorResponse,
   ProductCreate,
   ProductResponse,
+  ProductUpdate,
   SeasonResponse,
-  SizeResponse
+  SizeResponse,
+  VariantCreate
 } from '../../models';
+import { ConfirmService } from '../../shared/ui/confirm.service';
+import { UiDrawerComponent } from '../../shared/ui/drawer.component';
 
+const EMPTY_PRODUCT: ProductCreate = {
+  name: '',
+  brand: '',
+  category_id: 0,
+  season_id: null,
+  price: 0,
+  model_3d_url: null,
+  model_3d_format: null,
+  technical_metadata: null,
+  is_active: true
+};
+
+/** CU05 — Gestionar el catálogo de prendas: tabla con filtros y drawer con ficha técnica y variantes. */
 @Component({
   selector: 'app-products-page',
-  imports: [CommonModule, FormsModule],
-  template: `
-    <h2>Catálogo de prendas</h2>
-
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p class="success">{{ message() }}</p>
-    }
-
-    <div class="card">
-      <h3>Nueva prenda</h3>
-      <div class="grid-2">
-        <div>
-          <label for="name">Nombre</label>
-          <input id="name" [(ngModel)]="form.name" />
-        </div>
-        <div>
-          <label for="brand">Marca</label>
-          <input id="brand" [(ngModel)]="form.brand" />
-        </div>
-        <div>
-          <label for="category">Categoría</label>
-          <select id="category" [(ngModel)]="form.category_id">
-            <option [ngValue]="0">Selecciona</option>
-            @for (category of categories(); track category.id) {
-              <option [ngValue]="category.id">{{ category.name }}</option>
-            }
-          </select>
-        </div>
-        <div>
-          <label for="season">Temporada</label>
-          <select id="season" [(ngModel)]="form.season_id">
-            <option [ngValue]="null">Sin temporada</option>
-            @for (season of seasons(); track season.id) {
-              <option [ngValue]="season.id">{{ season.name }}</option>
-            }
-          </select>
-        </div>
-        <div>
-          <label for="price">Precio</label>
-          <input id="price" type="number" min="0" [(ngModel)]="form.price" />
-        </div>
-        <div>
-          <label for="model">Modelo 3D (URL .glb/.gltf)</label>
-          <input id="model" [(ngModel)]="form.model_3d_url" />
-        </div>
-      </div>
-      <br />
-      <button class="btn-primary" (click)="create()">Crear prenda</button>
-    </div>
-
-    @if (variantProduct(); as product) {
-      <div class="card">
-        <h3>Agregar variante a "{{ product.name }}"</h3>
-        <div class="grid-2">
-          <div>
-            <label for="size">Talla</label>
-            <select id="size" [(ngModel)]="variant.size_id">
-              <option [ngValue]="0">Selecciona</option>
-              @for (size of sizes(); track size.id) {
-                <option [ngValue]="size.id">{{ size.name }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label for="color">Color</label>
-            <select id="color" [(ngModel)]="variant.color_id">
-              <option [ngValue]="0">Selecciona</option>
-              @for (color of colors(); track color.id) {
-                <option [ngValue]="color.id">{{ color.name }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label for="codigo">Código</label>
-            <input id="codigo" [(ngModel)]="variant.codigo" />
-          </div>
-          <div>
-            <label for="vprice">Precio variante</label>
-            <input id="vprice" type="number" min="0" [(ngModel)]="variant.price" />
-          </div>
-        </div>
-        <br />
-        <button class="btn-primary" (click)="addVariant(product)">Agregar variante</button>
-        <button class="btn" (click)="variantProduct.set(null)">Cancelar</button>
-      </div>
-    }
-
-    <div class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Marca</th>
-            <th>Precio</th>
-            <th>Variantes</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (product of products(); track product.id) {
-            <tr>
-              <td>{{ product.id }}</td>
-              <td>{{ product.name }}</td>
-              <td>{{ product.brand || '-' }}</td>
-              <td>{{ product.price | currency: 'USD' }}</td>
-              <td>{{ product.variants.length }}</td>
-              <td>
-                <span class="badge" [class.ok]="product.is_active">
-                  {{ product.is_active ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-              <td>
-                <button class="btn" (click)="variantProduct.set(product)">+ Variante</button>
-                <button class="btn-danger" (click)="remove(product)">Eliminar</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  `
+  imports: [CommonModule, FormsModule, UiDrawerComponent],
+  templateUrl: './products.page.html',
+  styleUrl: './products.page.scss'
 })
 export class ProductsPage {
   private readonly service = inject(ProductsService);
+  private readonly confirm = inject(ConfirmService);
 
   readonly products = signal<ProductResponse[]>([]);
   readonly categories = signal<CategoryResponse[]>([]);
   readonly seasons = signal<SeasonResponse[]>([]);
   readonly sizes = signal<SizeResponse[]>([]);
   readonly colors = signal<ColorResponse[]>([]);
-  readonly variantProduct = signal<ProductResponse | null>(null);
+  readonly drawerOpen = signal(false);
+  readonly editing = signal<ProductResponse | null>(null);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
 
-  form: ProductCreate = {
-    name: '',
-    brand: '',
-    category_id: 0,
-    season_id: null,
-    price: 0,
-    model_3d_url: null,
-    model_3d_format: null,
-    is_active: true
-  };
+  search = '';
+  categoryFilter: number | null = null;
+  seasonFilter: number | null = null;
 
-  variant = { size_id: 0, color_id: 0, codigo: '', price: null as number | null };
+  form: ProductCreate = { ...EMPTY_PRODUCT };
+  variant: VariantCreate = { size_id: 0, color_id: 0, codigo: '', price: null };
+
+  /** Filtro por nombre/marca, categoría y temporada. */
+  get filtered(): ProductResponse[] {
+    const term = this.search.trim().toLowerCase();
+    return this.products().filter((product) => {
+      if (this.categoryFilter !== null && product.category_id !== this.categoryFilter) return false;
+      if (this.seasonFilter !== null && product.season_id !== this.seasonFilter) return false;
+      if (!term) return true;
+      return (
+        product.name.toLowerCase().includes(term) ||
+        (product.brand ?? '').toLowerCase().includes(term)
+      );
+    });
+  }
 
   constructor() {
     this.load();
-    this.service.listCategories().subscribe((d) => this.categories.set(d));
-    this.service.listSeasons().subscribe((d) => this.seasons.set(d));
-    this.service.listSizes().subscribe((d) => this.sizes.set(d));
-    this.service.listColors().subscribe((d) => this.colors.set(d));
+    this.service.listCategories().subscribe((data) => this.categories.set(data));
+    this.service.listSeasons().subscribe((data) => this.seasons.set(data));
+    this.service.listSizes().subscribe((data) => this.sizes.set(data));
+    this.service.listColors().subscribe((data) => this.colors.set(data));
   }
 
-  private fail(err: Error): void {
-    this.error.set(err.message);
-    this.message.set(null);
+  initial(product: ProductResponse): string {
+    return (product.brand || product.name).charAt(0).toUpperCase();
   }
 
-  load(): void {
+  categoryName(product: ProductResponse): string {
+    return (
+      this.categories().find((category) => category.id === product.category_id)?.name ??
+      'Sin categoría'
+    );
+  }
+
+  seasonName(product: ProductResponse): string {
+    if (product.season_id === null) return 'Sin temporada';
+    return this.seasons().find((season) => season.id === product.season_id)?.name ?? '—';
+  }
+
+  sizeName(sizeId: number | null | undefined): string {
+    if (sizeId === null || sizeId === undefined) return '—';
+    return this.sizes().find((size) => size.id === sizeId)?.name ?? '—';
+  }
+
+  colorName(colorId: number | null | undefined): string {
+    if (colorId === null || colorId === undefined) return '—';
+    return this.colors().find((color) => color.id === colorId)?.name ?? '—';
+  }
+
+  load(after?: () => void): void {
     this.service.list().subscribe({
-      next: (data) => this.products.set(data),
+      next: (data) => {
+        this.products.set(data);
+        after?.();
+      },
       error: (err: Error) => this.fail(err)
     });
   }
 
-  create(): void {
-    if (!this.form.category_id || !this.form.name.trim()) {
+  openCreate(): void {
+    this.editing.set(null);
+    this.form = { ...EMPTY_PRODUCT };
+    this.message.set(null);
+    this.error.set(null);
+    this.drawerOpen.set(true);
+  }
+
+  openEdit(product: ProductResponse): void {
+    this.editing.set(product);
+    this.form = {
+      name: product.name,
+      brand: product.brand,
+      category_id: product.category_id,
+      season_id: product.season_id,
+      price: product.price,
+      model_3d_url: product.model_3d_url,
+      model_3d_format: product.model_3d_format === 'gltf' ? 'gltf' : product.model_3d_format === 'glb' ? 'glb' : null,
+      technical_metadata: product.technical_metadata,
+      is_active: product.is_active
+    };
+    this.variant = { size_id: 0, color_id: 0, codigo: '', price: null };
+    this.message.set(null);
+    this.error.set(null);
+    this.drawerOpen.set(true);
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen.set(false);
+    this.editing.set(null);
+  }
+
+  save(): void {
+    this.message.set(null);
+    this.error.set(null);
+
+    if (!this.form.name.trim() || !this.form.category_id) {
       this.fail(new Error('Nombre y categoría son obligatorios.'));
       return;
     }
-    this.service.create(this.form).subscribe({
+    if (!this.form.model_3d_url) {
+      this.form.model_3d_format = null;
+    }
+
+    const current = this.editing();
+    if (!current) {
+      this.service.create(this.form).subscribe({
+        next: () => {
+          this.message.set('Prenda creada.');
+          this.closeDrawer();
+          this.load();
+        },
+        error: (err: Error) => this.fail(err)
+      });
+      return;
+    }
+
+    const payload: ProductUpdate = {
+      name: this.form.name,
+      brand: this.form.brand,
+      category_id: this.form.category_id,
+      season_id: this.form.season_id,
+      price: this.form.price,
+      model_3d_url: this.form.model_3d_url,
+      model_3d_format: this.form.model_3d_format,
+      technical_metadata: this.form.technical_metadata,
+      is_active: this.form.is_active
+    };
+
+    this.service.update(current.id, payload).subscribe({
       next: () => {
-        this.message.set('Prenda creada.');
-        this.error.set(null);
-        this.form = {
-          name: '',
-          brand: '',
-          category_id: 0,
-          season_id: null,
-          price: 0,
-          model_3d_url: null,
-          model_3d_format: null,
-          is_active: true
-        };
-        this.load();
+        this.message.set('Prenda actualizada.');
+        this.load(() => {
+          this.editing.set(this.products().find((item) => item.id === current.id) ?? null);
+        });
       },
       error: (err: Error) => this.fail(err)
     });
   }
 
   addVariant(product: ProductResponse): void {
+    this.message.set(null);
+    this.error.set(null);
+
     if (!this.variant.size_id || !this.variant.color_id || !this.variant.codigo.trim()) {
       this.fail(new Error('Talla, color y código son obligatorios.'));
       return;
     }
+
     this.service
       .addVariant(product.id, {
         size_id: this.variant.size_id,
@@ -226,19 +213,37 @@ export class ProductsPage {
       .subscribe({
         next: () => {
           this.message.set('Variante agregada.');
-          this.error.set(null);
           this.variant = { size_id: 0, color_id: 0, codigo: '', price: null };
-          this.variantProduct.set(null);
-          this.load();
+          this.load(() => {
+            this.editing.set(this.products().find((item) => item.id === product.id) ?? null);
+          });
         },
         error: (err: Error) => this.fail(err)
       });
   }
 
   remove(product: ProductResponse): void {
-    this.service.remove(product.id).subscribe({
-      next: () => this.load(),
-      error: (err: Error) => this.fail(err)
-    });
+    void this.confirm
+      .ask({
+        title: 'Eliminar prenda',
+        message: `¿Eliminar "${product.name}" del catálogo? Si tiene ventas asociadas el sistema lo impedirá.`,
+        confirmLabel: 'Sí, eliminar',
+        danger: true
+      })
+      .then((confirmed) => {
+        if (!confirmed) return;
+        this.service.remove(product.id).subscribe({
+          next: () => {
+            this.message.set('Prenda eliminada.');
+            this.load();
+          },
+          error: (err: Error) => this.fail(err)
+        });
+      });
+  }
+
+  private fail(err: Error): void {
+    this.error.set(err.message);
+    this.message.set(null);
   }
 }
