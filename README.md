@@ -113,7 +113,11 @@ Screens already aligned with the Figma prototype: the shell itself, **Login** an
 (KPIs + per-order detail, CU16) and **My reservations** (CU15), **Collections & promotions**
 (CU20), **POS** (open register → sale by barcode/SKU → payment → printable receipt, CU12),
 **Store reservations** (status board + fitting-room drawer, CU14), **Users** (table + role drawer,
-CU03) and **Product catalog admin** (table + drawer with variants and 3D model, CU05).
+CU03), **Product catalog admin** (table + drawer with variants and 3D model, CU05),
+**Parameters** (tabs per entity + drawer, CU06), **Branches and cities** (tabs + drawers, CU04),
+**Suppliers** (table + drawer, CU07), **Inventory** (KPIs + movements drawer, CU09) and
+**Promotions & collections admin** (tabs + drawers, CU20). Still pending: reports (charts),
+dashboard charts, recommendations and chatbot layout.
 
 ## Code scaffolding
 
