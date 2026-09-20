@@ -165,7 +165,7 @@ export function navForRole(role: Role | undefined): NavGroup[] {
 export const ROLE_META: Record<Role, { label: string; color: string }> = {
   [Role.Cliente]: { label: 'Cliente', color: '#6366f1' },
   [Role.Administrador]: { label: 'Administrador', color: 'var(--brand)' },
-  [Role.Encargado]: { label: 'Encargado de sucursal', color: '#b45309' },
+  [Role.Encargado]: { label: 'Encargado de sucursal', color: '#d97706' },
   [Role.Cajero]: { label: 'Punto de venta', color: '#059669' },
   [Role.Proveedor]: { label: 'Proveedor', color: 'var(--muted)' }
 };
