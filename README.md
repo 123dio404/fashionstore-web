@@ -26,7 +26,7 @@ Start the FastAPI backend before using the API (from the `fashionstore-backend` 
 uvicorn main:app --reload
 ```
 
-`AuthService` implements registration, OAuth2 form login, current-user retrieval and profile updates. `authInterceptor` automatically sends the stored JWT as a Bearer token on backend requests. The backend contract is stored in `openapi.json`.
+`AuthService` implements registration, OAuth2 form login, current-user retrieval and profile updates. `authInterceptor` automatically sends the stored JWT as a Bearer token on backend requests.
 
 The CORS configuration of the backend already allows `http://localhost:4200` and `http://127.0.0.1:4200`.
 
@@ -59,13 +59,6 @@ The CORS configuration of the backend already allows `http://localhost:4200` and
 
 CU13 (reserva de probador físico) and CU17 (vestidor virtual con RA) are mobile-only per the specification.
 
-## Extra modules
-
-Beyond the use cases, the management area also includes two additional modules backed by the API:
-
-- **Finanzas** (`/admin/finance`): cuotas/expensas, pagos, multas y reporte financiero (`/finance`).
-- **Operaciones** (`/admin/operations`): instalaciones, mantenimiento, disponibilidad, reservas y reporte de uso (`/operations`).
-
 ## Project structure
 
 ```text
@@ -90,21 +83,22 @@ The shell (`app.html` + `app.scss`) is a replica of the **web layout of the Figm
 
 - **Sidebar** (240 px, collapses to 64 px, state stored in `localStorage`): dark `#111827`
   background, brand mark, role badge, grouped navigation and logout action.
-- **Topbar** (64 px): breadcrumb (`group › page` + CU chip), global search that drives
+- **Topbar** (64 px): breadcrumb (`group › page`), global search that drives
   `/catalog?q=`, notification button and user menu (profile, purchases, public catalog, logout).
 - **Public layout**: when there is no session, the sidebar is replaced by a light top bar
   (catalog, promotions, cart, sign in, create account).
 - **Navigation model** lives in `src/app/core/navigation.ts` (`navForRole`): grouped items per role
-  (`Cliente`, `Administrador`, `Encargado`, `Cajero`) with an optional `cu` field that documents the
-  use case behind each screen. Icons in `ICONS` are the exact line paths used by the Figma design,
-  rendered by `shared/ui/icon.component.ts` (`app-ui-icon`). No icon fonts, no emojis.
+  (`Cliente`, `Administrador`, `Encargado`, `Cajero`) with an optional `cu` field that documents
+  (never renders) the use case behind each screen. Icons in `ICONS` are the exact line paths used by
+  the Figma design, rendered by `shared/ui/icon.component.ts` (`app-ui-icon`). No icon fonts, no emojis.
 - **Tokens** (`src/styles.scss`): brand `#8C3858`, semantic colours, neutrals, radii
   (6/10/14/pill), spacing (4/8/12/16/24/32), type scale (32/20/14/12) and the shell variables
   (`--sidebar-bg`, `--sidebar-w`, `--topbar-h`, `--font-display`, `--font-body`).
   Fonts: **Inter** for UI and **DM Serif Display** for headings — the same pairing used by the
   mobile app and the Figma prototypes (loaded from Google Fonts in `src/index.html`).
-- **States** are implemented as reusable components (`app-ui-*`): skeletons, empty, error with
-  retry, offline, service unavailable, access denied, confirmation modal, buttons, badges.
+- **States** are implemented as reusable components (`app-ui-*`): skeleton, empty, error with retry,
+  access denied and the confirmation modal. The Figma states page also defines *offline* and
+  *service not configured*: they stay in the design backlog until the app can produce them.
 
 Screens already aligned with the Figma prototype: the shell itself, **Login** and **Register**
 (two-panel layout, CU01/CU02), **Catalog** (filter sidebar + card grid, CU08), **Product detail**

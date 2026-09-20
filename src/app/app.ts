@@ -50,7 +50,7 @@ export class App {
   /** Menú lateral del rol autenticado. */
   readonly navGroups = computed<NavGroup[]>(() => navForRole(this.user()?.role));
 
-  /** Ítem de navegación activo (breadcrumb, título y CU en curso). */
+  /** Ítem de navegación activo (breadcrumb y título de la página). */
   readonly currentItem = computed<NavItem | undefined>(() => {
     const path = this.url().split('?')[0];
     return this.navGroups()
