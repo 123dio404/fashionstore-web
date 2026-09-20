@@ -81,6 +81,10 @@ src/app/
 
 ## Shell and design system
 
+All design material lives in the separate **`fashionstore-design`** repository (local workspace path
+`../design`): design tokens, the brand logo, the Figma PNG snapshots and the navigable Figma Make
+prototype. This repo only consumes its tokens and assets.
+
 The shell (`app.html` + `app.scss`) is a replica of the **web layout of the Figma prototype**
 (`design/figma-make/src/web/WebLayout.tsx`):
 
