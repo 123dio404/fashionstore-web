@@ -1,0 +1,161 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Sucursales y ciudades</h2>
+    <p class="page-sub">
+      Puntos de venta y ciudades donde operan el inventario, las reservas y la caja.
+    </p>
+  </div>
+  <div class="page-actions">
+    @if (activeTab() === 'branches') {
+      <button type="button" class="btn-primary" (click)="openBranchCreate()">Nueva sucursal</button>
+    } @else {
+      <button type="button" class="btn-primary" (click)="openCityCreate()">Nueva ciudad</button>
+    }
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<app-ui-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+@if (activeTab() === 'branches') {
+  <div class="table-card">
+    <h3>Sucursales</h3>
+    @if (branches().length === 0) {
+      <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">Todavía no hay sucursales.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Sucursal</th>
+            <th>Ciudad</th>
+            <th>Dirección</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (branch of branches(); track branch.id) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <span class="avatar-sm">{{ initial(branch.name) }}</span>
+                  <span class="cell-strong">{{ branch.name }}</span>
+                </div>
+              </td>
+              <td>{{ cityName(branch.city_id) }}</td>
+              <td>{{ branch.address }}</td>
+              <td>
+                <span class="badge" [class.ok]="branch.is_active" [class.neutral]="!branch.is_active">
+                  {{ branch.is_active ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-sm" (click)="openBranchEdit(branch)">Editar</button>
+                  <button type="button" class="btn btn-sm" (click)="toggleBranch(branch)">
+                    {{ branch.is_active ? 'Desactivar' : 'Activar' }}
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" (click)="removeBranch(branch)">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+} @else {
+  <div class="table-card">
+    <h3>Ciudades</h3>
+    @if (cities().length === 0) {
+      <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">Todavía no hay ciudades.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Ciudad</th>
+            <th>Sucursales</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (city of cities(); track city.id) {
+            <tr>
+              <td class="cell-strong">{{ city.name }}</td>
+              <td><span class="badge info">{{ branchesIn(city.id) }}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-sm" (click)="openCityEdit(city)">Editar</button>
+                  <button type="button" class="btn-danger btn-sm" (click)="removeCity(city)">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<app-ui-drawer
+  [open]="branchDrawer()"
+  [title]="editingBranch() ? 'Editar sucursal' : 'Nueva sucursal'"
+  subtitle="Se usa en stock, reservas y caja"
+  (closed)="branchDrawer.set(false)"
+>
+  <div class="field">
+    <label for="b-city">Ciudad</label>
+    <select id="b-city" [(ngModel)]="branchForm.city_id">
+      <option [ngValue]="0">Selecciona una ciudad</option>
+      @for (city of cities(); track city.id) {
+        <option [ngValue]="city.id">{{ city.name }}</option>
+      }
+    </select>
+  </div>
+  <div class="field">
+    <label for="b-name">Nombre</label>
+    <input id="b-name" [(ngModel)]="branchForm.name" placeholder="Ej. Sucursal Centro" />
+  </div>
+  <div class="field">
+    <label for="b-address">Dirección</label>
+    <input id="b-address" [(ngModel)]="branchForm.address" />
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="branchForm.is_active" />
+      Sucursal activa
+    </label>
+  </div>
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="branchDrawer.set(false)">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="saveBranch()">
+      {{ editingBranch() ? 'Guardar cambios' : 'Crear sucursal' }}
+    </button>
+  </div>
+</app-ui-drawer>
+
+<app-ui-drawer
+  [open]="cityDrawer()"
+  [title]="editingCity() ? 'Editar ciudad' : 'Nueva ciudad'"
+  subtitle="Agrupa una o más sucursales"
+  [width]="360"
+  (closed)="cityDrawer.set(false)"
+>
+  <div class="field">
+    <label for="c-name">Nombre</label>
+    <input id="c-name" [(ngModel)]="cityNameValue" placeholder="Ej. Santa Cruz" />
+  </div>
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="cityDrawer.set(false)">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="saveCity()">
+      {{ editingCity() ? 'Guardar cambios' : 'Crear ciudad' }}
+    </button>
+  </div>
+</app-ui-drawer>

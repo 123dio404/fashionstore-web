@@ -154,18 +154,6 @@
   text-overflow: ellipsis;
 }
 
-.nav-cu {
-  margin-left: auto;
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.nav-item.active .nav-cu {
-  color: rgba(255, 255, 255, 0.6);
-}
-
 .nav-badge {
   display: inline-flex;
   align-items: center;

@@ -1,0 +1,239 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Inventario multisede</h2>
+    <p class="page-sub">
+      Stock por sucursal, ingresos, ajustes y transferencias con su historial.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn" (click)="reload()">Actualizar</button>
+    <button type="button" class="btn-primary" (click)="openMovement()">Registrar movimiento</button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0">
+    <label for="i-branch">Sucursal</label>
+    <select id="i-branch" [ngModel]="branchId()" (ngModelChange)="onBranch($event)">
+      <option [ngValue]="null">Todas</option>
+      @for (branch of branches(); track branch.id) {
+        <option [ngValue]="branch.id">{{ branch.name }}</option>
+      }
+    </select>
+  </div>
+  <div class="field" style="margin: 0; min-width: 15rem">
+    <label for="i-search">Buscar variante</label>
+    <input id="i-search" placeholder="Prenda, código o stock #" [(ngModel)]="search" />
+  </div>
+  <div class="field" style="margin: 0">
+    <label>Alerta</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="lowOnly" />
+      Solo bajo mínimo (≤ 3)
+    </label>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="stat">
+    <div class="value">{{ stock().length }}</div>
+    <div class="label">Registros de stock</div>
+  </div>
+  <div class="stat">
+    <div class="value">{{ totalAvailable() }}</div>
+    <div class="label">Unidades disponibles</div>
+  </div>
+  <div class="stat">
+    <div class="value">{{ totalReserved() }}</div>
+    <div class="label">Unidades reservadas</div>
+  </div>
+  <div class="stat">
+    <div class="value">{{ lowStockCount() }}</div>
+    <div class="label">Bajo mínimo</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <h3>Stock por sucursal</h3>
+  @if (filteredStock().length === 0) {
+    <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+      No hay registros de stock con los filtros actuales.
+    </p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Variante</th>
+          <th>Sucursal</th>
+          <th>Físico</th>
+          <th>Reservado</th>
+          <th>Disponible</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredStock(); track row.id) {
+          <tr>
+            <td>
+              <div class="cell-stack">
+                <span class="cell-strong">{{ variantLabel(row.variant_id) }}</span>
+                <span class="cell-sub">stock #{{ row.id }}</span>
+              </div>
+            </td>
+            <td>{{ branchName(row.branch_id) }}</td>
+            <td>{{ row.physical_stock }}</td>
+            <td>{{ row.reserved_stock }}</td>
+            <td>
+              <span
+                class="badge"
+                [class.err]="row.available_stock <= 0"
+                [class.warn]="row.available_stock > 0 && row.available_stock <= 3"
+                [class.ok]="row.available_stock > 3"
+              >
+                {{ row.available_stock }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn-sm" (click)="openAdjust(row)">Ingreso / ajuste</button>
+                <button type="button" class="btn btn-sm" (click)="openTransfer(row)">Transferir</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+<div class="table-card">
+  <h3>Movimientos recientes</h3>
+  @if (movements().length === 0) {
+    <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">Sin movimientos registrados.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Variante</th>
+          <th>Cantidad</th>
+          <th>Motivo</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (movement of movements(); track movement.id) {
+          <tr>
+            <td>
+              <span class="badge" [class.ok]="movement.quantity > 0" [class.err]="movement.quantity < 0">
+                {{ movement.movement_type }}
+              </span>
+            </td>
+            <td>{{ variantLabel(movement.variant_id) }}</td>
+            <td>{{ movement.quantity > 0 ? '+' : '' }}{{ movement.quantity }}</td>
+            <td>{{ movement.reason || '—' }}</td>
+            <td>{{ movement.created_at | date: 'short' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+<app-ui-drawer
+  [open]="drawerOpen()"
+  title="Registrar movimiento"
+  subtitle="El stock se actualiza y cada movimiento queda en el historial"
+  [width]="460"
+  (closed)="drawerOpen.set(false)"
+>
+  <app-ui-tabs [tabs]="drawerTabs" [active]="drawerTab()" (activeChange)="drawerTab.set($event)" />
+
+  @if (drawerTab() === 'adjust') {
+    <div class="field">
+      <label for="m-branch">Sucursal</label>
+      <select id="m-branch" [(ngModel)]="adjustForm.branch_id">
+        <option [ngValue]="0">Selecciona</option>
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="m-variant">Variante</label>
+      <select id="m-variant" [(ngModel)]="adjustForm.variant_id">
+        <option [ngValue]="0">Selecciona</option>
+        @for (variant of variants(); track variant.id) {
+          <option [ngValue]="variant.id">{{ variantLabel(variant.id) }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="m-qty">Cantidad</label>
+      <input id="m-qty" type="number" [(ngModel)]="adjustForm.quantity" />
+      <p class="field-hint">Positivo para ingreso, negativo para baja por merma o corrección de conteo.</p>
+    </div>
+    <div class="field">
+      <label for="m-reason">Motivo</label>
+      <input
+        id="m-reason"
+        placeholder="Compra a proveedor, merma, conteo físico…"
+        [(ngModel)]="adjustForm.reason"
+      />
+    </div>
+  } @else {
+    <div class="field">
+      <label for="t-variant">Variante</label>
+      <select id="t-variant" [(ngModel)]="transferForm.variant_id">
+        <option [ngValue]="0">Selecciona</option>
+        @for (variant of variants(); track variant.id) {
+          <option [ngValue]="variant.id">{{ variantLabel(variant.id) }}</option>
+        }
+      </select>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label for="t-source">Origen</label>
+        <select id="t-source" [(ngModel)]="transferForm.source_branch_id">
+          <option [ngValue]="0">Selecciona</option>
+          @for (branch of branches(); track branch.id) {
+            <option [ngValue]="branch.id">{{ branch.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="t-dest">Destino</label>
+        <select id="t-dest" [(ngModel)]="transferForm.destination_branch_id">
+          <option [ngValue]="0">Selecciona</option>
+          @for (branch of branches(); track branch.id) {
+            <option [ngValue]="branch.id">{{ branch.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="t-qty">Cantidad</label>
+      <input id="t-qty" type="number" min="1" [(ngModel)]="transferForm.quantity" />
+    </div>
+    <div class="field">
+      <label for="t-reason">Motivo</label>
+      <input id="t-reason" placeholder="Reposición de tienda" [(ngModel)]="transferForm.reason" />
+    </div>
+  }
+
+  <ng-container drawer-actions>
+    <button type="button" class="btn" (click)="drawerOpen.set(false)">Cancelar</button>
+    @if (drawerTab() === 'adjust') {
+      <button type="button" class="btn-primary" (click)="submitAdjust()">Registrar movimiento</button>
+    } @else {
+      <button type="button" class="btn-primary" (click)="submitTransfer()">Transferir</button>
+    }
+  </ng-container>
+</app-ui-drawer>

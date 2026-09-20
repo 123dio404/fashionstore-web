@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty span {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+code {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Comprobante (se imprime tal cual: ver reglas @media print en styles.scss) */
+.receipt {
+  max-width: 42rem;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.receipt-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.receipt-head img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  object-position: left center;
+}

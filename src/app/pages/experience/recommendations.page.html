@@ -1,0 +1,214 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Recomendaciones personalizadas</h2>
+    <p class="page-sub">
+      Sugerencias por categoría, marca, historial, talla, color, temporada y disponibilidad.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn-primary" [disabled]="generating()" (click)="generate()">
+      {{ generating() ? 'Generando…' : 'Generar recomendaciones' }}
+    </button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<div class="two-col">
+  <div>
+    @if (result(); as block) {
+      <div class="row" style="margin-bottom: 1rem">
+        <span class="badge info">{{ block.recommendation_type }}</span>
+        <span
+          class="badge"
+          [class.ok]="block.status === 'visto'"
+          [class.err]="block.status === 'descartado'"
+          [class.neutral]="block.status !== 'visto' && block.status !== 'descartado'"
+        >
+          {{ block.status }}
+        </span>
+        <span class="spacer"></span>
+        <span class="muted">{{ block.created_at | date: 'medium' }}</span>
+        <button type="button" class="btn btn-sm" (click)="markSeen(block)">Marcar bloque como visto</button>
+        <button type="button" class="btn-danger btn-sm" (click)="discard(block)">Descartar bloque</button>
+      </div>
+
+      @if (block.items.length === 0) {
+        <app-ui-empty
+          icon="✨"
+          title="Sin sugerencias"
+          message="Guarda tus preferencias o realiza alguna compra para que el motor tenga señales."
+        />
+      } @else {
+        <div class="rec-grid">
+          @for (item of block.items; track item.id) {
+            <article class="card rec-card">
+              <div class="rec-head">
+                <span class="rec-score">
+                  <strong>{{ score(item.score) }}</strong>
+                  <span>Coincidencia</span>
+                </span>
+                <span class="spacer"></span>
+                @if (item.available_stock !== null) {
+                  <span class="chip" [class.selected]="item.available_stock <= 2">
+                    {{
+                      item.available_stock === 0
+                        ? 'Sin stock'
+                        : item.available_stock <= 2
+                          ? 'Últimas ' + item.available_stock
+                          : item.available_stock + ' disponibles'
+                    }}
+                  </span>
+                }
+              </div>
+
+              <p class="rec-brand">{{ item.product?.brand || 'Sin marca' }}</p>
+              <h3 class="rec-name">
+                <a [routerLink]="['/catalog', item.product_id]">
+                  {{ item.product?.name || 'Producto #' + item.product_id }}
+                </a>
+              </h3>
+              <p class="rec-price">{{ item.product?.price | currency: 'USD' }}</p>
+
+              <div class="chip-row">
+                @for (reason of reasonChips(item.reason); track reason) {
+                  <span class="chip">{{ reason }}</span>
+                }
+              </div>
+
+              <div class="rec-actions">
+                <a class="btn btn-sm" [routerLink]="['/catalog', item.product_id]">Ver prenda</a>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    } @else {
+      <app-ui-empty
+        icon="✨"
+        title="Todavía no hay sugerencias generadas"
+        message="Completa tus preferencias y pulsa «Generar recomendaciones» para ver prendas afines a tu estilo."
+      />
+    }
+
+    <section class="table-card">
+      <h3>Bloques anteriores</h3>
+      @if (history().length === 0) {
+        <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+          Aún no has generado recomendaciones.
+        </p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Sugerencias</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (block of history(); track block.id) {
+              <tr>
+                <td>{{ block.created_at | date: 'short' }}</td>
+                <td>{{ block.recommendation_type }}</td>
+                <td>{{ block.items.length }}</td>
+                <td>
+                  <span
+                    class="badge"
+                    [class.ok]="block.status === 'visto'"
+                    [class.err]="block.status === 'descartado'"
+                    [class.info]="block.status === 'pendiente'"
+                  >
+                    {{ block.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-sm" (click)="result.set(block)">Ver</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  </div>
+
+  <aside class="aside-card">
+    <h3 class="aside-title">Tu estilo</h3>
+
+    <div class="field">
+      <label for="r-brand">Marca preferida</label>
+      <input id="r-brand" placeholder="Ej. Zara" [(ngModel)]="preferredBrand" />
+    </div>
+
+    <div class="field">
+      <label for="r-category">Categoría favorita</label>
+      <select id="r-category" [ngModel]="categoryId()" (ngModelChange)="categoryId.set($event)">
+        <option [ngValue]="null">Sin preferencia</option>
+        @for (category of categories(); track category.id) {
+          <option [ngValue]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Colores preferidos</span>
+      <div class="chip-row">
+        @for (color of colors(); track color.id) {
+          <button
+            type="button"
+            class="chip"
+            [class.selected]="preferredColorList().includes(color.name)"
+            (click)="toggleColor(color.name)"
+          >
+            {{ color.name }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Tallas preferidas</span>
+      <div class="chip-row">
+        @for (size of sizes(); track size.id) {
+          <button
+            type="button"
+            class="chip"
+            [class.selected]="preferredSizeList().includes(size.id)"
+            (click)="toggleSize(size.id)"
+          >
+            {{ size.name }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="r-min">Precio mínimo</label>
+        <input id="r-min" type="number" min="0" [(ngModel)]="minPrice" />
+      </div>
+      <div class="field">
+        <label for="r-max">Precio máximo</label>
+        <input id="r-max" type="number" min="0" [(ngModel)]="maxPrice" />
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-block" (click)="savePreferences()">
+      Guardar preferencias
+    </button>
+    <p class="note">
+      Con marca, categoría, tallas y presupuesto el motor deja de sugerir solo por historial y pasa a
+      sugerir por estilo.
+    </p>
+  </aside>
+</div>

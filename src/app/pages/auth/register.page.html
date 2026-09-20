@@ -1,0 +1,92 @@
+<div class="auth">
+  <section class="auth-aside">
+    <div class="auth-brand">
+      <img src="/img/brand/logo.svg" alt="" />
+      <span>FashionStore</span>
+    </div>
+
+    <div class="auth-pitch">
+      <h1>Crea tu cuenta y<br />empieza a comprar.</h1>
+      <p>
+        Guarda tus preferencias, sigue tus pedidos y recibe recomendaciones según tu estilo,
+        tu historial y la temporada.
+      </p>
+      <div class="auth-stats">
+        <div class="auth-stat">
+          <strong>{{ productCount() ?? '—' }}</strong>
+          <span>Prendas en línea</span>
+        </div>
+        <div class="auth-stat">
+          <strong>{{ branchCount() ?? '—' }}</strong>
+          <span>Sucursales</span>
+        </div>
+        <div class="auth-stat">
+          <strong>{{ promotionCount() ?? '—' }}</strong>
+          <span>Promociones activas</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-main">
+    <form class="auth-form" (ngSubmit)="submit()">
+      <h2>Crear cuenta</h2>
+      <p class="auth-sub">Solo necesitas tu nombre, tu correo y una contraseña.</p>
+
+      <div class="auth-field">
+        <label for="fullName">Nombre completo</label>
+        <input
+          id="fullName"
+          name="fullName"
+          autocomplete="name"
+          placeholder="Ana López"
+          [(ngModel)]="fullName"
+          required
+        />
+      </div>
+
+      <div class="auth-field">
+        <label for="email">Correo electrónico</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="tucorreo@fashionstore.com"
+          [(ngModel)]="email"
+          required
+        />
+      </div>
+
+      <div class="auth-field">
+        <label for="password">Contraseña</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Mínimo 8 caracteres"
+          [(ngModel)]="password"
+          required
+        />
+        <p class="note">La contraseña debe tener al menos 8 caracteres.</p>
+      </div>
+
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+      @if (done()) {
+        <div class="alert alert-success">¡Cuenta creada! Te llevamos al inicio de sesión…</div>
+      }
+
+      <button class="auth-submit" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Creando cuenta…' : 'Registrarme' }}
+      </button>
+
+      <p class="auth-alt">¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia sesión</a></p>
+      <p class="auth-foot">
+        Tus datos se usan para gestionar tus pedidos, reservas y recomendaciones.
+      </p>
+    </form>
+  </section>
+</div>

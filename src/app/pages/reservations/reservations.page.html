@@ -1,0 +1,130 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Reservas en tienda</h2>
+    <p class="page-sub">
+      Prepara las prendas reservadas, asigna probador y confirma la atención.
+    </p>
+  </div>
+  <div class="page-actions">
+    <span class="chip">{{ reservations().length }} reservas cargadas</span>
+  </div>
+</div>
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0">
+    <label for="res-branch">Sucursal</label>
+    <select id="res-branch" [(ngModel)]="branchFilter">
+      <option [ngValue]="null">Todas</option>
+      @for (branch of branches(); track branch.id) {
+        <option [ngValue]="branch.id">{{ branch.name }}</option>
+      }
+    </select>
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="res-date">Fecha</label>
+    <input id="res-date" type="date" [(ngModel)]="dateFilter" />
+  </div>
+  <button type="button" class="btn-primary" (click)="load()">Filtrar</button>
+  <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<app-ui-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="activeTab.set($event)" />
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="96" />
+} @else if (visible().length === 0) {
+  <app-ui-empty
+    icon="📋"
+    title="Sin reservas"
+    message="No hay reservas para los filtros seleccionados."
+  />
+} @else {
+  <div class="res-grid">
+    @for (reservation of visible(); track reservation.id) {
+      <article class="card res-card">
+        <header class="res-head">
+          <div>
+            <strong>Reserva #{{ reservation.id }}</strong>
+            <p class="note" style="margin: 0.15rem 0 0">
+              Cliente #{{ reservation.client_id }} · Sucursal #{{ reservation.branch_id }}
+            </p>
+          </div>
+          <span [class]="'badge ' + statusClass(reservation)">{{ statusLabel(reservation) }}</span>
+          <span class="spacer"></span>
+          <span class="res-meta">
+            <app-ui-icon [d]="icons.calendar" [size]="13" color="var(--muted)" />
+            {{ reservation.reservation_date }} · {{ reservation.reservation_time }}
+          </span>
+        </header>
+
+        <div class="chip-row" style="margin-top: 0.75rem">
+          @for (item of reservation.items; track item.id) {
+            <span class="chip">{{ item.quantity }}× stock #{{ item.stock_id }}</span>
+          }
+        </div>
+
+        <p class="note">
+          {{ reservation.items.length }} artículo(s) reservado(s)
+          @if (reservation.fitting_room) {
+            · probador {{ reservation.fitting_room }}
+          }
+          @if (reservation.prepared_at) {
+            · preparada
+          }
+        </p>
+
+        <div class="res-actions">
+          <button type="button" class="btn btn-sm" (click)="openRoomDrawer(reservation)">
+            Asignar probador
+          </button>
+          @for (step of nextSteps(reservation); track step.status) {
+            <button type="button" class="btn-primary btn-sm" (click)="advance(reservation, step.status)">
+              {{ step.label }}
+            </button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}
+
+<app-ui-drawer
+  [open]="drawerOpen()"
+  title="Asignar probador"
+  [subtitle]="drawerReservation() ? 'Reserva #' + drawerReservation()!.id : ''"
+  [width]="380"
+  (closed)="closeDrawer()"
+>
+  <div class="field">
+    <label for="fit-room">Número de probador</label>
+    <input id="fit-room" type="number" min="1" [(ngModel)]="roomNumber" />
+    <p class="field-hint">Queda guardado en la reserva y el cliente lo ve en la app.</p>
+  </div>
+
+  <div class="chip-row">
+    @for (room of rooms; track room) {
+      <button
+        type="button"
+        class="chip"
+        [class.selected]="roomNumber === room"
+        (click)="roomNumber = room"
+      >
+        Probador {{ room }}
+      </button>
+    }
+  </div>
+
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="closeDrawer()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!roomNumber" (click)="saveRoom()">
+      Guardar probador
+    </button>
+  </div>
+</app-ui-drawer>

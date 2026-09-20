@@ -1,0 +1,76 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Mi perfil</h2>
+    <p class="page-sub">Actualiza tus datos de acceso y revisa tu cuenta.</p>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h3 style="margin-top: 0">Datos de la cuenta</h3>
+    <form (ngSubmit)="submit()">
+      <div class="field">
+        <label for="fullName">Nombre completo</label>
+        <input id="fullName" name="fullName" autocomplete="name" [(ngModel)]="fullName" />
+      </div>
+
+      <div class="field">
+        <label for="email">Correo electrónico</label>
+        <input id="email" name="email" type="email" autocomplete="email" [(ngModel)]="email" />
+      </div>
+
+      <div class="field">
+        <label for="password">Nueva contraseña (opcional)</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Déjalo vacío para no cambiarla"
+          [(ngModel)]="password"
+        />
+        <p class="field-hint">Si la cambias, debe tener al menos 8 caracteres.</p>
+      </div>
+
+      @if (message()) {
+        <div class="alert alert-success">{{ message() }}</div>
+      }
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+
+      <button class="btn-primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </form>
+  </div>
+
+  <aside class="aside-card">
+    <div class="profile-id">
+      <span class="avatar-lg">{{ initials() }}</span>
+      <div>
+        <strong>{{ user()?.full_name }}</strong>
+        <p class="note" style="margin: 0">{{ user()?.email }}</p>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <span class="label">Rol</span>
+      <span class="badge">{{ user()?.role }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Estado</span>
+      <span class="badge" [class.ok]="user()?.is_active">
+        {{ user()?.is_active ? 'Activa' : 'Inactiva' }}
+      </span>
+    </div>
+
+    <p class="note">El rol de tu cuenta lo asigna un administrador; no se cambia desde aquí.</p>
+
+    <a class="btn btn-block" routerLink="/purchase-history" style="margin-top: 0.75rem">Mis compras</a>
+    <a class="btn btn-block" routerLink="/my-reservations" style="margin-top: 0.5rem">Mis reservas</a>
+    <a class="btn-ghost btn-block" routerLink="/recommendations" style="margin-top: 0.5rem">
+      Recomendaciones
+    </a>
+  </aside>
+</div>

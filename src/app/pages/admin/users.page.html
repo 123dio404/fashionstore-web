@@ -1,0 +1,131 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Usuarios y roles</h2>
+    <p class="page-sub">Crea cuentas, asigna roles y controla el acceso al sistema.</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn-primary" (click)="openCreate()">Nuevo usuario</button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0; min-width: 14rem">
+    <label for="u-search">Buscar</label>
+    <input id="u-search" placeholder="Nombre o correo" [(ngModel)]="search" />
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="u-role">Rol</label>
+    <select id="u-role" [(ngModel)]="roleFilter">
+      <option [ngValue]="null">Todos</option>
+      @for (role of roles; track role) {
+        <option [ngValue]="role">{{ role }}</option>
+      }
+    </select>
+  </div>
+  <span class="spacer"></span>
+  <span class="muted">{{ filtered.length }} de {{ list().length }} cuentas</span>
+</div>
+
+<div class="table-card">
+  <h3>Cuentas</h3>
+  @if (filtered.length === 0) {
+    <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+      Ninguna cuenta coincide con el filtro.
+    </p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of filtered; track user.id) {
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar-sm">{{ initials(user) }}</span>
+                <span class="cell-strong">{{ user.full_name }}</span>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>
+              <span class="badge" [class.info]="user.role === 'Administrador'">{{ user.role }}</span>
+            </td>
+            <td>
+              <span class="badge" [class.ok]="user.is_active" [class.neutral]="!user.is_active">
+                {{ user.is_active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn-sm" (click)="openEdit(user)">Editar</button>
+                <button type="button" class="btn btn-sm" (click)="toggleActive(user)">
+                  {{ user.is_active ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+<app-ui-drawer
+  [open]="drawerOpen()"
+  [title]="editing() ? 'Editar usuario' : 'Nuevo usuario'"
+  [subtitle]="editing() ? editing()!.email : 'Define el rol y la contraseña de acceso'"
+  (closed)="closeDrawer()"
+>
+  <div class="field">
+    <label for="d-name">Nombre completo</label>
+    <input id="d-name" [(ngModel)]="form.full_name" />
+  </div>
+
+  <div class="field">
+    <label for="d-email">Correo electrónico</label>
+    <input id="d-email" type="email" [(ngModel)]="form.email" />
+  </div>
+
+  <div class="field">
+    <label for="d-pass">{{ editing() ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</label>
+    <input id="d-pass" type="password" [(ngModel)]="form.password" />
+    <p class="field-hint">Debe tener al menos 8 caracteres.</p>
+  </div>
+
+  <div class="field">
+    <label for="d-role">Rol</label>
+    <select id="d-role" [(ngModel)]="form.role">
+      @for (role of roles; track role) {
+        <option [ngValue]="role">{{ role }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Estado de la cuenta</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="form.is_active" />
+      Cuenta activa (puede iniciar sesión)
+    </label>
+  </div>
+
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="closeDrawer()">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="save()">
+      {{ editing() ? 'Guardar cambios' : 'Crear usuario' }}
+    </button>
+  </div>
+</app-ui-drawer>

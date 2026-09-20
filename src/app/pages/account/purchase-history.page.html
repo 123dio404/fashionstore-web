@@ -1,0 +1,84 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Historial de compras</h2>
+    <p class="page-sub">Pedidos digitales y compras presenciales registradas en tu cuenta.</p>
+  </div>
+</div>
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0">
+    <label for="start">Desde</label>
+    <input id="start" type="date" [(ngModel)]="startDate" />
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="end">Hasta</label>
+    <input id="end" type="date" [(ngModel)]="endDate" />
+  </div>
+  <button class="btn-primary" type="button" (click)="load()">Filtrar</button>
+  <button class="btn" type="button" (click)="clear()">Limpiar</button>
+</div>
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="88" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+} @else if (history(); as data) {
+  <div class="kpi-grid">
+    <div class="stat">
+      <div class="value">{{ data.total_orders }}</div>
+      <div class="label">Pedidos</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ data.total_spent | currency: 'USD' }}</div>
+      <div class="label">Total gastado</div>
+    </div>
+    <div class="stat">
+      <div class="value">
+        {{ data.total_orders > 0 ? (data.total_spent / data.total_orders | currency: 'USD') : '—' }}
+      </div>
+      <div class="label">Ticket promedio</div>
+    </div>
+  </div>
+
+  @if (data.purchases.length === 0) {
+    <app-ui-empty
+      icon="🧾"
+      title="Sin compras registradas"
+      message="Cuando realices una compra aparecerá aquí con su detalle."
+    >
+      <a class="btn-primary" routerLink="/catalog" style="margin-top: 0.75rem">Ir al catálogo</a>
+    </app-ui-empty>
+  } @else {
+    @for (entry of data.purchases; track entry.sale_id) {
+      <div class="table-card">
+        <h3 class="order-head">
+          <span>Orden #{{ entry.sale_id }}</span>
+          <span class="badge" [class.ok]="entry.sale_type === 'digital'">{{ entry.sale_type }}</span>
+          <span class="spacer"></span>
+          <span class="muted">{{ entry.sale_date | date: 'medium' }}</span>
+          <strong>{{ entry.total | currency: 'USD' }}</strong>
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Precio unit.</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of entry.items; track item.variant_id) {
+              <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unit_price | currency: 'USD' }}</td>
+                <td>{{ item.subtotal | currency: 'USD' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}

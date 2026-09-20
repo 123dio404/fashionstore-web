@@ -1,0 +1,108 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Reporte de inventario</h2>
+    <p class="page-sub">
+      Rotación, niveles de agotamiento y prendas inmovilizadas por sucursal.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn" [disabled]="!data()" (click)="exportCsv()">Exportar CSV</button>
+    <button type="button" class="btn-primary" (click)="load()">Actualizar</button>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="96" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+} @else if (data(); as report) {
+  <div class="kpi-grid">
+    <div class="stat">
+      <div class="value">{{ report.total_skus }}</div>
+      <div class="label">SKUs con stock</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.total_physical_units }}</div>
+      <div class="label">Unidades físicas</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.total_available_units }}</div>
+      <div class="label">Unidades disponibles</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.low_stock_count }}</div>
+      <div class="label">Bajo mínimo</div>
+    </div>
+  </div>
+
+  <div class="report-grid">
+    <section class="card">
+      <h3 style="margin-top: 0">Disponible por prenda (top 10)</h3>
+      <app-ui-chart [points]="productPoints()" type="bar" [height]="170" />
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top: 0">Alertas de reposición</h3>
+      <app-ui-chart [points]="branchPoints()" type="bar" [height]="170" />
+      <p class="note">Unidades bajo el mínimo agrupadas por sucursal.</p>
+    </section>
+  </div>
+
+  <div class="page-toolbar">
+    <div class="field" style="margin: 0; min-width: 15rem">
+      <label for="inv-search">Buscar prenda</label>
+      <input id="inv-search" placeholder="Nombre de la prenda" [(ngModel)]="search" />
+    </div>
+    <div class="field" style="margin: 0">
+      <label>Alerta</label>
+      <label class="check-row">
+        <input type="checkbox" [(ngModel)]="lowOnly" />
+        Solo bajo mínimo
+      </label>
+    </div>
+    <span class="spacer"></span>
+    <span class="muted">{{ filtered().length }} de {{ report.stock.length }} registros</span>
+  </div>
+
+  <div class="table-card">
+    <h3>Detalle de stock</h3>
+    @if (filtered().length === 0) {
+      <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+        No hay registros con los filtros actuales.
+      </p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Prenda</th>
+            <th>Sucursal</th>
+            <th>Variante</th>
+            <th>Físico</th>
+            <th>Reservado</th>
+            <th>Disponible</th>
+            <th>Mínimo</th>
+            <th>Alerta</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of filtered(); track row.stock_id) {
+            <tr>
+              <td class="cell-strong">{{ row.product_name }}</td>
+              <td>{{ branchName(row.branch_id) }}</td>
+              <td>#{{ row.variant_id }}</td>
+              <td>{{ row.physical_stock }}</td>
+              <td>{{ row.reserved_stock }}</td>
+              <td>{{ row.available_stock }}</td>
+              <td>{{ row.min_stock }}</td>
+              <td>
+                <span class="badge" [class.warn]="row.below_minimum" [class.ok]="!row.below_minimum">
+                  {{ row.below_minimum ? 'Bajo mínimo' : 'OK' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}

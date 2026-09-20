@@ -1,0 +1,123 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Dashboard gerencial</h2>
+    <p class="page-sub">
+      Indicadores clave del negocio para la toma de decisiones.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn-primary" (click)="load()">Actualizar</button>
+  </div>
+</div>
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0">
+    <label for="d-start">Desde</label>
+    <input id="d-start" type="date" [(ngModel)]="startDate" />
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="d-end">Hasta</label>
+    <input id="d-end" type="date" [(ngModel)]="endDate" />
+  </div>
+  <div class="chip-row" style="padding-bottom: 0.35rem">
+    <button type="button" class="chip" (click)="range(7)">7 días</button>
+    <button type="button" class="chip" (click)="range(30)">30 días</button>
+    <button type="button" class="chip" (click)="range(90)">90 días</button>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="96" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+} @else if (data(); as report) {
+  <div class="kpi-grid">
+    <div class="stat">
+      <div class="value">{{ report.total_orders }}</div>
+      <div class="label">Órdenes</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.total_units }}</div>
+      <div class="label">Unidades vendidas</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.total_revenue | currency: 'USD' }}</div>
+      <div class="label">Ingresos</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.average_order_value | currency: 'USD' }}</div>
+      <div class="label">Ticket promedio</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.inventory_value | currency: 'USD' }}</div>
+      <div class="label">Valor de inventario</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.low_stock_count }}</div>
+      <div class="label">Productos bajo mínimo</div>
+    </div>
+  </div>
+
+  <div class="report-grid">
+    <section class="card">
+      <h3 style="margin-top: 0">Ingresos por día</h3>
+      <app-ui-chart [points]="dayPoints()" type="line" [height]="170" [currency]="true" />
+    </section>
+    <section class="card">
+      <h3 style="margin-top: 0">Ingresos por sucursal</h3>
+      <app-ui-chart [points]="branchPoints()" type="bar" [height]="170" [currency]="true" />
+    </section>
+  </div>
+
+  <div class="report-grid">
+    <div class="table-card">
+      <h3>Productos más vendidos</h3>
+      @if (topProducts().length === 0) {
+        <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">Sin ventas en el rango.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Unidades</th>
+              <th>Ingresos</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of topProducts(); track product.name) {
+              <tr>
+                <td class="cell-strong">{{ product.name }}</td>
+                <td>{{ product.units }}</td>
+                <td>{{ product.revenue | currency: 'USD' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="table-card">
+      <h3>Canales de venta</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Canal</th>
+            <th>Órdenes</th>
+            <th>Unidades</th>
+            <th>Ingresos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of report.channels; track row.key) {
+            <tr>
+              <td class="cell-strong">{{ row.key }}</td>
+              <td>{{ row.orders }}</td>
+              <td>{{ row.units }}</td>
+              <td>{{ row.revenue | currency: 'USD' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

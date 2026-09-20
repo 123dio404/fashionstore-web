@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { MarketingService } from '../../core/services/marketing.service';
@@ -9,265 +9,271 @@ import {
   PromotionCreate,
   PromotionResponse
 } from '../../models';
+import { ConfirmService } from '../../shared/ui/confirm.service';
+import { UiDrawerComponent } from '../../shared/ui/drawer.component';
+import { TabItem, UiTabsComponent } from '../../shared/ui/tabs.component';
 
+const EMPTY_PROMOTION: PromotionCreate = {
+  name: '',
+  description: '',
+  discount_type: 'percentage',
+  discount_value: 0,
+  start_date: null,
+  end_date: null,
+  is_active: true,
+  product_ids: []
+};
+
+const EMPTY_COLLECTION: CollectionCreate = {
+  name: '',
+  description: '',
+  is_active: true,
+  product_ids: []
+};
+
+/** CU20 — Gestionar colecciones y promociones: pestañas, tablas y drawers por entidad. */
 @Component({
   selector: 'app-marketing-page',
-  imports: [CommonModule, FormsModule],
-  template: `
-    <h2>Colecciones y promociones</h2>
-
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p class="success">{{ message() }}</p>
-    }
-
-    <div class="card">
-      <h3>Nueva colección</h3>
-      <div class="grid-2">
-        <div>
-          <label for="cname">Nombre</label>
-          <input id="cname" [(ngModel)]="collection.name" />
-        </div>
-        <div>
-          <label for="cdesc">Descripción</label>
-          <input id="cdesc" [(ngModel)]="collection.description" />
-        </div>
-      </div>
-      <br />
-      <button class="btn-primary" (click)="addCollection()">Crear colección</button>
-
-      <table style="margin-top: 1rem">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Productos</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of collections(); track item.id) {
-            <tr>
-              <td>{{ item.id }}</td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.description || '-' }}</td>
-              <td>{{ item.product_ids.length }}</td>
-              <td>
-                <span class="badge" [class.ok]="item.is_active">
-                  {{ item.is_active ? 'Activa' : 'Inactiva' }}
-                </span>
-              </td>
-              <td>
-                <button class="btn" (click)="toggleCollection(item)">
-                  {{ item.is_active ? 'Desactivar' : 'Activar' }}
-                </button>
-                <button class="btn-danger" (click)="removeCollection(item)">Eliminar</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h3>Nueva promoción</h3>
-      <div class="grid-2">
-        <div>
-          <label for="pname">Nombre</label>
-          <input id="pname" [(ngModel)]="promotion.name" />
-        </div>
-        <div>
-          <label for="ptype">Tipo de descuento</label>
-          <select id="ptype" [(ngModel)]="promotion.discount_type">
-            <option value="percentage">Porcentaje</option>
-            <option value="fixed">Monto fijo</option>
-          </select>
-        </div>
-        <div>
-          <label for="pvalue">Valor</label>
-          <input id="pvalue" type="number" min="0" [(ngModel)]="promotion.discount_value" />
-        </div>
-        <div>
-          <label for="pstart">Inicio</label>
-          <input id="pstart" type="date" [(ngModel)]="promotion.start_date" />
-        </div>
-        <div>
-          <label for="pend">Fin</label>
-          <input id="pend" type="date" [(ngModel)]="promotion.end_date" />
-        </div>
-      </div>
-      <br />
-      <button class="btn-primary" (click)="addPromotion()">Crear promoción</button>
-
-      <table style="margin-top: 1rem">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Descuento</th>
-            <th>Vigencia</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of promotions(); track item.id) {
-            <tr>
-              <td>{{ item.id }}</td>
-              <td>{{ item.name }}</td>
-              <td>
-                {{ item.discount_value }}
-                {{ item.discount_type === 'percentage' ? '%' : 'USD' }}
-              </td>
-              <td class="muted">{{ item.start_date || '-' }} → {{ item.end_date || '-' }}</td>
-              <td>
-                <span class="badge" [class.ok]="item.is_active">
-                  {{ item.is_active ? 'Activa' : 'Inactiva' }}
-                </span>
-              </td>
-              <td>
-                <button class="btn" (click)="togglePromotion(item)">
-                  {{ item.is_active ? 'Desactivar' : 'Activar' }}
-                </button>
-                <button class="btn-danger" (click)="removePromotion(item)">Eliminar</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  `
+  imports: [CommonModule, FormsModule, UiDrawerComponent, UiTabsComponent],
+  templateUrl: './marketing.page.html'
 })
 export class MarketingPage {
   private readonly service = inject(MarketingService);
+  private readonly confirm = inject(ConfirmService);
 
-  readonly collections = signal<CollectionResponse[]>([]);
+  readonly activeTab = signal<'promotions' | 'collections'>('promotions');
   readonly promotions = signal<PromotionResponse[]>([]);
+  readonly collections = signal<CollectionResponse[]>([]);
+  readonly promotionDrawer = signal(false);
+  readonly collectionDrawer = signal(false);
+  readonly editingPromotion = signal<PromotionResponse | null>(null);
+  readonly editingCollection = signal<CollectionResponse | null>(null);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
 
-  collection: CollectionCreate = { name: '', description: '', is_active: true };
-  promotion: PromotionCreate = {
-    name: '',
-    description: '',
-    discount_type: 'percentage',
-    discount_value: 0,
-    start_date: null,
-    end_date: null,
-    is_active: true
-  };
+  promotionForm: PromotionCreate = { ...EMPTY_PROMOTION };
+  collectionForm: CollectionCreate = { ...EMPTY_COLLECTION };
+  productIds = '';
+
+  readonly tabs = computed<TabItem[]>(() => [
+    { id: 'promotions', label: 'Promociones', count: this.promotions().length },
+    { id: 'collections', label: 'Colecciones', count: this.collections().length }
+  ]);
 
   constructor() {
-    this.loadCollections();
-    this.loadPromotions();
+    this.load();
+  }
+
+  onTab(id: string): void {
+    this.activeTab.set(id as 'promotions' | 'collections');
+    this.message.set(null);
+    this.error.set(null);
+  }
+
+  /** Una promoción está vigente si está activa y hoy cae dentro de su rango. */
+  isCurrent(promotion: PromotionResponse): boolean {
+    if (!promotion.is_active) return false;
+    const today = new Date().toISOString().slice(0, 10);
+    const afterStart = !promotion.start_date || promotion.start_date <= today;
+    const beforeEnd = !promotion.end_date || promotion.end_date >= today;
+    return afterStart && beforeEnd;
+  }
+
+  rangeLabel(promotion: PromotionResponse): string {
+    if (!promotion.start_date && !promotion.end_date) return 'Sin fecha límite';
+    if (promotion.start_date && promotion.end_date) {
+      return `${promotion.start_date} → ${promotion.end_date}`;
+    }
+    return promotion.end_date ? `Hasta ${promotion.end_date}` : `Desde ${promotion.start_date}`;
+  }
+
+  openPromotionCreate(): void {
+    this.editingPromotion.set(null);
+    this.promotionForm = { ...EMPTY_PROMOTION };
+    this.productIds = '';
+    this.promotionDrawer.set(true);
+  }
+
+  openPromotionEdit(promotion: PromotionResponse): void {
+    this.editingPromotion.set(promotion);
+    this.promotionForm = {
+      name: promotion.name,
+      description: promotion.description ?? '',
+      discount_type: promotion.discount_type === 'fixed' ? 'fixed' : 'percentage',
+      discount_value: promotion.discount_value,
+      start_date: promotion.start_date,
+      end_date: promotion.end_date,
+      is_active: promotion.is_active,
+      product_ids: promotion.product_ids
+    };
+    this.productIds = promotion.product_ids.join(', ');
+    this.promotionDrawer.set(true);
+  }
+
+  savePromotion(): void {
+    if (!this.promotionForm.name.trim() || this.promotionForm.discount_value <= 0) {
+      this.fail(new Error('El nombre y un valor de descuento mayor a 0 son obligatorios.'));
+      return;
+    }
+
+    const payload: PromotionCreate = { ...this.promotionForm, product_ids: this.parseIds() };
+    const current = this.editingPromotion();
+    const request$ = current
+      ? this.service.updatePromotion(current.id, payload)
+      : this.service.createPromotion(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.message.set(current ? 'Promoción actualizada.' : 'Promoción creada.');
+        this.error.set(null);
+        this.promotionDrawer.set(false);
+        this.load();
+      },
+      error: (err: Error) => this.fail(err)
+    });
+  }
+
+  togglePromotion(promotion: PromotionResponse): void {
+    this.service
+      .updatePromotion(promotion.id, {
+        name: promotion.name,
+        description: promotion.description,
+        discount_type: promotion.discount_type === 'fixed' ? 'fixed' : 'percentage',
+        discount_value: promotion.discount_value,
+        start_date: promotion.start_date,
+        end_date: promotion.end_date,
+        is_active: !promotion.is_active,
+        product_ids: promotion.product_ids
+      })
+      .subscribe({
+        next: () => {
+          this.message.set(promotion.is_active ? 'Promoción desactivada.' : 'Promoción activada.');
+          this.load();
+        },
+        error: (err: Error) => this.fail(err)
+      });
+  }
+
+  removePromotion(promotion: PromotionResponse): void {
+    void this.confirm
+      .ask({
+        title: 'Eliminar promoción',
+        message: `¿Eliminar "${promotion.name}"? El catálogo dejará de reflejar el descuento.`,
+        confirmLabel: 'Sí, eliminar',
+        danger: true
+      })
+      .then((confirmed) => {
+        if (!confirmed) return;
+        this.service.removePromotion(promotion.id).subscribe({
+          next: () => {
+            this.message.set('Promoción eliminada.');
+            this.load();
+          },
+          error: (err: Error) => this.fail(err)
+        });
+      });
+  }
+
+  // --- Colecciones ---
+  openCollectionCreate(): void {
+    this.editingCollection.set(null);
+    this.collectionForm = { ...EMPTY_COLLECTION };
+    this.productIds = '';
+    this.collectionDrawer.set(true);
+  }
+
+  openCollectionEdit(collection: CollectionResponse): void {
+    this.editingCollection.set(collection);
+    this.collectionForm = {
+      name: collection.name,
+      description: collection.description ?? '',
+      is_active: collection.is_active,
+      product_ids: collection.product_ids
+    };
+    this.productIds = collection.product_ids.join(', ');
+    this.collectionDrawer.set(true);
+  }
+
+  saveCollection(): void {
+    if (!this.collectionForm.name.trim()) {
+      this.fail(new Error('El nombre de la colección es obligatorio.'));
+      return;
+    }
+
+    const payload: CollectionCreate = { ...this.collectionForm, product_ids: this.parseIds() };
+    const current = this.editingCollection();
+    const request$ = current
+      ? this.service.updateCollection(current.id, payload)
+      : this.service.createCollection(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.message.set(current ? 'Colección actualizada.' : 'Colección creada.');
+        this.error.set(null);
+        this.collectionDrawer.set(false);
+        this.load();
+      },
+      error: (err: Error) => this.fail(err)
+    });
+  }
+
+  toggleCollection(collection: CollectionResponse): void {
+    this.service
+      .updateCollection(collection.id, {
+        name: collection.name,
+        description: collection.description,
+        is_active: !collection.is_active,
+        product_ids: collection.product_ids
+      })
+      .subscribe({
+        next: () => {
+          this.message.set(collection.is_active ? 'Colección desactivada.' : 'Colección activada.');
+          this.load();
+        },
+        error: (err: Error) => this.fail(err)
+      });
+  }
+
+  removeCollection(collection: CollectionResponse): void {
+    void this.confirm
+      .ask({
+        title: 'Eliminar colección',
+        message: `¿Eliminar "${collection.name}"? Las prendas no se borran, solo salen de la colección.`,
+        confirmLabel: 'Sí, eliminar',
+        danger: true
+      })
+      .then((confirmed) => {
+        if (!confirmed) return;
+        this.service.removeCollection(collection.id).subscribe({
+          next: () => {
+            this.message.set('Colección eliminada.');
+            this.load();
+          },
+          error: (err: Error) => this.fail(err)
+        });
+      });
+  }
+
+  private parseIds(): number[] {
+    return this.productIds
+      .split(',')
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isInteger(value) && value > 0);
+  }
+
+  private load(): void {
+    this.service.listPromotions().subscribe({
+      next: (data) => this.promotions.set(data),
+      error: (err: Error) => this.fail(err)
+    });
+    this.service.listCollections().subscribe({
+      next: (data) => this.collections.set(data),
+      error: (err: Error) => this.fail(err)
+    });
   }
 
   private fail(err: Error): void {
     this.error.set(err.message);
     this.message.set(null);
-  }
-
-  loadCollections(): void {
-    this.service.listCollections().subscribe({
-      next: (d) => this.collections.set(d),
-      error: (e: Error) => this.fail(e)
-    });
-  }
-
-  loadPromotions(): void {
-    this.service.listPromotions().subscribe({
-      next: (d) => this.promotions.set(d),
-      error: (e: Error) => this.fail(e)
-    });
-  }
-
-  addCollection(): void {
-    if (!this.collection.name.trim()) {
-      this.fail(new Error('El nombre de la colección es obligatorio.'));
-      return;
-    }
-    this.service.createCollection(this.collection).subscribe({
-      next: () => {
-        this.message.set('Colección creada.');
-        this.error.set(null);
-        this.collection = { name: '', description: '', is_active: true };
-        this.loadCollections();
-      },
-      error: (e: Error) => this.fail(e)
-    });
-  }
-
-  toggleCollection(item: CollectionResponse): void {
-    this.service
-      .updateCollection(item.id, {
-        name: item.name,
-        description: item.description,
-        is_active: !item.is_active,
-        product_ids: item.product_ids
-      })
-      .subscribe({
-        next: () => this.loadCollections(),
-        error: (e: Error) => this.fail(e)
-      });
-  }
-
-  removeCollection(item: CollectionResponse): void {
-    this.service.removeCollection(item.id).subscribe({
-      next: () => this.loadCollections(),
-      error: (e: Error) => this.fail(e)
-    });
-  }
-
-  addPromotion(): void {
-    if (!this.promotion.name.trim() || this.promotion.discount_value <= 0) {
-      this.fail(new Error('Nombre y un valor de descuento mayor a 0 son obligatorios.'));
-      return;
-    }
-    this.service.createPromotion(this.promotion).subscribe({
-      next: () => {
-        this.message.set('Promoción creada.');
-        this.error.set(null);
-        this.promotion = {
-          name: '',
-          description: '',
-          discount_type: 'percentage',
-          discount_value: 0,
-          start_date: null,
-          end_date: null,
-          is_active: true
-        };
-        this.loadPromotions();
-      },
-      error: (e: Error) => this.fail(e)
-    });
-  }
-
-  togglePromotion(item: PromotionResponse): void {
-    this.service
-      .updatePromotion(item.id, {
-        name: item.name,
-        description: item.description,
-        discount_type: item.discount_type === 'fixed' ? 'fixed' : 'percentage',
-        discount_value: item.discount_value,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        is_active: !item.is_active,
-        product_ids: item.product_ids
-      })
-      .subscribe({
-        next: () => this.loadPromotions(),
-        error: (e: Error) => this.fail(e)
-      });
-  }
-
-  removePromotion(item: PromotionResponse): void {
-    this.service.removePromotion(item.id).subscribe({
-      next: () => this.loadPromotions(),
-      error: (e: Error) => this.fail(e)
-    });
   }
 }

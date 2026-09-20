@@ -48,7 +48,7 @@ interface DiscountedProduct {
       <div>
         <h2 style="margin: 0">Colecciones y promociones</h2>
         <p class="muted" style="margin: 0.25rem 0 0">
-          Descuentos vigentes publicados por la tienda (CU20).
+          Descuentos vigentes publicados por la tienda.
         </p>
       </div>
       <span class="spacer"></span>

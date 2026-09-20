@@ -1,0 +1,69 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Mis reservas</h2>
+    <p class="page-sub">
+      Revisa el estado de tus reservas para probador físico y cancélalas para liberar el stock.
+    </p>
+  </div>
+</div>
+
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="88" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+} @else if (reservations().length === 0) {
+  <app-ui-empty
+    icon="📅"
+    title="Sin reservas"
+    message="No tienes reservas registradas. Puedes crear una desde el catálogo en la app móvil."
+  >
+    <a class="btn-primary" routerLink="/catalog" style="margin-top: 0.75rem">Ir al catálogo</a>
+  </app-ui-empty>
+} @else {
+  <div class="res-list">
+    @for (reservation of reservations(); track reservation.id) {
+      <article class="card res-card">
+        <div class="res-head">
+          <div>
+            <strong>Reserva #{{ reservation.id }}</strong>
+            <p class="note" style="margin: 0.15rem 0 0">Sucursal #{{ reservation.branch_id }}</p>
+          </div>
+          <span class="badge" [class]="'badge ' + statusClass(reservation)">
+            {{ statusLabel(reservation) }}
+          </span>
+          <span class="spacer"></span>
+          <span class="res-meta">
+            <app-ui-icon [d]="icons.calendar" [size]="13" color="var(--muted)" />
+            {{ reservation.reservation_date }} · {{ reservation.reservation_time }}
+          </span>
+        </div>
+
+        @if (reservation.fitting_room) {
+          <p class="note" style="margin: 0.35rem 0 0">Probador asignado: {{ reservation.fitting_room }}</p>
+        }
+
+        <div class="chip-row" style="margin-top: 0.75rem">
+          @for (item of reservation.items; track item.id) {
+            <span class="chip">{{ item.quantity }}× artículo (stock #{{ item.stock_id }})</span>
+          }
+        </div>
+
+        <div class="res-actions">
+          <span class="note" style="margin: 0">{{ reservation.items.length }} artículo(s) reservado(s)</span>
+          <span class="spacer"></span>
+          @if (canCancel(reservation)) {
+            <button type="button" class="btn-danger btn-sm" (click)="cancel(reservation)">
+              Cancelar reserva
+            </button>
+          } @else {
+            <span class="note" style="margin: 0">Esta reserva ya no se puede cancelar.</span>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}

@@ -41,6 +41,9 @@ export class App {
   });
   readonly isAdmin = computed(() => this.user()?.role === Role.Administrador);
 
+  /** Login y registro se muestran a sangre, sin la barra pública (diseño de Figma). */
+  readonly isAuthRoute = computed(() => this.url().startsWith('/auth/'));
+
   /** Etiqueta y color de la insignia de rol. */
   readonly roleMeta = computed(() => {
     const role = this.user()?.role;
@@ -50,7 +53,7 @@ export class App {
   /** Menú lateral del rol autenticado. */
   readonly navGroups = computed<NavGroup[]>(() => navForRole(this.user()?.role));
 
-  /** Ítem de navegación activo (breadcrumb, título y CU en curso). */
+  /** Ítem de navegación activo (breadcrumb y título de la página). */
   readonly currentItem = computed<NavItem | undefined>(() => {
     const path = this.url().split('?')[0];
     return this.navGroups()

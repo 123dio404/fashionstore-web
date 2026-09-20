@@ -1,0 +1,137 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Reporte de ventas</h2>
+    <p class="page-sub">
+      Ingresos y volumen por sucursal, canal y rango de fechas.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn" [disabled]="!data()" (click)="exportCsv()">Exportar CSV</button>
+    <button type="button" class="btn-primary" (click)="load()">Generar reporte</button>
+  </div>
+</div>
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0">
+    <label for="s-start">Desde</label>
+    <input id="s-start" type="date" [(ngModel)]="startDate" />
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="s-end">Hasta</label>
+    <input id="s-end" type="date" [(ngModel)]="endDate" />
+  </div>
+  <div class="chip-row" style="padding-bottom: 0.35rem">
+    <button type="button" class="chip" (click)="range('today')">Hoy</button>
+    <button type="button" class="chip" (click)="range('week')">7 días</button>
+    <button type="button" class="chip" (click)="range('month')">30 días</button>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="96" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+} @else if (data(); as report) {
+  <div class="kpi-grid">
+    <div class="stat">
+      <div class="value">{{ report.total_orders }}</div>
+      <div class="label">Órdenes</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.total_units }}</div>
+      <div class="label">Unidades vendidas</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.total_revenue | currency: 'USD' }}</div>
+      <div class="label">Ingresos</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ report.average_order_value | currency: 'USD' }}</div>
+      <div class="label">Ticket promedio</div>
+    </div>
+  </div>
+
+  <div class="report-grid">
+    <section class="card">
+      <h3 style="margin-top: 0">Ingresos por día</h3>
+      <app-ui-chart [points]="dayPoints()" type="line" [height]="170" [currency]="true" />
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top: 0">Ingresos por sucursal</h3>
+      <app-ui-chart [points]="branchPoints()" type="bar" [height]="170" [currency]="true" />
+    </section>
+  </div>
+
+  <div class="table-card">
+    <h3>Detalle por canal</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Canal</th>
+          <th>Órdenes</th>
+          <th>Unidades</th>
+          <th>Ingresos</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of report.by_channel; track row.key) {
+          <tr>
+            <td class="cell-strong">{{ row.key }}</td>
+            <td>{{ row.orders }}</td>
+            <td>{{ row.units }}</td>
+            <td>{{ row.revenue | currency: 'USD' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <h3>Detalle por sucursal</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Sucursal</th>
+          <th>Órdenes</th>
+          <th>Unidades</th>
+          <th>Ingresos</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of report.by_branch; track row.key) {
+          <tr>
+            <td class="cell-strong">{{ row.key }}</td>
+            <td>{{ row.orders }}</td>
+            <td>{{ row.units }}</td>
+            <td>{{ row.revenue | currency: 'USD' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <h3>Detalle por día</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Día</th>
+          <th>Órdenes</th>
+          <th>Unidades</th>
+          <th>Ingresos</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of report.by_day; track row.key) {
+          <tr>
+            <td class="cell-strong">{{ row.key }}</td>
+            <td>{{ row.orders }}</td>
+            <td>{{ row.units }}</td>
+            <td>{{ row.revenue | currency: 'USD' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

@@ -1,0 +1,227 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Colecciones y promociones</h2>
+    <p class="page-sub">
+      Agrupa prendas en colecciones y configura descuentos por temporada.
+    </p>
+  </div>
+  <div class="page-actions">
+    @if (activeTab() === 'promotions') {
+      <button type="button" class="btn-primary" (click)="openPromotionCreate()">Nueva promoción</button>
+    } @else {
+      <button type="button" class="btn-primary" (click)="openCollectionCreate()">Nueva colección</button>
+    }
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<app-ui-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+@if (activeTab() === 'promotions') {
+  <div class="table-card">
+    <h3>Promociones</h3>
+    @if (promotions().length === 0) {
+      <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+        Todavía no hay promociones configuradas.
+      </p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Promoción</th>
+            <th>Descuento</th>
+            <th>Vigencia</th>
+            <th>Prendas</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (promotion of promotions(); track promotion.id) {
+            <tr>
+              <td>
+                <div class="cell-stack">
+                  <span class="cell-strong">{{ promotion.name }}</span>
+                  <span class="cell-sub">{{ promotion.description || 'Sin descripción' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="badge info">
+                  {{
+                    promotion.discount_type === 'fixed'
+                      ? '- $ ' + promotion.discount_value
+                      : '-' + promotion.discount_value + '%'
+                  }}
+                </span>
+              </td>
+              <td>{{ rangeLabel(promotion) }}</td>
+              <td>{{ promotion.product_ids.length }}</td>
+              <td>
+                <span class="badge" [class.ok]="isCurrent(promotion)" [class.neutral]="!promotion.is_active">
+                  {{
+                    !promotion.is_active ? 'Inactiva' : isCurrent(promotion) ? 'Vigente' : 'Programada'
+                  }}
+                </span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-sm" (click)="openPromotionEdit(promotion)">Editar</button>
+                  <button type="button" class="btn btn-sm" (click)="togglePromotion(promotion)">
+                    {{ promotion.is_active ? 'Desactivar' : 'Activar' }}
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" (click)="removePromotion(promotion)">
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+} @else {
+  <div class="table-card">
+    <h3>Colecciones</h3>
+    @if (collections().length === 0) {
+      <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+        Todavía no hay colecciones configuradas.
+      </p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Colección</th>
+            <th>Descripción</th>
+            <th>Prendas</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (collection of collections(); track collection.id) {
+            <tr>
+              <td class="cell-strong">{{ collection.name }}</td>
+              <td>{{ collection.description || '—' }}</td>
+              <td><span class="badge info">{{ collection.product_ids.length }}</span></td>
+              <td>
+                <span class="badge" [class.ok]="collection.is_active" [class.neutral]="!collection.is_active">
+                  {{ collection.is_active ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-sm" (click)="openCollectionEdit(collection)">Editar</button>
+                  <button type="button" class="btn btn-sm" (click)="toggleCollection(collection)">
+                    {{ collection.is_active ? 'Desactivar' : 'Activar' }}
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" (click)="removeCollection(collection)">
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<app-ui-drawer
+  [open]="promotionDrawer()"
+  [title]="editingPromotion() ? 'Editar promoción' : 'Nueva promoción'"
+  subtitle="Las prendas en promoción se muestran al cliente en /promotions"
+  [width]="460"
+  (closed)="promotionDrawer.set(false)"
+>
+  <div class="field">
+    <label for="pr-name">Nombre</label>
+    <input id="pr-name" [(ngModel)]="promotionForm.name" placeholder="Ej. Semana del calzado" />
+  </div>
+  <div class="field">
+    <label for="pr-desc">Descripción</label>
+    <input id="pr-desc" [(ngModel)]="promotionForm.description" />
+  </div>
+  <div class="grid-2">
+    <div class="field">
+      <label for="pr-type">Tipo de descuento</label>
+      <select id="pr-type" [(ngModel)]="promotionForm.discount_type">
+        <option value="percentage">Porcentaje (%)</option>
+        <option value="fixed">Monto fijo ($)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="pr-value">Valor</label>
+      <input id="pr-value" type="number" min="0" [(ngModel)]="promotionForm.discount_value" />
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="field">
+      <label for="pr-start">Inicio</label>
+      <input id="pr-start" type="date" [(ngModel)]="promotionForm.start_date" />
+    </div>
+    <div class="field">
+      <label for="pr-end">Fin</label>
+      <input id="pr-end" type="date" [(ngModel)]="promotionForm.end_date" />
+    </div>
+  </div>
+  <div class="field">
+    <label for="pr-products">Prendas (IDs separados por coma)</label>
+    <input id="pr-products" placeholder="1, 4, 9" [(ngModel)]="productIds" />
+    <p class="field-hint">Opcional: limita el descuento a esas prendas.</p>
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="promotionForm.is_active" />
+      Promoción activa
+    </label>
+  </div>
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="promotionDrawer.set(false)">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="savePromotion()">
+      {{ editingPromotion() ? 'Guardar cambios' : 'Crear promoción' }}
+    </button>
+  </div>
+</app-ui-drawer>
+
+<app-ui-drawer
+  [open]="collectionDrawer()"
+  [title]="editingCollection() ? 'Editar colección' : 'Nueva colección'"
+  subtitle="Agrupación comercial de prendas"
+  [width]="420"
+  (closed)="collectionDrawer.set(false)"
+>
+  <div class="field">
+    <label for="co-name">Nombre</label>
+    <input id="co-name" [(ngModel)]="collectionForm.name" placeholder="Ej. Otoño Invierno 2026" />
+  </div>
+  <div class="field">
+    <label for="co-desc">Descripción</label>
+    <input id="co-desc" [(ngModel)]="collectionForm.description" />
+  </div>
+  <div class="field">
+    <label for="co-products">Prendas (IDs separados por coma)</label>
+    <input id="co-products" placeholder="1, 2, 3" [(ngModel)]="productIds" />
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="collectionForm.is_active" />
+      Colección activa
+    </label>
+  </div>
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="collectionDrawer.set(false)">Cancelar</button>
+    <button type="button" class="btn-primary" (click)="saveCollection()">
+      {{ editingCollection() ? 'Guardar cambios' : 'Crear colección' }}
+    </button>
+  </div>
+</app-ui-drawer>

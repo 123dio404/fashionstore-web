@@ -1,0 +1,250 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Catálogo de prendas</h2>
+    <p class="page-sub">
+      Alta y edición de prendas con su ficha técnica, variantes y modelo 3D.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn-primary" (click)="openCreate()">Nueva prenda</button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+<div class="page-toolbar">
+  <div class="field" style="margin: 0; min-width: 14rem">
+    <label for="p-search">Buscar</label>
+    <input id="p-search" placeholder="Nombre o marca" [(ngModel)]="search" />
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="p-category">Categoría</label>
+    <select id="p-category" [(ngModel)]="categoryFilter">
+      <option [ngValue]="null">Todas</option>
+      @for (category of categories(); track category.id) {
+        <option [ngValue]="category.id">{{ category.name }}</option>
+      }
+    </select>
+  </div>
+  <div class="field" style="margin: 0">
+    <label for="p-season">Temporada</label>
+    <select id="p-season" [(ngModel)]="seasonFilter">
+      <option [ngValue]="null">Todas</option>
+      @for (season of seasons(); track season.id) {
+        <option [ngValue]="season.id">{{ season.name }}</option>
+      }
+    </select>
+  </div>
+  <span class="spacer"></span>
+  <span class="muted">{{ filtered.length }} de {{ products().length }} prendas</span>
+</div>
+
+<div class="table-card">
+  <h3>Prendas</h3>
+  @if (filtered.length === 0) {
+    <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+      Ninguna prenda coincide con el filtro.
+    </p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Prenda</th>
+          <th>Categoría</th>
+          <th>Temporada</th>
+          <th>Precio</th>
+          <th>Variantes</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (product of filtered; track product.id) {
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar-sm">{{ initial(product) }}</span>
+                <div class="cell-stack">
+                  <span class="cell-strong">{{ product.name }}</span>
+                  <span class="cell-sub">
+                    {{ product.brand || 'Sin marca' }}
+                    @if (product.model_3d_url) {
+                      · modelo 3D {{ product.model_3d_format || 'glb' }}
+                    }
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td>{{ categoryName(product) }}</td>
+            <td>{{ seasonName(product) }}</td>
+            <td>{{ product.price | currency: 'USD' }}</td>
+            <td>
+              <span class="badge" [class.info]="product.variants.length > 0">
+                {{ product.variants.length }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [class.ok]="product.is_active" [class.neutral]="!product.is_active">
+                {{ product.is_active ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn-sm" (click)="openEdit(product)">Editar</button>
+                <button type="button" class="btn-danger btn-sm" (click)="remove(product)">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+<app-ui-drawer
+  [open]="drawerOpen()"
+  [title]="editing() ? 'Editar prenda' : 'Nueva prenda'"
+  [subtitle]="editing() ? editing()!.name : 'Ficha técnica, precio y modelo 3D'"
+  [width]="480"
+  (closed)="closeDrawer()"
+>
+  <div class="field">
+    <label for="d-name">Nombre</label>
+    <input id="d-name" [(ngModel)]="form.name" />
+  </div>
+
+  <div class="grid-2">
+    <div class="field">
+      <label for="d-brand">Marca</label>
+      <input id="d-brand" [(ngModel)]="form.brand" />
+    </div>
+    <div class="field">
+      <label for="d-price">Precio</label>
+      <input id="d-price" type="number" min="0" [(ngModel)]="form.price" />
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="field">
+      <label for="d-category">Categoría</label>
+      <select id="d-category" [(ngModel)]="form.category_id">
+        <option [ngValue]="0">Selecciona</option>
+        @for (category of categories(); track category.id) {
+          <option [ngValue]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="d-season">Temporada</label>
+      <select id="d-season" [(ngModel)]="form.season_id">
+        <option [ngValue]="null">Sin temporada</option>
+        @for (season of seasons(); track season.id) {
+          <option [ngValue]="season.id">{{ season.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="field">
+      <label for="d-model">Modelo 3D (URL)</label>
+      <input id="d-model" placeholder="https://.../prenda.glb" [(ngModel)]="form.model_3d_url" />
+    </div>
+    <div class="field">
+      <label for="d-format">Formato</label>
+      <select id="d-format" [(ngModel)]="form.model_3d_format">
+        <option [ngValue]="null">Sin modelo</option>
+        <option value="glb">glb</option>
+        <option value="gltf">gltf</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="d-meta">Ficha técnica</label>
+    <textarea id="d-meta" rows="3" [(ngModel)]="form.technical_metadata"></textarea>
+    <p class="field-hint">Composición, cuidados y medidas de la prenda.</p>
+  </div>
+
+  <div class="field">
+    <label>Estado</label>
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="form.is_active" />
+      Prenda activa en el catálogo
+    </label>
+  </div>
+
+  @if (editing(); as product) {
+    <section class="variants">
+      <h4 class="variants-title">Variantes ({{ product.variants.length }})</h4>
+
+      @if (product.variants.length === 0) {
+        <p class="note" style="margin-top: 0">Esta prenda todavía no tiene variantes.</p>
+      } @else {
+        <table class="variants-table">
+          <thead>
+            <tr>
+              <th>Talla</th>
+              <th>Color</th>
+              <th>Código</th>
+              <th>Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (variant of product.variants; track variant.id) {
+              <tr>
+                <td>{{ sizeName(variant.size_id) }}</td>
+                <td>{{ colorName(variant.color_id) }}</td>
+                <td><code>{{ variant.codigo }}</code></td>
+                <td>{{ (variant.price ?? product.price) | currency: 'USD' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <h4 class="variants-title">Añadir variante</h4>
+      <div class="grid-2">
+        <div class="field">
+          <label for="v-size">Talla</label>
+          <select id="v-size" [(ngModel)]="variant.size_id">
+            <option [ngValue]="0">Selecciona</option>
+            @for (size of sizes(); track size.id) {
+              <option [ngValue]="size.id">{{ size.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="v-color">Color</label>
+          <select id="v-color" [(ngModel)]="variant.color_id">
+            <option [ngValue]="0">Selecciona</option>
+            @for (color of colors(); track color.id) {
+              <option [ngValue]="color.id">{{ color.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="v-code">Código (SKU)</label>
+          <input id="v-code" [(ngModel)]="variant.codigo" />
+        </div>
+        <div class="field">
+          <label for="v-price">Precio de la variante</label>
+          <input id="v-price" type="number" min="0" [(ngModel)]="variant.price" />
+        </div>
+      </div>
+      <button type="button" class="btn" (click)="addVariant(product)">Añadir variante</button>
+    </section>
+  }
+
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="closeDrawer()">Cerrar</button>
+    <button type="button" class="btn-primary" (click)="save()">
+      {{ editing() ? 'Guardar cambios' : 'Crear prenda' }}
+    </button>
+  </div>
+</app-ui-drawer>

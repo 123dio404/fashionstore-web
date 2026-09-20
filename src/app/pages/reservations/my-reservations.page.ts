@@ -1,62 +1,35 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
+import { ICONS } from '../../core/navigation';
 import { CommerceService } from '../../core/services/commerce.service';
 import { ReservationResponse, ReservationStatus } from '../../models';
 import { ConfirmService } from '../../shared/ui/confirm.service';
 import { UiEmptyComponent } from '../../shared/ui/empty-state.component';
 import { UiErrorComponent } from '../../shared/ui/error-state.component';
+import { UiIconComponent } from '../../shared/ui/icon.component';
 import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
 
+/** CU15 — Consultar y cancelar reservas (web): tarjetas con estado, probador y cancelación. */
 @Component({
   selector: 'app-my-reservations-page',
-  imports: [CommonModule, UiEmptyComponent, UiErrorComponent, UiSkeletonComponent],
-  template: `
-    <h2>Mis reservas</h2>
-    <p class="muted">
-      Consulta el estado de tus reservas para probador físico y cancélalas para liberar stock.
-    </p>
-
-    @if (message()) {
-      <p class="success">{{ message() }}</p>
-    }
-
-    @if (loading()) {
-      <app-ui-skeleton [rows]="3" [height]="64" />
-    } @else if (error()) {
-      <app-ui-error [message]="error() ?? ''" (retry)="load()" />
-    } @else if (reservations().length === 0) {
-      <app-ui-empty
-        icon="📅"
-        title="Sin reservas"
-        message="No tienes reservas registradas. Puedes crear una desde la app móvil."
-      />
-    }
-
-    @for (reservation of reservations(); track reservation.id) {
-      <div class="card">
-        <div class="row">
-          <strong>Reserva #{{ reservation.id }}</strong>
-          <span class="badge" [class.ok]="reservation.status === 'confirmada'">
-            {{ reservation.status }}
-          </span>
-          <span class="spacer"></span>
-          <span class="muted">
-            {{ reservation.reservation_date }} · {{ reservation.reservation_time }}
-          </span>
-        </div>
-        <p class="muted">Sucursal #{{ reservation.branch_id }} · {{ reservation.items.length }} artículo(s)</p>
-        @if (canCancel(reservation)) {
-          <button class="btn-danger" (click)="cancel(reservation)">Cancelar reserva</button>
-        }
-      </div>
-    }
-  `
+  imports: [
+    CommonModule,
+    RouterLink,
+    UiEmptyComponent,
+    UiErrorComponent,
+    UiIconComponent,
+    UiSkeletonComponent
+  ],
+  templateUrl: './my-reservations.page.html',
+  styleUrl: './my-reservations.page.scss'
 })
 export class MyReservationsPage {
   private readonly commerce = inject(CommerceService);
   private readonly confirm = inject(ConfirmService);
 
+  readonly icons = ICONS;
   readonly reservations = signal<ReservationResponse[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -67,12 +40,40 @@ export class MyReservationsPage {
   }
 
   canCancel(reservation: ReservationResponse): boolean {
-    return reservation.status !== ReservationStatus.Cancelada &&
-      reservation.status !== ReservationStatus.Completada;
+    return (
+      reservation.status !== ReservationStatus.Cancelada &&
+      reservation.status !== ReservationStatus.Completada &&
+      reservation.status !== ReservationStatus.Reembolsada &&
+      reservation.status !== ReservationStatus.Devuelta
+    );
+  }
+
+  /** Color del badge según el estado de la reserva (CU14 la avanza en tienda). */
+  statusClass(reservation: ReservationResponse): string {
+    switch (reservation.status) {
+      case ReservationStatus.Completada:
+        return 'ok';
+      case ReservationStatus.Cancelada:
+        return 'err';
+      case ReservationStatus.Reembolsada:
+      case ReservationStatus.Devuelta:
+        return 'neutral';
+      case ReservationStatus.EnProbador:
+      case ReservationStatus.EnTienda:
+      case ReservationStatus.Lista:
+        return 'warn';
+      default:
+        return 'info';
+    }
+  }
+
+  statusLabel(reservation: ReservationResponse): string {
+    return reservation.status.replace(/_/g, ' ');
   }
 
   load(): void {
     this.loading.set(true);
+    this.error.set(null);
     this.commerce.listReservations().subscribe({
       next: (data) => {
         this.reservations.set(data);
