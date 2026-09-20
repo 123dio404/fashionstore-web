@@ -1,0 +1,124 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Mi carrito</h2>
+    <p class="page-sub">Revisa tus prendas antes de confirmar la compra (CU10 · CU11).</p>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="72" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="reload()" />
+} @else if (cart(); as current) {
+  @if (current.items.length === 0) {
+    <app-ui-empty
+      icon="🛍️"
+      title="Tu carrito está vacío"
+      message="Agrega prendas desde el catálogo para empezar tu compra."
+    >
+      <a class="btn-primary" routerLink="/catalog" style="margin-top: 0.75rem">Ir al catálogo</a>
+    </app-ui-empty>
+  } @else {
+    <div class="two-col">
+      <div>
+        <div class="table-card">
+          <h3>Prendas ({{ itemCount() }})</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Talla</th>
+                <th>Color</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of current.items; track item.id) {
+                <tr>
+                  <td>{{ item.product_name }}</td>
+                  <td>{{ item.size || '—' }}</td>
+                  <td>{{ item.color || '—' }}</td>
+                  <td>{{ item.price | currency: 'USD' }}</td>
+                  <td>
+                    <div class="qty">
+                      <button type="button" class="btn btn-sm" (click)="setQuantity(item, item.quantity - 1)">−</button>
+                      <span>{{ item.quantity }}</span>
+                      <button type="button" class="btn btn-sm" (click)="setQuantity(item, item.quantity + 1)">+</button>
+                    </div>
+                  </td>
+                  <td><strong>{{ item.quantity * item.price | currency: 'USD' }}</strong></td>
+                  <td>
+                    <button type="button" class="btn-danger btn-sm" (click)="remove(item)">Quitar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Los importes finales los calcula el backend al confirmar la compra.</p>
+      </div>
+
+      <aside class="aside-card">
+        <h3 class="aside-title">Resumen de compra</h3>
+        <div class="summary-row">
+          <span class="label">Artículos</span>
+          <span>{{ itemCount() }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Subtotal</span>
+          <span>{{ current.total | currency: 'USD' }}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>{{ current.total | currency: 'USD' }}</span>
+        </div>
+
+        <div class="field" style="margin-top: 1rem">
+          <label for="branch">Sucursal de despacho o retiro</label>
+          <select id="branch" [(ngModel)]="branchId">
+            <option [ngValue]="null">Selecciona una sucursal</option>
+            @for (branch of branches(); track branch.id) {
+              <option [ngValue]="branch.id">{{ branch.name }}</option>
+            }
+          </select>
+        </div>
+
+        <button
+          type="button"
+          class="btn-primary btn-block"
+          [disabled]="!branchId || checkingOut()"
+          (click)="checkout()"
+        >
+          {{ checkingOut() ? 'Procesando pago…' : 'Pagar con Stripe' }}
+        </button>
+        <p class="note">El cobro lo procesa el backend (Stripe); aquí se muestra el estado que devuelve la API.</p>
+
+        @if (message()) {
+          <div class="alert alert-success" style="margin-top: 1rem">{{ message() }}</div>
+        }
+        @if (checkoutError()) {
+          <div class="alert alert-error" style="margin-top: 1rem">{{ checkoutError() }}</div>
+        }
+
+        @if (sale(); as completed) {
+          <div class="summary-row" style="margin-top: 1rem">
+            <span class="label">Orden</span>
+            <span>#{{ completed.id }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Estado del pago</span>
+            <span class="badge ok">{{ completed.payments[0]?.status || 'pendiente' }}</span>
+          </div>
+          <a class="btn btn-block" routerLink="/purchase-history" style="margin-top: 0.75rem">
+            Ver historial de compras
+          </a>
+        }
+
+        <a class="btn-ghost btn-block" routerLink="/catalog" style="margin-top: 0.5rem">Seguir comprando</a>
+      </aside>
+    </div>
+  }
+}

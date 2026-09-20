@@ -3,52 +3,49 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { BranchesService } from '../../core/services/branches.service';
+import { MarketingService } from '../../core/services/marketing.service';
+import { ProductsService } from '../../core/services/products.service';
 
+/** CU01 — Registro de cliente (web): misma composición de dos paneles que el login. */
 @Component({
   selector: 'app-register-page',
   imports: [FormsModule, RouterLink],
-  template: `
-    <div class="card" style="max-width: 26rem; margin: 2rem auto">
-      <h2>Crear cuenta</h2>
-      <form (ngSubmit)="submit()">
-        <div style="margin-bottom: 0.75rem">
-          <label for="fullName">Nombre completo</label>
-          <input id="fullName" name="fullName" [(ngModel)]="fullName" required />
-        </div>
-        <div style="margin-bottom: 0.75rem">
-          <label for="email">Correo</label>
-          <input id="email" name="email" type="email" [(ngModel)]="email" required />
-        </div>
-        <div style="margin-bottom: 1rem">
-          <label for="password">Contraseña (mínimo 8 caracteres)</label>
-          <input id="password" name="password" type="password" [(ngModel)]="password" required />
-        </div>
-        @if (error()) {
-          <p class="error">{{ error() }}</p>
-        }
-        @if (done()) {
-          <p class="success">¡Cuenta creada! Ya puedes iniciar sesión.</p>
-        }
-        <button class="btn-primary" type="submit" [disabled]="loading()">
-          {{ loading() ? 'Creando...' : 'Registrarme' }}
-        </button>
-      </form>
-      <p class="muted" style="margin-top: 1rem">
-        ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia sesión</a>
-      </p>
-    </div>
-  `
+  templateUrl: './register.page.html'
 })
 export class RegisterPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly products = inject(ProductsService);
+  private readonly branches = inject(BranchesService);
+  private readonly marketing = inject(MarketingService);
+
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly done = signal(false);
+  /** Cifras reales para el panel de marca (sin métricas inventadas). */
+  readonly productCount = signal<number | null>(null);
+  readonly branchCount = signal<number | null>(null);
+  readonly promotionCount = signal<number | null>(null);
 
   fullName = '';
   email = '';
   password = '';
-  readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly done = signal(false);
+
+  constructor() {
+    this.products.list().subscribe({
+      next: (items) => this.productCount.set(items.filter((item) => item.is_active).length),
+      error: () => this.productCount.set(null)
+    });
+    this.branches.list().subscribe({
+      next: (items) => this.branchCount.set(items.length),
+      error: () => this.branchCount.set(null)
+    });
+    this.marketing.listPromotions(true).subscribe({
+      next: (items) => this.promotionCount.set(items.length),
+      error: () => this.promotionCount.set(null)
+    });
+  }
 
   submit(): void {
     this.loading.set(true);
@@ -60,7 +57,7 @@ export class RegisterPage {
         next: () => {
           this.loading.set(false);
           this.done.set(true);
-          setTimeout(() => this.router.navigate(['/auth/login']), 800);
+          setTimeout(() => this.router.navigate(['/auth/login']), 900);
         },
         error: (err: Error) => {
           this.loading.set(false);

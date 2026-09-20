@@ -10,8 +10,7 @@ import { ProductsService } from '../../core/services/products.service';
 @Component({
   selector: 'app-login-page',
   imports: [FormsModule, RouterLink],
-  templateUrl: './login.page.html',
-  styleUrl: './login.page.scss'
+  templateUrl: './login.page.html'
 })
 export class LoginPage {
   private readonly auth = inject(AuthService);

@@ -204,6 +204,21 @@ button {
   color: #92400e;
 }
 
+.badge.info {
+  background: var(--info-soft);
+  color: #2b3f9e;
+}
+
+.badge.err {
+  background: var(--danger-soft);
+  color: #8f2f34;
+}
+
+.badge.neutral {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
 .muted {
   color: var(--muted);
   font-size: 0.85rem;
@@ -651,5 +666,347 @@ tbody tr {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+/* ═══ Kit de página (composición del diseño web de Figma) ═════════════ */
+
+/* Cabecera de pantalla: título (display) + subtítulo + acciones a la derecha */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.page-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.page-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* Barra de filtros dentro de una tarjeta */
+.page-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+/* Tarjeta que contiene una tabla (sin padding para que la tabla llegue al borde) */
+.table-card {
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.table-card > h3 {
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  font-size: 1.15rem;
+}
+
+.table-card th {
+  background: var(--bg);
+}
+
+/* Layout de dos columnas: contenido + resumen lateral */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 22rem;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.aside-card {
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--space-4));
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.aside-title {
+  margin: 0 0 var(--space-3);
+  font-size: 1.15rem;
+}
+
+/* Filas de resumen (etiqueta … valor) */
+.summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.45rem 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-row:last-of-type {
+  border-bottom: none;
+}
+
+.summary-row.total {
+  padding-top: 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.summary-row .label {
+  color: var(--muted);
+}
+
+/* Rejilla de KPI (tarjetas .stat) */
+.kpi-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin-bottom: var(--space-5);
+}
+
+/* Chips tipo pill (filtros, tallas, estados) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.chip.selected {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+  font-weight: 600;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Nota al pie de un bloque */
+.note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
+  color: var(--muted-2);
+}
+
+@media (max-width: 1080px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .aside-card {
+    position: static;
+  }
+}
+
+/* ═══ Layout de autenticación (CU01 registro + CU02 login) ════════════ */
+
+.auth {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  max-width: 62rem;
+  min-height: 32rem;
+  margin: 1rem auto 2rem;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-2);
+}
+
+.auth-aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 3rem;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(140, 56, 136, 0.45), transparent 55%),
+    linear-gradient(160deg, var(--sidebar-bg), #2a2233);
+  color: #fff;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-brand img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  object-position: left center;
+  filter: brightness(0) invert(1);
+}
+
+.auth-brand span {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.auth-pitch h1 {
+  margin: 0 0 1rem;
+  font-size: 2.35rem;
+  line-height: 1.1;
+}
+
+.auth-pitch p {
+  max-width: 24rem;
+  margin: 0 0 2rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.auth-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.auth-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.auth-stat strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.auth-stat span {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.auth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 3rem;
+}
+
+.auth-form {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.auth-form h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.85rem;
+}
+
+.auth-sub {
+  margin: 0 0 2rem;
+  font-size: 0.87rem;
+  color: var(--muted);
+}
+
+.auth-field {
+  margin-bottom: 1rem;
+}
+
+.auth-field label,
+.auth-field > span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.auth-field input {
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 12px;
+  background: var(--text);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-alt {
+  margin: 1.5rem 0 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.auth-foot {
+  margin: 0.75rem 0 0;
+  font-size: 0.72rem;
+  text-align: center;
+  color: var(--muted-2);
+}
+
+@media (max-width: 900px) {
+  .auth {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .auth-aside {
+    padding: 2rem;
+  }
+
+  .auth-pitch h1 {
+    font-size: 1.6rem;
+  }
+
+  .auth-main {
+    padding: 2rem;
+  }
 }
 
