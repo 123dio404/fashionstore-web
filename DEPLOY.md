@@ -3,42 +3,72 @@
 La aplicación es **estática**: se compila con `npm run build` y el resultado queda en
 `dist/fashionstore-web/browser`. Hay tres caminos, todos ya configurados en este repo.
 
+> **La web necesita la API en algún lado.** Desplegar solo la web en Vercel deja un sitio que no
+> carga datos: el backend (FastAPI + PostgreSQL) va aparte — por ejemplo en Railway (ver
+> `fashionstore-backend/DEPLOY.md`). Orden recomendado: **1) backend, 2) web, 3) CORS**.
+
 ## 0. Antes de compilar: apunta la API
 
-`src/environments/environment.production.ts` tiene **una sola línea** que debes ajustar:
+Dos formas, elige una:
+
+**a) Variable de entorno (recomendado para Vercel/Railway/CI).** El hook `prebuild` ejecuta
+`scripts/set-api-url.mjs` y escribe la URL en el entorno de producción:
+
+```bash
+API_URL=https://mi-api.up.railway.app/api/v1 npm run build
+```
+
+En Vercel: *Project → Settings → Environment Variables → `API_URL`* (Production) y redeploy.
+
+**b) Editando el archivo.** `src/environments/environment.production.ts`, una sola línea:
 
 ```ts
 apiUrl: 'https://api.fashionstore.example.com/api/v1'
 ```
 
-con el dominio real del backend (con `/api/v1` al final). Con Docker puedes evitarlo usando el
-build-arg `API_URL` (ver opción C). Recuerda que ese dominio también debe estar en
-`CORS_ORIGINS` del backend, o el navegador bloqueará las llamadas.
+Recuerda que ese dominio debe estar en `CORS_ORIGINS` del backend, o el navegador bloqueará las
+llamadas. Durante el desarrollo (`npm start`) se usa `environment.development.ts` con
+`http://localhost:8000/api/v1`.
 
-> Durante el desarrollo (`npm start`) se usa `environment.development.ts` con
-> `http://localhost:8000/api/v1`; la configuración de producción solo entra al compilar.
+## Opción A — Vercel (la más rápida) ⭐
 
-## Opción A — Hosting estático (Netlify / Cloudflare Pages / Vercel)
+Solo se despliega **este repo**; la API va en otro servicio.
 
-Ya están incluidos `public/_redirects` (Netlify y Cloudflare Pages) y `vercel.json` (Vercel) con el
-**rewrite de SPA**, necesario para que al recargar `/catalog/5` o `/pos` no dé 404.
+1. **Import Project** → repositorio `fashionstore-web`. Vercel detecta Angular y usa `vercel.json`:
+   - Build Command: `npm run build`
+   - Output Directory: `dist/fashionstore-web/browser`
+   - Install Command: `npm ci`
+   - Rewrites: `/(.*) → /index.html` (necesario para que un F5 en `/pos` no dé 404)
+2. **Environment Variables** → `API_URL = https://<tu-api>/api/v1` (entorno Production).
+3. **Deploy** y copia el dominio que te da (`https://fashionstore-web.vercel.app`).
+4. Vuelve al backend y agrega ese dominio a `CORS_ORIGINS`, luego redeploy del backend.
+5. Prueba: `/catalog` carga prendas y el login del administrador entra.
+
+Cada `git push` a la rama conectada vuelve a desplegar automáticamente.
+
+> Si prefieres desplegar una **Preview** de otra rama (por ejemplo el PR), funciona igual: Vercel
+> crea una URL por rama y puedes apuntar `API_URL` a la misma API.
+
+## Opción B — Cloudflare Pages / Netlify
+
+Mismos tres datos que Vercel. El rewrite de SPA ya viene en `public/_redirects`
+(`/*  /index.html  200`), que ambas plataformas copian al publicar.
 
 | Plataforma | Build | Directorio de publicación |
 | :-- | :-- | :-- |
-| Netlify / Cloudflare Pages | `npm run build` | `dist/fashionstore-web/browser` |
-| Vercel | detectado por `vercel.json` | `dist/fashionstore-web/browser` |
+| Netlify / Cloudflare Pages | `API_URL=... npm run build` | `dist/fashionstore-web/browser` |
 
-## Opción B — GitHub Pages
+## Opción C — GitHub Pages
 
 ```bash
-npm run build -- --base-href /fashionstore-web/
+API_URL=https://<tu-api>/api/v1 npm run build -- --base-href /fashionstore-web/
 ```
 
 Publica `dist/fashionstore-web/browser` en la rama `gh-pages`. Ojo: GitHub Pages **no** permite
-rewrites, así que las recargas profundas de rutas (por ejemplo `/pos`) darán 404; para una demo de
-una sola sesión funciona, pero es preferible la opción A o C.
+rewrites, así que las recargas profundas (por ejemplo `/pos`) darán 404; para la demo usa Vercel o
+Docker.
 
-## Opción C — Docker con Nginx (recomendado para el servidor)
+## Opción D — Docker con Nginx (servidor propio o Railway)
 
 ```bash
 docker build --build-arg API_URL=https://api.tudominio.com/api/v1 -t fashionstore-web .
@@ -53,7 +83,7 @@ inmutable para los archivos con hash, `no-cache` para `index.html`, `/healthz` y
 `nginx.conf` trae (comentado) un `proxy_pass` a la API. Si lo activas:
 
 1. descomenta el bloque `location /api/`,
-2. compila con `--build-arg API_URL=/api/v1`,
+2. compila con `API_URL=/api/v1` (o `--build-arg`),
 3. levanta los contenedores en la misma red de Docker con el nombre `api` para la API.
 
 Ventaja: navegador y API comparten dominio, así que no hay CORS ni mixed content.
@@ -68,7 +98,7 @@ Ventaja: navegador y API comparten dominio, así que no hay CORS ni mixed conten
 
 ## Checklist rápido
 
-- [ ] `environment.production.ts` apunta al dominio real de la API
+- [ ] `API_URL` configurada en el hosting (o la línea de `environment.production.ts`)
 - [ ] El dominio de la web está en `CORS_ORIGINS` del backend
 - [ ] El backend responde en `/health` y tiene un usuario Administrador
 - [ ] El hosting tiene el rewrite de SPA activo
