@@ -41,6 +41,9 @@ export class App {
   });
   readonly isAdmin = computed(() => this.user()?.role === Role.Administrador);
 
+  /** Login y registro se muestran a sangre, sin la barra pública (diseño de Figma). */
+  readonly isAuthRoute = computed(() => this.url().startsWith('/auth/'));
+
   /** Etiqueta y color de la insignia de rol. */
   readonly roleMeta = computed(() => {
     const role = this.user()?.role;

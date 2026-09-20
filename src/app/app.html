@@ -138,22 +138,24 @@
     </div>
   </div>
 } @else {
-  <header class="guestbar">
-    <a class="brand" routerLink="/catalog">
-      <img src="/img/brand/logo.svg" alt="" height="30" />
-      <span class="brand-name">FashionStore</span>
-    </a>
-    <nav class="guestnav">
-      <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
-      <a routerLink="/promotions" routerLinkActive="active">Promociones</a>
-      <a routerLink="/cart" routerLinkActive="active">Carrito</a>
-    </nav>
-    <span class="spacer"></span>
-    <a class="btn-ghost" routerLink="/auth/login">Iniciar sesión</a>
-    <a class="btn-primary" routerLink="/auth/register">Crear cuenta</a>
-  </header>
+  @if (!isAuthRoute()) {
+    <header class="guestbar">
+      <a class="brand" routerLink="/catalog">
+        <img src="/img/brand/logo.svg" alt="" height="30" />
+        <span class="brand-name">FashionStore</span>
+      </a>
+      <nav class="guestnav">
+        <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
+        <a routerLink="/promotions" routerLinkActive="active">Promociones</a>
+        <a routerLink="/cart" routerLinkActive="active">Carrito</a>
+      </nav>
+      <span class="spacer"></span>
+      <a class="btn-ghost" routerLink="/auth/login">Iniciar sesión</a>
+      <a class="btn-primary" routerLink="/auth/register">Crear cuenta</a>
+    </header>
+  }
 
-  <main class="container">
+  <main class="container" [class.bleed]="isAuthRoute()">
     <router-outlet />
   </main>
 }

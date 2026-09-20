@@ -79,6 +79,12 @@ a {
   padding: var(--space-6) var(--space-6) 3rem;
 }
 
+/* Pantallas de acceso: a sangre, sin el padding del contenedor público */
+.container.bleed {
+  max-width: none;
+  padding: 0;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -649,42 +655,51 @@ tbody tr {
   }
 }
 
-/* ═══ Layout de autenticación (CU01 registro + CU02 login) ════════════ */
+/* ═══ Acceso (login + registro) — prototipo web de Figma ══════════════ */
 
 .auth {
   display: grid;
   grid-template-columns: 55% 45%;
-  max-width: 62rem;
-  min-height: 32rem;
-  margin: 1rem auto 2rem;
-  overflow: hidden;
+  min-height: 100vh;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  box-shadow: var(--shadow-2);
 }
 
+/* Panel de marca: foto del prototipo al 35 % sobre el fondo oscuro */
 .auth-aside {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 2rem;
-  padding: 3rem;
-  background:
-    radial-gradient(circle at 85% 15%, rgba(140, 56, 136, 0.45), transparent 55%),
-    linear-gradient(160deg, var(--sidebar-bg), #2a2233);
+  justify-content: flex-end;
+  padding: 3.5rem;
+  overflow: hidden;
+  background: #111827;
   color: #fff;
+}
+
+.auth-aside::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/img/auth/hero.jpg') center / cover no-repeat;
+  opacity: 0.35;
+}
+
+.auth-panel {
+  position: relative;
+  z-index: 2;
 }
 
 .auth-brand {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  margin-bottom: 3rem;
 }
 
 .auth-brand img {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   object-fit: cover;
   object-position: left center;
   filter: brightness(0) invert(1);
@@ -692,83 +707,153 @@ tbody tr {
 
 .auth-brand span {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.375rem;
   letter-spacing: -0.01em;
 }
 
 .auth-pitch h1 {
   margin: 0 0 1rem;
-  font-size: 2.35rem;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 400;
   line-height: 1.1;
 }
 
 .auth-pitch p {
-  max-width: 24rem;
+  max-width: 22.5rem;
   margin: 0 0 2rem;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .auth-stats {
   display: flex;
-  gap: 2rem;
-}
-
-.auth-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  gap: 1.5rem;
 }
 
 .auth-stat strong {
+  display: block;
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.375rem;
+  font-weight: 700;
 }
 
 .auth-stat span {
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .auth-main {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  padding: 2.5rem 3rem;
+  padding: 4rem 4.5rem;
 }
 
 .auth-form {
   width: 100%;
-  max-width: 22rem;
+  max-width: 26.25rem;
 }
 
 .auth-form h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.85rem;
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
 }
 
 .auth-sub {
-  margin: 0 0 2rem;
-  font-size: 0.87rem;
+  margin: 0 0 2.25rem;
+  font-size: 0.875rem;
   color: var(--muted);
+}
+
+/* Selector de portal: Cliente · Administrador · Punto de Venta */
+.auth-roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.auth-role {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0.5rem;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.auth-role span {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.auth-role.selected.cliente {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.06);
+  color: #6366f1;
+}
+
+.auth-role.selected.admin {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.auth-role.selected.pos {
+  border-color: #059669;
+  background: rgba(5, 150, 105, 0.06);
+  color: #059669;
 }
 
 .auth-field {
   margin-bottom: 1rem;
 }
 
-.auth-field label,
-.auth-field > span {
+/* Espaciados del prototipo: 28 px tras el selector y 24 px tras la contraseña */
+.auth-field-roles {
+  margin-bottom: 1.75rem;
+}
+
+.auth-field-password {
+  margin-bottom: 1.5rem;
+}
+
+.auth-label,
+.auth-field label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text);
+}
+
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.auth-label-row label {
+  margin-bottom: 0;
+}
+
+.auth-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--brand);
 }
 
 .auth-field input {
@@ -776,35 +861,54 @@ tbody tr {
   border: 1.5px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .auth-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
   margin-top: 0.5rem;
-  padding: 0.9rem;
+  padding: 0.875rem;
   border: none;
   border-radius: 12px;
-  background: var(--text);
+  background: #111827;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
   font-weight: 700;
 }
 
 .auth-submit:disabled {
-  opacity: 0.7;
+  opacity: 0.8;
   cursor: not-allowed;
 }
 
+.auth-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: auth-spin 0.7s linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .auth-alt {
-  margin: 1.5rem 0 0;
+  margin: 1.25rem 0 0;
   font-size: 0.85rem;
   text-align: center;
 }
 
 .auth-foot {
-  margin: 0.75rem 0 0;
-  font-size: 0.72rem;
+  margin: 1.5rem 0 0;
+  font-size: 0.75rem;
   text-align: center;
   color: var(--muted-2);
 }
@@ -820,7 +924,7 @@ tbody tr {
   }
 
   .auth-pitch h1 {
-    font-size: 1.6rem;
+    font-size: 1.9rem;
   }
 
   .auth-main {

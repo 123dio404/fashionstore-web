@@ -100,8 +100,10 @@ The shell (`app.html` + `app.scss`) is a replica of the **web layout of the Figm
   access denied and the confirmation modal. The Figma states page also defines *offline* and
   *service not configured*: they stay in the design backlog until the app can produce them.
 
-Screens already aligned with the Figma prototype: the shell itself, **Login** and **Register**
-(two-panel layout, CU01/CU02), **Catalog** (filter sidebar + card grid, CU08), **Product detail**
+Screens already aligned with the Figma prototype: the shell itself, **Login** (full-bleed two-panel
+layout with the prototype's photo hero, "Bienvenida de nuevo", the *Acceso como* portal selector —
+Cliente / Administrador / Punto de Venta —, "¿Olvidaste tu contraseña?" and the version footer) and
+**Register** (two-panel layout, CU01/CU02), **Catalog** (filter sidebar + card grid, CU08), **Product detail**
 (gallery + purchase panel with size/colour, per-branch stock and cart, CU08/CU10), **Cart**
 (items table + summary/aside with Stripe checkout, CU10/CU11), **Profile**, **Purchase history**
 (KPIs + per-order detail, CU16) and **My reservations** (CU15), **Collections & promotions**

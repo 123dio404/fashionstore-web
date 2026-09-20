@@ -1,27 +1,29 @@
 <div class="auth">
   <section class="auth-aside">
-    <div class="auth-brand">
-      <img src="/img/brand/logo.svg" alt="" />
-      <span>FashionStore</span>
-    </div>
+    <div class="auth-panel">
+      <div class="auth-brand">
+        <img src="/img/brand/logo.svg" alt="" />
+        <span>FashionStore</span>
+      </div>
 
-    <div class="auth-pitch">
-      <h1>Moda que inspira,<br />plataforma que impulsa.</h1>
-      <p>
-        Gestión integral de inventario, ventas y atención al cliente en una sola plataforma.
-      </p>
-      <div class="auth-stats">
-        <div class="auth-stat">
-          <strong>{{ productCount() ?? '—' }}</strong>
-          <span>Prendas en línea</span>
-        </div>
-        <div class="auth-stat">
-          <strong>{{ branchCount() ?? '—' }}</strong>
-          <span>Sucursales</span>
-        </div>
-        <div class="auth-stat">
-          <strong>{{ brandCount() ?? '—' }}</strong>
-          <span>Marcas</span>
+      <div class="auth-pitch">
+        <h1>Moda que<br />inspira, plataforma<br />que impulsa.</h1>
+        <p>
+          Gestión integral de inventario, ventas y atención al cliente en una sola plataforma.
+        </p>
+        <div class="auth-stats">
+          <div class="auth-stat">
+            <strong>{{ productCount() ?? '—' }}</strong>
+            <span>Productos</span>
+          </div>
+          <div class="auth-stat">
+            <strong>{{ branchCount() ?? '—' }}</strong>
+            <span>Sucursales</span>
+          </div>
+          <div class="auth-stat">
+            <strong>{{ brandCount() ?? '—' }}</strong>
+            <span>Marcas</span>
+          </div>
         </div>
       </div>
     </div>
@@ -29,8 +31,27 @@
 
   <section class="auth-main">
     <form class="auth-form" (ngSubmit)="submit()">
-      <h2>Iniciar sesión</h2>
-      <p class="auth-sub">Ingresa con las credenciales de tu cuenta para continuar.</p>
+      <h2>Bienvenida de nuevo</h2>
+      <p class="auth-sub">Selecciona tu rol e inicia sesión para continuar.</p>
+
+      <div class="auth-field auth-field-roles">
+        <span class="auth-label">Acceso como</span>
+        <div class="auth-roles">
+          @for (portal of portals; track portal.id) {
+            <button
+              type="button"
+              [class]="'auth-role ' + portal.id"
+              [class.selected]="portal.id === selectedPortal()"
+              [attr.aria-pressed]="portal.id === selectedPortal()"
+              [title]="portal.hint"
+              (click)="selectedPortal.set(portal.id)"
+            >
+              <app-ui-icon [d]="portal.icon" [size]="20" />
+              <span>{{ portal.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
 
       <div class="auth-field">
         <label for="email">Correo electrónico</label>
@@ -45,8 +66,13 @@
         />
       </div>
 
-      <div class="auth-field">
-        <label for="password">Contraseña</label>
+      <div class="auth-field auth-field-password">
+        <div class="auth-label-row">
+          <label for="password">Contraseña</label>
+          <button type="button" class="auth-link" (click)="helpOpen.set(true)">
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
         <input
           id="password"
           name="password"
@@ -63,13 +89,31 @@
       }
 
       <button class="auth-submit" type="submit" [disabled]="loading()">
-        {{ loading() ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+        @if (loading()) {
+          <span class="auth-spinner"></span>
+          Iniciando sesión…
+        } @else {
+          Iniciar sesión
+        }
       </button>
 
       <p class="auth-alt">¿No tienes cuenta? <a routerLink="/auth/register">Crear una cuenta</a></p>
-      <p class="auth-foot">
-        El rol (cliente, encargado, cajero o administrador) lo define tu cuenta.
-      </p>
+      <p class="auth-foot">© 2026 FashionStore · Versión {{ version }}</p>
     </form>
   </section>
 </div>
+
+@if (helpOpen()) {
+  <div class="modal-backdrop" (click)="helpOpen.set(false)">
+    <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Recuperar contraseña</h3>
+      <p class="modal-message">
+        La contraseña la restablece el personal de la tienda: pide a un administrador que la cambie
+        desde «Usuarios» o escríbenos a soporte@fashionstore.com.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-primary" type="button" (click)="helpOpen.set(false)">Entendido</button>
+      </div>
+    </div>
+  </div>
+}
