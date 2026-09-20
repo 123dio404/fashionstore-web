@@ -1,73 +1,130 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
+import { ICONS } from '../../core/navigation';
 import { ProductsService } from '../../core/services/products.service';
-import { ProductResponse } from '../../models';
+import { CategoryResponse, ColorResponse, ProductResponse, SizeResponse } from '../../models';
+import { UiEmptyComponent } from '../../shared/ui/empty-state.component';
+import { UiErrorComponent } from '../../shared/ui/error-state.component';
+import { UiIconComponent } from '../../shared/ui/icon.component';
+import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
 
+type SortOption = 'relevance' | 'price-asc' | 'price-desc' | 'name';
+
+/** CU08 — Consultar catálogo y disponibilidad (web): filtros laterales + grid 4 columnas. */
 @Component({
   selector: 'app-catalog-page',
-  imports: [CommonModule, FormsModule, RouterLink],
-  template: `
-    <div class="row" style="margin-bottom: 1rem">
-      <h2 style="margin: 0">Catálogo</h2>
-      <span class="spacer"></span>
-      <input
-        placeholder="Buscar por nombre o marca"
-        [(ngModel)]="query"
-        style="max-width: 18rem"
-      />
-    </div>
-
-    @if (loading()) {
-      <p class="muted">Cargando productos...</p>
-    }
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-
-    @if (!loading() && filtered().length === 0) {
-      <p class="muted">No hay productos disponibles.</p>
-    }
-
-    <div class="grid">
-      @for (product of filtered(); track product.id) {
-        <a class="card" [routerLink]="['/catalog', product.id]">
-          <h3 style="margin: 0 0 0.25rem">{{ product.name }}</h3>
-          <p class="muted" style="margin: 0">{{ product.brand || 'Sin marca' }}</p>
-          <p style="margin: 0.5rem 0">
-            <strong>{{ product.price | currency: 'USD' }}</strong>
-          </p>
-          <span class="badge" [class.warn]="!product.is_active">
-            {{ product.is_active ? 'Disponible' : 'Inactivo' }}
-          </span>
-        </a>
-      }
-    </div>
-  `
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    UiEmptyComponent,
+    UiErrorComponent,
+    UiIconComponent,
+    UiSkeletonComponent
+  ],
+  templateUrl: './catalog.page.html',
+  styleUrl: './catalog.page.scss'
 })
 export class CatalogPage {
   private readonly products = inject(ProductsService);
+  private readonly route = inject(ActivatedRoute);
 
-  query = '';
+  readonly icons = ICONS;
   readonly list = signal<ProductResponse[]>([]);
+  readonly categories = signal<CategoryResponse[]>([]);
+  readonly sizes = signal<SizeResponse[]>([]);
+  readonly colors = signal<ColorResponse[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
-  readonly filtered = computed(() => {
-    const term = this.query.trim().toLowerCase();
-    if (!term) return this.list();
-    return this.list().filter(
-      (p) =>
-        p.name.toLowerCase().includes(term) || (p.brand ?? '').toLowerCase().includes(term)
+  query = '';
+  brand = '';
+  categoryId: number | null = null;
+  sizeId: number | null = null;
+  colorId: number | null = null;
+  minPrice: number | null = null;
+  maxPrice: number | null = null;
+  onlyActive = true;
+  sort: SortOption = 'relevance';
+
+  /** Marcas presentes en el catálogo cargado. */
+  get brands(): string[] {
+    const values = this.list()
+      .map((product) => product.brand)
+      .filter((value): value is string => Boolean(value));
+    return [...new Set(values)].sort();
+  }
+
+  get hasFilters(): boolean {
+    return Boolean(
+      this.brand || this.categoryId || this.sizeId || this.colorId || this.minPrice || this.maxPrice
     );
-  });
+  }
+
+  /** Filtros + orden aplicados sobre el catálogo (también responde al buscador global `?q=`). */
+  get filtered(): ProductResponse[] {
+    const term = this.query.trim().toLowerCase();
+    const min = this.minPrice === null ? null : Number(this.minPrice);
+    const max = this.maxPrice === null ? null : Number(this.maxPrice);
+
+    const items = this.list().filter((product) => {
+      if (term && !`${product.name} ${product.brand ?? ''}`.toLowerCase().includes(term)) {
+        return false;
+      }
+      if (this.categoryId !== null && product.category_id !== this.categoryId) return false;
+      if (this.brand && (product.brand ?? '') !== this.brand) return false;
+      if (min !== null && Number(product.price) < min) return false;
+      if (max !== null && Number(product.price) > max) return false;
+      if (this.onlyActive && !product.is_active) return false;
+      if (this.sizeId !== null && !product.variants.some((v) => v.size_id === this.sizeId)) {
+        return false;
+      }
+      if (this.colorId !== null && !product.variants.some((v) => v.color_id === this.colorId)) {
+        return false;
+      }
+      return true;
+    });
+
+    switch (this.sort) {
+      case 'price-asc':
+        return items.sort((a, b) => Number(a.price) - Number(b.price));
+      case 'price-desc':
+        return items.sort((a, b) => Number(b.price) - Number(a.price));
+      case 'name':
+        return items.sort((a, b) => a.name.localeCompare(b.name));
+      default:
+        return items;
+    }
+  }
 
   constructor() {
-    this.products.list().subscribe({
-      next: (items) => {
-        this.list.set(items);
+    this.route.queryParamMap.subscribe((params) => {
+      const term = params.get('q');
+      if (term !== null) {
+        this.query = term;
+      }
+    });
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    forkJoin({
+      products: this.products.list(),
+      categories: this.products.listCategories(),
+      sizes: this.products.listSizes(),
+      colors: this.products.listColors()
+    }).subscribe({
+      next: ({ products, categories, sizes, colors }) => {
+        this.list.set(products);
+        this.categories.set(categories);
+        this.sizes.set(sizes);
+        this.colors.set(colors);
         this.loading.set(false);
       },
       error: (err: Error) => {
@@ -75,5 +132,25 @@ export class CatalogPage {
         this.loading.set(false);
       }
     });
+  }
+
+  clearFilters(): void {
+    this.query = '';
+    this.brand = '';
+    this.categoryId = null;
+    this.sizeId = null;
+    this.colorId = null;
+    this.minPrice = null;
+    this.maxPrice = null;
+    this.onlyActive = true;
+    this.sort = 'relevance';
+  }
+
+  categoryName(product: ProductResponse): string {
+    return this.categories().find((category) => category.id === product.category_id)?.name ?? 'Sin categoría';
+  }
+
+  initial(product: ProductResponse): string {
+    return (product.brand || product.name).charAt(0).toUpperCase();
   }
 }

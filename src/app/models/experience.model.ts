@@ -21,11 +21,24 @@ export interface UserPreferenceResponse {
   updated_at: string;
 }
 
+export type RecommendationStatus = 'pendiente' | 'visto' | 'descartado';
+
+export interface RecommendedProductBrief {
+  id: Id;
+  name: string;
+  brand: string | null;
+  price: number;
+  category_id: Id;
+  season_id: Id | null;
+}
+
 export interface RecommendationItemResponse {
   id: Id;
   product_id: Id;
   score: number;
   reason: string | null;
+  available_stock: number | null;
+  product: RecommendedProductBrief | null;
 }
 
 export interface RecommendationResponse {
@@ -33,7 +46,7 @@ export interface RecommendationResponse {
   user_id: Id;
   recommendation_type: string;
   created_at: string;
-  status: string;
+  status: RecommendationStatus | string;
   items: RecommendationItemResponse[];
 }
 

@@ -1,0 +1,272 @@
+.pd-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.pd-crumbs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+}
+
+.pd-back {
+  transform: rotate(180deg);
+}
+
+.pd-crumbs span {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pd {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* Galería (placeholder: el catálogo todavía no tiene fotografías) */
+.pd-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pd-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-2);
+}
+
+.pd-initial {
+  font-family: var(--font-display);
+  font-size: 6rem;
+  color: var(--muted-2);
+}
+
+.pd-flag {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pd-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted-2);
+}
+
+/* Panel de compra */
+.pd-panel {
+  padding: 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.pd-brand {
+  margin: 0 0 0.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pd-name {
+  margin: 0 0 0.75rem;
+  font-size: 1.8rem;
+  line-height: 1.15;
+}
+
+.pd-price {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.pd-tax {
+  margin: 0.15rem 0 1.25rem;
+  font-size: 0.72rem;
+  color: var(--muted-2);
+}
+
+.pd-block {
+  margin-bottom: 1.1rem;
+}
+
+.pd-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pd-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.pd-warn {
+  font-size: 0.72rem;
+  color: var(--brand);
+}
+
+.pd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pd-chip {
+  min-width: 3rem;
+  height: 2.75rem;
+  padding: 0 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pd-chip.selected {
+  border-color: var(--text);
+  background: var(--text);
+  color: #fff;
+}
+
+.pd-chip.off {
+  opacity: 0.45;
+}
+
+.pd-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.pd-qty {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pd-qty button {
+  width: 2.5rem;
+  height: 3rem;
+  border: none;
+  background: var(--surface);
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.pd-qty span {
+  width: 2.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.pd-add {
+  flex: 1;
+  height: 3rem;
+  border: none;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pd-add:disabled {
+  background: var(--surface-2);
+  color: var(--muted-2);
+  cursor: not-allowed;
+}
+
+.pd-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3rem;
+  margin-bottom: 1.1rem;
+  border: 1.5px solid var(--text);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pd-stock {
+  padding: 1rem;
+  border-radius: 14px;
+  background: var(--bg);
+}
+
+.pd-stock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.pd-stock-row:last-child {
+  border-bottom: none;
+}
+
+.pd-stock-row.current {
+  font-weight: 600;
+}
+
+.pd-stock-row .ok {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.pd-stock-row .low {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.pd-stock-row .zero {
+  color: var(--muted-2);
+}
+
+.pd-meta {
+  margin-top: 1rem;
+}
+
+.pd-meta p:last-child {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1080px) {
+  .pd {
+    grid-template-columns: 1fr;
+  }
+}

@@ -16,6 +16,9 @@ export const routes: Routes = [
   { path: 'catalog', loadComponent: () => import('./pages/catalog/catalog.page').then((m) => m.CatalogPage) },
   { path: 'catalog/:id', loadComponent: () => import('./pages/catalog/product-detail.page').then((m) => m.ProductDetailPage) },
 
+  // CU20 - Public promotions and collections (client view)
+  { path: 'promotions', loadComponent: () => import('./pages/catalog/promotions.page').then((m) => m.PromotionsPage) },
+
   // CU10 / CU11 - Cart and checkout
   { path: 'cart', canActivate: [authGuard], loadComponent: () => import('./pages/cart/cart.page').then((m) => m.CartPage) },
 

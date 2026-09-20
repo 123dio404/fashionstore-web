@@ -51,7 +51,7 @@ The CORS configuration of the backend already allows `http://localhost:4200` and
 | CU16 | Historial de compras | `/purchase-history` |
 | CU18 | Recomendaciones personalizadas con IA | `/recommendations` |
 | CU19 | Chatbot inteligente | `/chatbot` |
-| CU20 | Colecciones y promociones | `/admin/marketing` |
+| CU20 | Colecciones y promociones | `/admin/marketing` (gestión), `/promotions` (cliente) |
 | CU21 | Reportes de ventas | `/reports/sales` |
 | CU22 | Reportes de inventario | `/reports/inventory` |
 | CU23 | Dashboard gerencial | `/reports/dashboard` |
@@ -79,7 +79,33 @@ src/app/
   pages/            Standalone feature pages, lazy loaded by route
 ```
 
-Navigation in the shell (`app.html`) is role-aware: management links require `Administrador`/`Encargado`, administration and reports require `Administrador`, and POS/reservations require staff roles.
+## Shell and design system
+
+The shell (`app.html` + `app.scss`) is a replica of the **web layout of the Figma prototype**
+(`design/figma-make/src/web/WebLayout.tsx`):
+
+- **Sidebar** (240 px, collapses to 64 px, state stored in `localStorage`): dark `#111827`
+  background, brand mark, role badge, grouped navigation and logout action.
+- **Topbar** (64 px): breadcrumb (`group › page` + CU chip), global search that drives
+  `/catalog?q=`, notification button and user menu (profile, purchases, public catalog, logout).
+- **Public layout**: when there is no session, the sidebar is replaced by a light top bar
+  (catalog, promotions, cart, sign in, create account).
+- **Navigation model** lives in `src/app/core/navigation.ts` (`navForRole`): grouped items per role
+  (`Cliente`, `Administrador`, `Encargado`, `Cajero`) with an optional `cu` field that documents the
+  use case behind each screen. Icons in `ICONS` are the exact line paths used by the Figma design,
+  rendered by `shared/ui/icon.component.ts` (`app-ui-icon`). No icon fonts, no emojis.
+- **Tokens** (`src/styles.scss`): brand `#8C3858`, semantic colours, neutrals, radii
+  (6/10/14/pill), spacing (4/8/12/16/24/32), type scale (32/20/14/12) and the shell variables
+  (`--sidebar-bg`, `--sidebar-w`, `--topbar-h`, `--font-display`, `--font-body`).
+  Fonts: **Inter** for UI and **DM Serif Display** for headings — the same pairing used by the
+  mobile app and the Figma prototypes (loaded from Google Fonts in `src/index.html`).
+- **States** are implemented as reusable components (`app-ui-*`): skeletons, empty, error with
+  retry, offline, service unavailable, access denied, confirmation modal, buttons, badges.
+
+Example screens already aligned with the Figma prototype: the shell itself, **Login** (brand panel +
+form, CU02), **Catalog** (filter sidebar + 4-column card grid, CU08), **Product detail** (gallery +
+purchase panel with size/colour, per-branch stock and cart, CU08/CU10) and
+**Collections & promotions** (hero banners + discounted products, CU20).
 
 ## Code scaffolding
 

@@ -1,0 +1,178 @@
+.auth {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  max-width: 62rem;
+  min-height: 32rem;
+  margin: 1rem auto 2rem;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-2);
+}
+
+/* Panel izquierdo — marca (el prototipo usa una foto; sin imágenes usamos marca) */
+.auth-aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 3rem;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(140, 56, 136, 0.45), transparent 55%),
+    linear-gradient(160deg, var(--sidebar-bg), #2a2233);
+  color: #fff;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-brand img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  object-position: left center;
+  filter: brightness(0) invert(1);
+}
+
+.auth-brand span {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.auth-pitch h1 {
+  margin: 0 0 1rem;
+  font-size: 2.35rem;
+  line-height: 1.1;
+}
+
+.auth-pitch p {
+  max-width: 24rem;
+  margin: 0 0 2rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.auth-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.auth-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.auth-stat strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.auth-stat span {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Panel derecho — formulario */
+.auth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 3rem;
+}
+
+.auth-form {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.auth-form h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.85rem;
+}
+
+.auth-sub {
+  margin: 0 0 2rem;
+  font-size: 0.87rem;
+  color: var(--muted);
+}
+
+.auth-field {
+  margin-bottom: 1rem;
+}
+
+.auth-field label,
+.auth-field > span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.auth-field input {
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 12px;
+  background: var(--text);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-alt {
+  margin: 1.5rem 0 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.auth-foot {
+  margin: 0.75rem 0 0;
+  font-size: 0.72rem;
+  text-align: center;
+  color: var(--muted-2);
+}
+
+@media (max-width: 900px) {
+  .auth {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .auth-aside {
+    padding: 2rem;
+  }
+
+  .auth-pitch h1 {
+    font-size: 1.6rem;
+  }
+
+  .auth-main {
+    padding: 2rem;
+  }
+}
