@@ -1,0 +1,128 @@
+<div class="row catalog-head">
+  <div>
+    <h2 style="margin: 0">Catálogo</h2>
+    <p class="muted" style="margin: 0.25rem 0 0">
+      Prendas disponibles en tienda y en línea (CU08).
+    </p>
+  </div>
+  <span class="spacer"></span>
+  <label class="catalog-search">
+    <app-ui-icon [d]="icons.search" [size]="15" color="var(--muted)" />
+    <input type="search" placeholder="Buscar por nombre o marca" [(ngModel)]="query" />
+  </label>
+</div>
+
+<div class="catalog-layout">
+  <aside class="catalog-filters card">
+    <div class="filter-head">
+      <h3 style="margin: 0">Filtros</h3>
+      <button type="button" class="btn btn-sm" (click)="clearFilters()">Limpiar</button>
+    </div>
+
+    <div class="field">
+      <label for="f-category">Categoría</label>
+      <select id="f-category" [(ngModel)]="categoryId">
+        <option [ngValue]="null">Todas</option>
+        @for (category of categories(); track category.id) {
+          <option [ngValue]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-brand">Marca</label>
+      <select id="f-brand" [(ngModel)]="brand">
+        <option value="">Todas</option>
+        @for (item of brands; track item) {
+          <option [value]="item">{{ item }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-size">Talla</label>
+      <select id="f-size" [(ngModel)]="sizeId">
+        <option [ngValue]="null">Todas</option>
+        @for (size of sizes(); track size.id) {
+          <option [ngValue]="size.id">{{ size.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-color">Color</label>
+      <select id="f-color" [(ngModel)]="colorId">
+        <option [ngValue]="null">Todos</option>
+        @for (color of colors(); track color.id) {
+          <option [ngValue]="color.id">{{ color.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Rango de precio</span>
+      <div class="filter-prices">
+        <input type="number" min="0" placeholder="Mín." [(ngModel)]="minPrice" />
+        <input type="number" min="0" placeholder="Máx." [(ngModel)]="maxPrice" />
+      </div>
+    </div>
+
+    <label class="filter-check">
+      <input type="checkbox" [(ngModel)]="onlyActive" />
+      <span>Solo prendas activas</span>
+    </label>
+  </aside>
+
+  <section class="catalog-results">
+    <div class="row catalog-toolbar">
+      <span class="muted">{{ filtered.length }} prendas</span>
+      <span class="spacer"></span>
+      <label class="sort">
+        <span class="muted">Ordenar por</span>
+        <select [(ngModel)]="sort">
+          <option value="relevance">Relevancia</option>
+          <option value="price-asc">Precio: menor a mayor</option>
+          <option value="price-desc">Precio: mayor a menor</option>
+          <option value="name">Nombre (A-Z)</option>
+        </select>
+      </label>
+    </div>
+
+    @if (loading()) {
+      <app-ui-skeleton [rows]="3" [height]="112" />
+    } @else if (error()) {
+      <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+    } @else if (filtered.length === 0) {
+      <app-ui-empty
+        icon="🔎"
+        title="Sin prendas"
+        [message]="
+          query || hasFilters
+            ? 'Ninguna prenda coincide con los filtros seleccionados.'
+            : 'Todavía no hay productos en el catálogo.'
+        "
+      />
+    } @else {
+      <div class="catalog-grid">
+        @for (product of filtered; track product.id) {
+          <a class="product-card" [routerLink]="['/catalog', product.id]">
+            <div class="product-thumb">
+              <span class="product-initial">{{ initial(product) }}</span>
+              @if (!product.is_active) {
+                <span class="product-off">Inactivo</span>
+              }
+            </div>
+            <div class="product-body">
+              <p class="product-brand">{{ product.brand || 'Sin marca' }}</p>
+              <p class="product-name">{{ product.name }}</p>
+              <p class="product-meta">
+                {{ categoryName(product) }} · {{ product.variants.length }} variantes
+              </p>
+              <p class="product-price">{{ product.price | currency: 'USD' }}</p>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </section>
+</div>

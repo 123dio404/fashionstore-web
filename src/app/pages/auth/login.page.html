@@ -1,0 +1,75 @@
+<div class="auth">
+  <section class="auth-aside">
+    <div class="auth-brand">
+      <img src="/img/brand/logo.svg" alt="" />
+      <span>FashionStore</span>
+    </div>
+
+    <div class="auth-pitch">
+      <h1>Moda que inspira,<br />plataforma que impulsa.</h1>
+      <p>
+        Gestión integral de inventario, ventas y atención al cliente en una sola plataforma.
+      </p>
+      <div class="auth-stats">
+        <div class="auth-stat">
+          <strong>{{ productCount() ?? '—' }}</strong>
+          <span>Prendas en línea</span>
+        </div>
+        <div class="auth-stat">
+          <strong>{{ branchCount() ?? '—' }}</strong>
+          <span>Sucursales</span>
+        </div>
+        <div class="auth-stat">
+          <strong>24</strong>
+          <span>Casos de uso</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-main">
+    <form class="auth-form" (ngSubmit)="submit()">
+      <h2>Iniciar sesión</h2>
+      <p class="auth-sub">Ingresa con las credenciales de tu cuenta para continuar.</p>
+
+      <div class="auth-field">
+        <label for="email">Correo electrónico</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="tucorreo@fashionstore.com"
+          [(ngModel)]="email"
+          required
+        />
+      </div>
+
+      <div class="auth-field">
+        <label for="password">Contraseña</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          [(ngModel)]="password"
+          required
+        />
+      </div>
+
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+
+      <button class="auth-submit" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+      </button>
+
+      <p class="auth-alt">¿No tienes cuenta? <a routerLink="/auth/register">Crear una cuenta</a></p>
+      <p class="auth-foot">
+        El rol (cliente, encargado, cajero o administrador) lo define tu cuenta.
+      </p>
+    </form>
+  </section>
+</div>

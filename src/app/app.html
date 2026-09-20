@@ -1,46 +1,167 @@
-<header class="topbar">
-  <a class="brand" routerLink="/catalog">FashionStore</a>
-  <nav>
-    <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
-    <a routerLink="/cart" routerLinkActive="active">Carrito</a>
-    @if (user()) {
-      <a routerLink="/purchase-history" routerLinkActive="active">Mis compras</a>
-      <a routerLink="/my-reservations" routerLinkActive="active">Mis reservas</a>
-      <a routerLink="/recommendations" routerLinkActive="active">Recomendaciones</a>
-      <a routerLink="/chatbot" routerLinkActive="active">Chatbot</a>
-    }
-    @if (isManager()) {
-      <a routerLink="/admin/products" routerLinkActive="active">Productos</a>
-      <a routerLink="/admin/parameters" routerLinkActive="active">Parámetros</a>
-      <a routerLink="/admin/branches" routerLinkActive="active">Sucursales</a>
-      <a routerLink="/admin/suppliers" routerLinkActive="active">Proveedores</a>
-      <a routerLink="/admin/inventory" routerLinkActive="active">Inventario</a>
-      <a routerLink="/admin/finance" routerLinkActive="active">Finanzas</a>
-      <a routerLink="/admin/operations" routerLinkActive="active">Operaciones</a>
-    }
-    @if (isAdmin()) {
-      <a routerLink="/admin/users" routerLinkActive="active">Usuarios</a>
-      <a routerLink="/admin/marketing" routerLinkActive="active">Marketing</a>
-      <a routerLink="/reports/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/reports/sales" routerLinkActive="active">Rep. ventas</a>
-      <a routerLink="/reports/inventory" routerLinkActive="active">Rep. inventario</a>
-      <a routerLink="/reports/analytical" routerLinkActive="active">Analítica IA</a>
-    }
-    @if (isStaff()) {
-      <a routerLink="/pos" routerLinkActive="active">POS</a>
-      <a routerLink="/reservations" routerLinkActive="active">Reservas</a>
-    }
-  </nav>
-  <span class="spacer"></span>
-  @if (user(); as current) {
-    <span class="muted">{{ current.full_name }} ({{ current.role }})</span>
-    <button class="btn" (click)="logout()">Salir</button>
-  } @else {
-    <a routerLink="/auth/login">Iniciar sesión</a>
-    <a routerLink="/auth/register">Registrarse</a>
-  }
-</header>
+@if (user(); as current) {
+  <div class="shell" [class.collapsed]="collapsed()">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <a class="brand" routerLink="/catalog">
+          <img src="/img/brand/logo.svg" alt="" height="26" />
+          @if (!collapsed()) {
+            <span class="brand-name">FashionStore</span>
+          }
+        </a>
+        <button
+          type="button"
+          class="ghost-btn"
+          (click)="toggleSidebar()"
+          [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Contraer menú'"
+        >
+          <app-ui-icon [d]="collapsed() ? icons.expand : icons.collapse" [size]="16" />
+        </button>
+      </div>
 
-<main class="container">
-  <router-outlet />
-</main>
+      @if (roleMeta(); as meta) {
+        @if (!collapsed()) {
+          <div
+            class="role-badge"
+            [style.color]="meta.color"
+            [style.border-color]="meta.color + '44'"
+            [style.background]="meta.color + '22'"
+          >
+            <span class="role-dot" [style.background]="meta.color"></span>
+            {{ meta.label }}
+          </div>
+        }
+      }
+
+      <nav class="sidebar-nav">
+        @for (group of navGroups(); track group.label) {
+          <div class="nav-group">
+            @if (!collapsed()) {
+              <span class="nav-group-label">{{ group.label }}</span>
+            }
+            @for (item of group.items; track item.path) {
+              <a
+                class="nav-item"
+                [routerLink]="item.path"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: false }"
+                [title]="item.label"
+              >
+                <app-ui-icon [d]="item.icon" [size]="17" />
+                @if (!collapsed()) {
+                  <span class="nav-label">{{ item.label }}</span>
+                  @if (item.cu) {
+                    <span class="nav-cu">{{ item.cu }}</span>
+                  }
+                }
+                @if (item.badge === 'cart' && cartCount() > 0 && !collapsed()) {
+                  <span class="nav-badge">{{ cartCount() }}</span>
+                }
+              </a>
+            }
+          </div>
+        } @empty {
+          <p class="nav-empty">Tu rol no tiene módulos asignados en la web.</p>
+        }
+      </nav>
+
+      <div class="sidebar-foot">
+        <button type="button" class="nav-item as-button" (click)="logout()" title="Cerrar sesión">
+          <app-ui-icon [d]="icons.logout" [size]="17" />
+          @if (!collapsed()) {
+            <span class="nav-label">Cerrar sesión</span>
+          }
+        </button>
+      </div>
+    </aside>
+
+    <div class="shell-body">
+      <header class="topbar">
+        <div class="crumbs">
+          @if (currentGroup()) {
+            <span class="crumb-root">{{ currentGroup() }}</span>
+            <app-ui-icon [d]="icons.chevronRight" [size]="12" color="var(--muted-2)" />
+          }
+          <span class="crumb-current">{{ currentItem()?.label ?? 'Catálogo' }}</span>
+          @if (currentItem()?.cu; as cu) {
+            <span class="badge">{{ cu }}</span>
+          }
+        </div>
+
+        <div class="topbar-search">
+          <app-ui-icon [d]="icons.search" [size]="15" color="var(--muted)" />
+          <input
+            #globalSearch
+            type="search"
+            placeholder="Buscar prendas o marcas..."
+            (keyup.enter)="search(globalSearch.value)"
+          />
+        </div>
+
+        <div class="topbar-right">
+          <button type="button" class="icon-btn" title="Notificaciones" aria-label="Notificaciones">
+            <app-ui-icon [d]="icons.bell" [size]="16" color="var(--muted)" />
+            <span class="icon-dot"></span>
+          </button>
+
+          <div class="user-menu">
+            <button
+              type="button"
+              class="user-btn"
+              (click)="toggleUserMenu()"
+              [attr.aria-expanded]="userMenuOpen()"
+            >
+              <span class="avatar">{{ initials() }}</span>
+              <span class="user-name">{{ current.full_name }}</span>
+              <app-ui-icon [d]="icons.chevronDown" [size]="12" color="var(--muted)" />
+            </button>
+            @if (userMenuOpen()) {
+              <div class="menu">
+                <span class="menu-head">
+                  <strong>{{ current.full_name }}</strong>
+                  <span class="menu-mail">{{ current.email }}</span>
+                </span>
+                <a class="menu-item" routerLink="/profile" (click)="closeUserMenu()">
+                  <app-ui-icon [d]="icons.user" [size]="15" /> Mi perfil
+                </a>
+                <a class="menu-item" routerLink="/purchase-history" (click)="closeUserMenu()">
+                  <app-ui-icon [d]="icons.purchases" [size]="15" /> Mis compras
+                </a>
+                <a class="menu-item" routerLink="/catalog" (click)="closeUserMenu()">
+                  <app-ui-icon [d]="icons.catalog" [size]="15" /> Catálogo público
+                </a>
+                <button type="button" class="menu-item danger" (click)="logout()">
+                  <app-ui-icon [d]="icons.logout" [size]="15" /> Cerrar sesión
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </header>
+
+      <main class="container">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+} @else {
+  <header class="guestbar">
+    <a class="brand" routerLink="/catalog">
+      <img src="/img/brand/logo.svg" alt="" height="30" />
+      <span class="brand-name">FashionStore</span>
+    </a>
+    <nav class="guestnav">
+      <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
+      <a routerLink="/promotions" routerLinkActive="active">Promociones</a>
+      <a routerLink="/cart" routerLinkActive="active">Carrito</a>
+    </nav>
+    <span class="spacer"></span>
+    <a class="btn-ghost" routerLink="/auth/login">Iniciar sesión</a>
+    <a class="btn-primary" routerLink="/auth/register">Crear cuenta</a>
+  </header>
+
+  <main class="container">
+    <router-outlet />
+  </main>
+}
+
+<app-ui-confirm />

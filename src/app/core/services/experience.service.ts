@@ -12,6 +12,7 @@ import {
   FittingSessionCreate,
   FittingSessionResponse,
   RecommendationResponse,
+  RecommendationStatus,
   UserPreferenceResponse,
   UserPreferenceUpsert
 } from '../../models';
@@ -39,6 +40,16 @@ export class ExperienceService {
   generateRecommendations(limit = 10): Observable<RecommendationResponse> {
     const params = new HttpParams().set('limit', limit);
     return this.http.post<RecommendationResponse>(`${this.base}/recommendations`, {}, { params });
+  }
+  listRecommendations(limit = 20): Observable<RecommendationResponse[]> {
+    const params = new HttpParams().set('limit', limit);
+    return this.http.get<RecommendationResponse[]>(`${this.base}/recommendations`, { params });
+  }
+  updateRecommendationStatus(
+    id: number,
+    status: RecommendationStatus
+  ): Observable<RecommendationResponse> {
+    return this.http.patch<RecommendationResponse>(`${this.base}/recommendations/${id}`, { status });
   }
 
   // CU19 - Intelligent chatbot

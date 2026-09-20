@@ -1,0 +1,146 @@
+<nav class="pd-crumbs">
+  <a routerLink="/catalog">
+    <app-ui-icon class="pd-back" [d]="icons.chevronRight" [size]="13" color="var(--muted)" />
+    Catálogo
+  </a>
+  <app-ui-icon [d]="icons.chevronRight" [size]="12" color="var(--muted-2)" />
+  <span>{{ product()?.name || 'Prenda' }}</span>
+</nav>
+
+@if (loading()) {
+  <app-ui-skeleton [rows]="3" [height]="140" />
+} @else if (error()) {
+  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
+} @else if (product(); as p) {
+  <div class="pd">
+    <div class="pd-gallery">
+      <div class="pd-hero">
+        <span class="pd-initial">{{ initial() }}</span>
+        @if (!p.is_active) {
+          <span class="pd-flag">Inactivo</span>
+        }
+      </div>
+      <p class="pd-hint">
+        Las fotografías del producto todavía no están en el catálogo: se muestra el monograma de la marca.
+      </p>
+      @if (p.model_3d_url) {
+        <p class="pd-hint">
+          Modelo 3D ({{ p.model_3d_format || 'glb' }}) registrado para el probador virtual (CU17, app móvil).
+        </p>
+      }
+    </div>
+
+    <aside class="pd-panel">
+      <p class="pd-brand">{{ p.brand || 'Sin marca' }}</p>
+      <h2 class="pd-name">{{ p.name }}</h2>
+      <p class="pd-price">{{ p.price | currency: 'USD' }}</p>
+      <p class="pd-tax">Precio final · impuestos incluidos</p>
+
+      @if (sizeOptions().length > 0) {
+        <div class="pd-block">
+          <div class="pd-block-head">
+            <span class="pd-label">Talla</span>
+            @if (sizeId() === null) {
+              <span class="pd-warn">Selecciona una talla</span>
+            }
+          </div>
+          <div class="pd-chips">
+            @for (size of sizeOptions(); track size.id) {
+              <button
+                type="button"
+                class="pd-chip"
+                [class.selected]="sizeId() === size.id"
+                [class.off]="!hasVariant(size.id, null)"
+                (click)="sizeId.set(size.id)"
+              >
+                {{ size.name }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (colorOptions().length > 0) {
+        <div class="pd-block">
+          <span class="pd-label">Color</span>
+          <div class="pd-chips">
+            @for (color of colorOptions(); track color.id) {
+              <button
+                type="button"
+                class="pd-chip"
+                [class.selected]="colorId() === color.id"
+                [class.off]="!hasVariant(null, color.id)"
+                (click)="colorId.set(color.id)"
+              >
+                {{ color.name }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="pd-block">
+        <label class="pd-label" for="pd-branch">Sucursal</label>
+        <select id="pd-branch" [ngModel]="branchId()" (ngModelChange)="branchId.set($event)">
+          @for (branch of branches(); track branch.id) {
+            <option [ngValue]="branch.id">{{ branch.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="pd-actions">
+        <div class="pd-qty">
+          <button type="button" (click)="setQuantity(quantity() - 1)">−</button>
+          <span>{{ quantity() }}</span>
+          <button type="button" (click)="setQuantity(quantity() + 1)">+</button>
+        </div>
+        <button type="button" class="pd-add" [disabled]="!canAdd()" (click)="addToCart()">
+          {{ added() ? '✓ Añadido al carrito' : 'Agregar al carrito' }}
+        </button>
+      </div>
+      <a class="pd-secondary" routerLink="/cart">Ver carrito</a>
+
+      @if (message()) {
+        <div class="alert alert-success">{{ message() }}</div>
+      }
+      @if (cartError()) {
+        <div class="alert alert-error">{{ cartError() }}</div>
+      }
+
+      <div class="pd-stock">
+        <p class="pd-label">Disponibilidad por sucursal</p>
+        @if (stockLoading()) {
+          <p class="muted">Consultando stock…</p>
+        } @else if (availability().length === 0) {
+          <p class="muted">Sin stock registrado para esta prenda.</p>
+        } @else {
+          @for (row of availability(); track row.branch_id) {
+            <div class="pd-stock-row" [class.current]="row.branch_id === branchId()">
+              <span>{{ row.name }}</span>
+              <span
+                [class.zero]="row.available === 0"
+                [class.low]="row.available > 0 && row.available <= 2"
+                [class.ok]="row.available > 2"
+              >
+                {{
+                  row.available === 0
+                    ? 'Sin stock'
+                    : row.available <= 2
+                      ? 'Últimas ' + row.available + ' unid.'
+                      : row.available + ' disponibles'
+                }}
+              </span>
+            </div>
+          }
+        }
+      </div>
+
+      @if (p.technical_metadata) {
+        <div class="pd-meta">
+          <p class="pd-label">Ficha técnica</p>
+          <p class="muted">{{ p.technical_metadata }}</p>
+        </div>
+      }
+    </aside>
+  </div>
+}
