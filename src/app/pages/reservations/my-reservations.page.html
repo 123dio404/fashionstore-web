@@ -1,69 +1,159 @@
-<div class="page-head">
+<div class="res-head">
   <div>
-    <h2 class="page-title">Mis reservas</h2>
-    <p class="page-sub">
-      Revisa el estado de tus reservas para probador físico y cancélalas para liberar el stock.
-    </p>
+    <h2 class="page-title">Reservas de probador</h2>
+    <p class="page-sub">Reserva tu turno en cualquier sucursal y asegura tu talla</p>
   </div>
+  <button type="button" class="btn btn-dark" (click)="openModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+    Nueva reserva
+  </button>
 </div>
 
-@if (message()) {
-  <div class="alert alert-success">{{ message() }}</div>
-}
+<div class="filter-tabs">
+  @for (
+    option of [
+      { v: 'all', l: 'Todas' },
+      { v: 'confirmada', l: 'Confirmadas' },
+      { v: 'pendiente', l: 'Pendientes' },
+      { v: 'cancelada', l: 'Canceladas' }
+    ];
+    track option.v
+  ) {
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="filter() === option.v"
+      (click)="filter.set(option.v)"
+    >
+      {{ option.l }}
+    </button>
+  }
+</div>
 
-@if (loading()) {
-  <app-ui-skeleton [rows]="3" [height]="88" />
-} @else if (error()) {
-  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
-} @else if (reservations().length === 0) {
-  <app-ui-empty
-    icon="📅"
-    title="Sin reservas"
-    message="No tienes reservas registradas. Puedes crear una desde el catálogo en la app móvil."
-  >
-    <a class="btn-primary" routerLink="/catalog" style="margin-top: 0.75rem">Ir al catálogo</a>
-  </app-ui-empty>
-} @else {
-  <div class="res-list">
-    @for (reservation of reservations(); track reservation.id) {
-      <article class="card res-card">
-        <div class="res-head">
-          <div>
-            <strong>Reserva #{{ reservation.id }}</strong>
-            <p class="note" style="margin: 0.15rem 0 0">Sucursal #{{ reservation.branch_id }}</p>
-          </div>
-          <span class="badge" [class]="'badge ' + statusClass(reservation)">
-            {{ statusLabel(reservation) }}
-          </span>
-          <span class="spacer"></span>
-          <span class="res-meta">
-            <app-ui-icon [d]="icons.calendar" [size]="13" color="var(--muted)" />
-            {{ reservation.reservation_date }} · {{ reservation.reservation_time }}
-          </span>
-        </div>
-
-        @if (reservation.fitting_room) {
-          <p class="note" style="margin: 0.35rem 0 0">Probador asignado: {{ reservation.fitting_room }}</p>
+<div class="res-grid">
+  @for (r of displayed; track r.id) {
+    <article class="res-card">
+      <div class="res-thumb">
+        @if (product(r.productId); as p) {
+          <img [src]="p.image" [alt]="p.name" loading="lazy" />
         }
+        <span class="thumb-overlay"></span>
+        <span class="status" [ngClass]="statusTone(r.status)">
+          {{ statusLabel(r.status) }}
+        </span>
+      </div>
 
-        <div class="chip-row" style="margin-top: 0.75rem">
-          @for (item of reservation.items; track item.id) {
-            <span class="chip">{{ item.quantity }}× artículo (stock #{{ item.stock_id }})</span>
-          }
+      <div class="res-body">
+        <p class="res-product">{{ product(r.productId)?.name }}</p>
+        <p class="res-meta">Talla {{ r.size }} · {{ r.color }}</p>
+
+        <div class="res-lines">
+          <span class="res-line">
+            <span class="res-dot"></span>{{ r.date }} · {{ r.time }}
+          </span>
+          <span class="res-line">
+            <span class="res-dot"></span>{{ storeName(r.storeId) }}
+          </span>
         </div>
 
-        <div class="res-actions">
-          <span class="note" style="margin: 0">{{ reservation.items.length }} artículo(s) reservado(s)</span>
-          <span class="spacer"></span>
-          @if (canCancel(reservation)) {
-            <button type="button" class="btn-danger btn-sm" (click)="cancel(reservation)">
-              Cancelar reserva
+        <div class="res-foot">
+          <div class="res-code">
+            <span class="code-label">Código</span>
+            <span class="code-value">{{ r.code }}</span>
+          </div>
+          @if (r.status !== 'cancelada') {
+            <button type="button" class="btn btn-outline btn-sm" (click)="cancel(r.id)">
+              Cancelar
             </button>
-          } @else {
-            <span class="note" style="margin: 0">Esta reserva ya no se puede cancelar.</span>
           }
         </div>
-      </article>
-    }
+      </div>
+    </article>
+  } @empty {
+    <div class="empty-inline">
+      <p class="empty-title">Sin reservas</p>
+      <p class="muted">No hay reservas con este estado.</p>
+      <button type="button" class="btn btn-primary" (click)="openModal()">
+        Crear la primera
+      </button>
+    </div>
+  }
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      @if (created()) {
+        <div class="modal-success">
+          <div class="check-circle">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h3>¡Reserva confirmada!</h3>
+          <p class="muted">Te enviaremos un recordatorio el día del turno.</p>
+          <button type="button" class="btn btn-dark" (click)="closeModal()">Cerrar</button>
+        </div>
+      } @else {
+        <div class="modal-head">
+          <h3>Nueva reserva</h3>
+          <button type="button" class="icon-close" (click)="closeModal()" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="modal-form">
+          <label>
+            <span class="field-label">Producto</span>
+            <select [(ngModel)]="productId">
+              @for (p of products; track p.id) {
+                <option [ngValue]="p.id">{{ p.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span class="field-label">Sucursal</span>
+            <select [(ngModel)]="storeId">
+              @for (s of stores; track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span class="field-label">Talla</span>
+            <select [(ngModel)]="size">
+              @for (sz of (product(productId)?.sizes ?? []); track sz) {
+                <option [value]="sz">{{ sz }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span class="field-label">Fecha</span>
+            <select [(ngModel)]="date">
+              @for (d of dates; track d.full) {
+                <option [value]="d.full">{{ d.full }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span class="field-label">Horario</span>
+            <select [(ngModel)]="time">
+              @for (t of slots; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <button type="button" class="btn btn-dark full" (click)="confirm()">
+          Confirmar reserva
+        </button>
+      }
+    </div>
   </div>
 }

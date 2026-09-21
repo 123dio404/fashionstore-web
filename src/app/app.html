@@ -176,3 +176,20 @@
 }
 
 <app-ui-confirm />
+
+@if (catalogStore.toast(); as toastMessage) {
+  <div class="app-toast" role="status">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#34D399"
+      stroke-width="2.5"
+      stroke-linecap="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+    {{ toastMessage }}
+  </div>
+}

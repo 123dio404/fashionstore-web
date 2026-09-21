@@ -1,0 +1,53 @@
+<h2 class="page-title">Promociones activas</h2>
+<p class="page-sub">Descuentos exclusivos disponibles hasta agotar stock</p>
+
+<section class="promo-heroes">
+  @for (promo of promos; track promo.id; let i = $index) {
+    <article class="promo-hero" [class.big]="i === 0">
+      <img [src]="promo.image" [alt]="promo.title" loading="lazy" />
+      <div
+        class="promo-overlay"
+        [style.background]="
+          'linear-gradient(135deg, ' + promo.color + 'CC, transparent 60%)'
+        "
+      ></div>
+      <div class="promo-text">
+        <p class="promo-title">{{ promo.title }}</p>
+        <p class="promo-sub">{{ promo.subtitle }}</p>
+        <button type="button" class="promo-code" (click)="copyCode(promo.code)">
+          CÓDIGO: {{ promo.code }}
+        </button>
+      </div>
+      <span class="promo-ends">Hasta {{ promo.ends }}</span>
+    </article>
+  }
+</section>
+
+<section class="sale-head">
+  <h3>Productos en oferta</h3>
+  <span class="muted">{{ saleProducts.length }} productos disponibles</span>
+</section>
+
+<div class="sale-grid">
+  @for (p of saleProducts; track p.id) {
+    <a class="sale-card" [routerLink]="['/catalog', p.id]">
+      <div class="sale-thumb">
+        <img [src]="p.image" [alt]="p.name" loading="lazy" />
+        <span class="badge-accent">-{{ p.discount }}%</span>
+      </div>
+      <div class="sale-body">
+        <p class="product-brand">{{ p.brand }}</p>
+        <p class="sale-name">{{ p.name }}</p>
+        <p class="sale-price">
+          <span class="now">{{ p.price | currency: 'USD' }}</span>
+          <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
+        </p>
+      </div>
+    </a>
+  } @empty {
+    <div class="empty-inline">
+      <p class="empty-title">Sin ofertas</p>
+      <p class="muted">Todavía no hay prendas con descuento en la tienda.</p>
+    </div>
+  }
+</div>

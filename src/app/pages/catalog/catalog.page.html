@@ -3,182 +3,171 @@
     <div class="filter-card">
       <div class="filter-head">
         <span class="filter-title">Filtros</span>
-        <button type="button" class="filter-clear" (click)="clearFilters()">Limpiar</button>
+        <button type="button" class="link-accent" (click)="clearFilters()">Limpiar</button>
       </div>
 
-      <div class="filter-search">
+      <label class="search-box">
         <app-ui-icon [d]="icons.search" [size]="13" color="var(--muted)" />
-        <input type="search" placeholder="Buscar productos..." [(ngModel)]="query" />
+        <input type="search" placeholder="Buscar..." [(ngModel)]="query" />
+      </label>
+
+      <p class="filter-label">Categoría</p>
+      <div class="chip-wrap">
+        @for (c of categories; track c) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="category === c"
+            (click)="category = c"
+          >
+            {{ c }}
+          </button>
+        }
       </div>
 
-      <section class="filter-group">
-        <p class="filter-label">Categoría</p>
-        <label class="filter-radio">
-          <input type="radio" name="cat" [checked]="categoryId === null" (change)="categoryId = null" />
-          <span [class.active]="categoryId === null">Todas</span>
-        </label>
-        @for (category of categories(); track category.id) {
-          <label class="filter-radio">
-            <input
-              type="radio"
-              name="cat"
-              [checked]="categoryId === category.id"
-              (change)="categoryId = category.id"
-            />
-            <span [class.active]="categoryId === category.id">{{ category.name }}</span>
-          </label>
+      <p class="filter-label">Marca</p>
+      <select [(ngModel)]="brand">
+        @for (b of brands; track b) {
+          <option [value]="b">{{ b }}</option>
         }
-      </section>
+      </select>
 
-      <section class="filter-group">
-        <p class="filter-label">Marca</p>
-        <label class="filter-radio">
-          <input type="radio" name="brand" [checked]="brand === ''" (change)="brand = ''" />
-          <span [class.active]="brand === ''">Todas las marcas</span>
-        </label>
-        @for (item of brands; track item) {
-          <label class="filter-radio">
-            <input type="radio" name="brand" [checked]="brand === item" (change)="brand = item" />
-            <span [class.active]="brand === item">{{ item }}</span>
-          </label>
-        }
-      </section>
+      <p class="filter-label">Rango de precio</p>
+      <div class="filter-prices">
+        <input type="number" min="0" placeholder="Mín." [(ngModel)]="minPrice" />
+        <input type="number" min="0" placeholder="Máx." [(ngModel)]="maxPrice" />
+      </div>
 
-      <section class="filter-group">
-        <p class="filter-label">Precio</p>
-        <div class="filter-prices">
-          <input type="number" min="0" placeholder="Mín" [(ngModel)]="minPrice" />
-          <span class="filter-dash">–</span>
-          <input type="number" min="0" placeholder="Máx" [(ngModel)]="maxPrice" />
-        </div>
-      </section>
-
-      <section class="filter-group">
-        <label class="filter-check">
-          <input type="checkbox" [(ngModel)]="onlyActive" />
-          <span>Solo prendas activas</span>
-        </label>
-      </section>
+      <label class="filter-check">
+        <input type="checkbox" [(ngModel)]="onSale" />
+        <span>Solo ofertas</span>
+      </label>
     </div>
   </aside>
 
   <section class="catalog-results">
-    <div class="catalog-toolbar">
+    <div class="toolbar">
       <div>
-        <h2 class="catalog-title">Catálogo</h2>
-        <p class="catalog-count">{{ filtered.length }} productos encontrados</p>
+        <h2>Catálogo</h2>
+        <p class="muted">
+          {{ filtered.length }} prenda{{ filtered.length === 1 ? '' : 's' }} disponibles
+        </p>
       </div>
-      <div class="catalog-actions">
-        <select class="sort" [(ngModel)]="sort">
-          <option value="relevance">Más relevantes</option>
-          <option value="price-asc">Precio: menor a mayor</option>
-          <option value="price-desc">Precio: mayor a menor</option>
-          <option value="name">Nombre (A-Z)</option>
-        </select>
+      <span class="spacer"></span>
 
-        <div class="view-toggle">
-          <button
-            type="button"
-            [class.active]="view() === 'grid'"
-            (click)="setView('grid')"
-            title="Ver cuadrícula"
-          >
-            <app-ui-icon [d]="viewGrid" [size]="15" [color]="view() === 'grid' ? '#fff' : 'var(--muted)'" />
-          </button>
-          <button
-            type="button"
-            [class.active]="view() === 'list'"
-            (click)="setView('list')"
-            title="Ver lista"
-          >
-            <app-ui-icon [d]="viewList" [size]="15" [color]="view() === 'list' ? '#fff' : 'var(--muted)'" />
-          </button>
-        </div>
+      <div class="view-toggle">
+        <button
+          type="button"
+          [class.active]="view() === 'grid'"
+          (click)="view.set('grid')"
+          title="Cuadrícula"
+        >
+          <app-ui-icon [d]="icons.grid" [size]="15" />
+        </button>
+        <button
+          type="button"
+          [class.active]="view() === 'list'"
+          (click)="view.set('list')"
+          title="Lista"
+        >
+          <app-ui-icon [d]="icons.catalog" [size]="15" />
+        </button>
       </div>
+
+      <label class="sort">
+        <span class="muted">Ordenar</span>
+        <select [(ngModel)]="sort">
+          @for (option of sorts; track option.v) {
+            <option [value]="option.v">{{ option.l }}</option>
+          }
+        </select>
+      </label>
     </div>
 
-    @if (loading()) {
-      <app-ui-skeleton [rows]="4" [height]="240" />
-    } @else if (error()) {
-      <app-ui-error [message]="error() ?? ''" (retry)="load()" />
-    } @else if (filtered.length === 0) {
-      <div class="cat-empty">
-        <div class="cat-empty-icon">
-          <app-ui-icon [d]="icons.search" [size]="24" color="var(--muted-2)" />
-        </div>
-        <p class="cat-empty-title">Sin resultados</p>
-        <p class="cat-empty-msg">Prueba con otros filtros</p>
-        <button type="button" class="cat-empty-btn" (click)="clearFilters()">Limpiar filtros</button>
+    @if (filtered.length === 0) {
+      <div class="empty-inline">
+        <p class="empty-title">Sin resultados</p>
+        <p class="muted">
+          Ninguna prenda coincide con tu búsqueda. Prueba con otros términos o ajusta los filtros.
+        </p>
+        <button type="button" class="btn btn-primary" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
       </div>
     } @else if (view() === 'grid') {
       <div class="catalog-grid">
-        @for (product of filtered; track product.id) {
-          <div class="product-card" (click)="open(product.id)">
+        @for (p of filtered; track p.id) {
+          <a class="product-card" [routerLink]="['/catalog', p.id]">
             <div class="product-thumb">
-              <span class="product-initial">{{ initial(product) }}</span>
-              @if (!product.is_active) {
-                <span class="product-badge">Inactivo</span>
+              <img [src]="p.image" [alt]="p.name" loading="lazy" />
+              <span class="badge-accent">-{{ p.discount }}%</span>
+              @if (p.isNew) {
+                <span class="badge-dark">NUEVO</span>
               }
               <button
                 type="button"
-                class="product-fav"
-                [attr.aria-label]="isFav(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
-                (click)="$event.stopPropagation(); toggleFav(product.id)"
+                class="fav-btn"
+                (click)="toggleFav(p.id, $event)"
+                aria-label="Marcar como favorito"
               >
-                <app-ui-icon
-                  [d]="heart"
-                  [size]="14"
-                  [color]="isFav(product.id) ? '#E05A47' : 'var(--muted)'"
-                />
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  [attr.fill]="isFav(p.id) ? 'var(--brand)' : 'none'"
+                  [attr.stroke]="isFav(p.id) ? 'var(--brand)' : 'var(--muted-2)'"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path [attr.d]="heartPath" />
+                </svg>
+              </button>
+              <button type="button" class="add-chip" (click)="add(p, $event)">
+                {{ addedId() === p.id ? '✓ Añadido' : '+ Añadir' }}
               </button>
             </div>
             <div class="product-body">
-              <p class="product-brand">{{ product.brand || 'Sin marca' }}</p>
-              <p class="product-name">{{ product.name }}</p>
-              <div class="product-price-row">
-                <span class="product-price">{{ priceText(product.price) }}</span>
-              </div>
-              <a class="product-add" [routerLink]="['/catalog', product.id]">
-                <app-ui-icon [d]="plus" [size]="13" />
-                Al carrito
-              </a>
+              <p class="product-brand">{{ p.brand }}</p>
+              <p class="product-name">{{ p.name }}</p>
+              <p class="product-rating">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B">
+                  <path [attr.d]="starPath" />
+                </svg>
+                {{ p.rating }} ({{ p.reviews }})
+              </p>
+              <p class="product-price">
+                <span class="now">{{ p.price | currency: 'USD' }}</span>
+                <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
+              </p>
             </div>
-          </div>
+          </a>
         }
       </div>
     } @else {
       <div class="catalog-list">
-        @for (product of filtered; track product.id) {
-          <div class="product-row" (click)="open(product.id)">
+        @for (p of filtered; track p.id) {
+          <a class="product-row" [routerLink]="['/catalog', p.id]">
             <div class="row-thumb">
-              <span class="row-initial">{{ initial(product) }}</span>
+              <img [src]="p.image" [alt]="p.name" loading="lazy" />
             </div>
             <div class="row-body">
-              <p class="row-brand">{{ product.brand || 'Sin marca' }} · {{ categoryName(product) }}</p>
-              <p class="row-name">{{ product.name }}</p>
-              @if (!product.is_active) {
-                <p class="row-inactive">Prenda inactiva</p>
-              }
+              <p class="product-brand">{{ p.brand }} · {{ p.category }}</p>
+              <p class="row-name">{{ p.name }}</p>
+              <p class="product-rating">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B">
+                  <path [attr.d]="starPath" />
+                </svg>
+                {{ p.rating }} ({{ p.reviews }} reseñas)
+              </p>
             </div>
-            <div class="row-end">
-              <span class="row-price">{{ priceText(product.price) }}</span>
-              <div class="row-actions">
-                <button
-                  type="button"
-                  class="row-fav"
-                  [attr.aria-label]="isFav(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
-                  (click)="$event.stopPropagation(); toggleFav(product.id)"
-                >
-                  <app-ui-icon
-                    [d]="heart"
-                    [size]="14"
-                    [color]="isFav(product.id) ? '#E05A47' : 'var(--muted)'"
-                  />
-                </button>
-                <a class="row-add" [routerLink]="['/catalog', product.id]">Agregar</a>
-              </div>
+            <div class="row-side">
+              <p class="row-price">{{ p.price | currency: 'USD' }}</p>
+              <p class="was">{{ p.oldPrice | currency: 'USD' }}</p>
+              <button type="button" class="btn btn-dark btn-sm" (click)="add(p, $event)">
+                {{ addedId() === p.id ? '✓ Añadido' : 'Agregar' }}
+              </button>
             </div>
-          </div>
+          </a>
         }
       </div>
     }

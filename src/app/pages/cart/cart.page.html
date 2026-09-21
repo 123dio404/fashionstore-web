@@ -1,124 +1,151 @@
-<div class="page-head">
-  <div>
-    <h2 class="page-title">Mi carrito</h2>
-    <p class="page-sub">Revisa tus prendas antes de confirmar la compra.</p>
+@if (stage() === 'processing') {
+  <div class="stage-center">
+    <div class="spinner"></div>
+    <p class="stage-title">Procesando pago…</p>
+    <p class="muted">Conectando con la pasarela. No cierres esta ventana.</p>
   </div>
-</div>
+} @else if (stage() === 'done') {
+  <div class="stage-center">
+    <div class="check-circle">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </div>
+    <h2 class="stage-title">¡Compra exitosa!</h2>
+    <p class="muted">
+      Orden <strong>{{ orderId() }}</strong> confirmada. Recibirás un correo con el seguimiento.
+    </p>
+    <div class="stage-actions">
+      <a routerLink="/purchase-history" class="btn btn-dark">Ver mis compras</a>
+      <a routerLink="/catalog" class="btn btn-outline" (click)="reset()">Seguir comprando</a>
+    </div>
+  </div>
+} @else if (cartCount() === 0) {
+  <div class="empty-inline">
+    <p class="empty-title">Tu carrito está vacío</p>
+    <p class="muted">Explora el catálogo y agrega tus prendas favoritas.</p>
+    <a routerLink="/catalog" class="btn btn-primary">Ir al catálogo</a>
+  </div>
+} @else {
+  <h2 class="page-title">Mi carrito</h2>
 
-@if (loading()) {
-  <app-ui-skeleton [rows]="3" [height]="72" />
-} @else if (error()) {
-  <app-ui-error [message]="error() ?? ''" (retry)="reload()" />
-} @else if (cart(); as current) {
-  @if (current.items.length === 0) {
-    <app-ui-empty
-      icon="🛍️"
-      title="Tu carrito está vacío"
-      message="Agrega prendas desde el catálogo para empezar tu compra."
-    >
-      <a class="btn-primary" routerLink="/catalog" style="margin-top: 0.75rem">Ir al catálogo</a>
-    </app-ui-empty>
-  } @else {
-    <div class="two-col">
-      <div>
-        <div class="table-card">
-          <h3>Prendas ({{ itemCount() }})</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Talla</th>
-                <th>Color</th>
-                <th>Precio</th>
-                <th>Cantidad</th>
-                <th>Subtotal</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of current.items; track item.id) {
-                <tr>
-                  <td>{{ item.product_name }}</td>
-                  <td>{{ item.size || '—' }}</td>
-                  <td>{{ item.color || '—' }}</td>
-                  <td>{{ item.price | currency: 'USD' }}</td>
-                  <td>
-                    <div class="qty">
-                      <button type="button" class="btn btn-sm" (click)="setQuantity(item, item.quantity - 1)">−</button>
-                      <span>{{ item.quantity }}</span>
-                      <button type="button" class="btn btn-sm" (click)="setQuantity(item, item.quantity + 1)">+</button>
-                    </div>
-                  </td>
-                  <td><strong>{{ item.quantity * item.price | currency: 'USD' }}</strong></td>
-                  <td>
-                    <button type="button" class="btn-danger btn-sm" (click)="remove(item)">Quitar</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <p class="note">El total se confirma al procesar el pago.</p>
-      </div>
+  <div class="cart-layout">
+    <section class="cart-items">
+      @for (item of store.cart(); track item.productId + '-' + item.size) {
+        <article class="cart-row">
+          <a class="cart-thumb" [routerLink]="['/catalog', item.productId]">
+            <img [src]="item.image" [alt]="item.name" />
+          </a>
+          <div class="cart-body">
+            <p class="product-brand">{{ item.brand }}</p>
+            <a class="cart-name" [routerLink]="['/catalog', item.productId]">{{ item.name }}</a>
+            <p class="cart-meta">Talla {{ item.size }} · {{ item.color }}</p>
+            <div class="cart-foot">
+              <span class="cart-price">{{ (item.price * item.qty) | currency: 'USD' }}</span>
+              <div class="qty">
+                <button type="button" (click)="dec(item.productId, item.size)" aria-label="Quitar uno">−</button>
+                <span>{{ item.qty }}</span>
+                <button type="button" (click)="inc(item.productId, item.size)" aria-label="Agregar uno">+</button>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="remove-btn"
+            (click)="remove(item.productId, item.size)"
+            aria-label="Quitar del carrito"
+          >
+            ✕
+          </button>
+        </article>
+      }
+    </section>
 
-      <aside class="aside-card">
-        <h3 class="aside-title">Resumen de compra</h3>
-        <div class="summary-row">
-          <span class="label">Artículos</span>
-          <span>{{ itemCount() }}</span>
+    <aside class="cart-side">
+      <div class="side-card">
+        <p class="side-title">Método de entrega</p>
+        <div class="delivery-row">
+          <button
+            type="button"
+            class="delivery-opt"
+            [class.active]="delivery() === 'home'"
+            (click)="setDelivery('home')"
+          >
+            <span class="opt-label">Envío a domicilio</span>
+            <span class="opt-sub">3–5 días hábiles</span>
+            <span class="opt-price">{{ shippingHome | currency: 'USD' }}</span>
+          </button>
+          <button
+            type="button"
+            class="delivery-opt"
+            [class.active]="delivery() === 'pickup'"
+            (click)="setDelivery('pickup')"
+          >
+            <span class="opt-label">Retiro en tienda</span>
+            <span class="opt-sub">Disponible en 24 hrs</span>
+            <span class="opt-price">Gratis</span>
+          </button>
         </div>
-        <div class="summary-row">
-          <span class="label">Subtotal</span>
-          <span>{{ current.total | currency: 'USD' }}</span>
-        </div>
-        <div class="summary-row total">
-          <span>Total</span>
-          <span>{{ current.total | currency: 'USD' }}</span>
-        </div>
-
-        <div class="field" style="margin-top: 1rem">
-          <label for="branch">Sucursal de despacho o retiro</label>
-          <select id="branch" [(ngModel)]="branchId">
-            <option [ngValue]="null">Selecciona una sucursal</option>
-            @for (branch of branches(); track branch.id) {
-              <option [ngValue]="branch.id">{{ branch.name }}</option>
+        @if (delivery() === 'pickup') {
+          <select
+            class="store-select"
+            [ngModel]="storeId()"
+            (ngModelChange)="setStore($event)"
+          >
+            @for (s of stores; track s.id) {
+              <option [value]="s.id">{{ s.name }}</option>
             }
           </select>
+        }
+      </div>
+
+      <div class="side-card">
+        <p class="side-title">Código de descuento</p>
+        <div class="coupon-row">
+          <input
+            type="text"
+            placeholder="FASHION10"
+            [(ngModel)]="coupon"
+            [disabled]="couponApplied()"
+          />
+          <button
+            type="button"
+            class="btn btn-dark btn-sm"
+            [disabled]="couponApplied()"
+            (click)="applyCoupon()"
+          >
+            {{ couponApplied() ? 'Aplicado' : 'Aplicar' }}
+          </button>
         </div>
+      </div>
 
-        <button
-          type="button"
-          class="btn-primary btn-block"
-          [disabled]="!branchId || checkingOut()"
-          (click)="checkout()"
-        >
-          {{ checkingOut() ? 'Procesando pago…' : 'Pagar con Stripe' }}
+      <div class="side-card">
+        <p class="side-title">Resumen del pedido</p>
+        <div class="sum-row">
+          <span>Subtotal ({{ cartCount() }} art.)</span>
+          <span>{{ subtotal() | currency: 'USD' }}</span>
+        </div>
+        <div class="sum-row">
+          <span>Envío</span>
+          <span class="free" [class.on]="shipping() === 0">
+            {{ shipping() === 0 ? 'Gratis' : (shipping() | currency: 'USD') }}
+          </span>
+        </div>
+        @if (couponApplied()) {
+          <div class="sum-row">
+            <span>Descuento FASHION10</span>
+            <span class="free on">-{{ discount() | currency: 'USD' }}</span>
+          </div>
+        }
+        <div class="sum-total">
+          <span>Total</span>
+          <span>{{ total() | currency: 'USD' }}</span>
+        </div>
+        <button type="button" class="btn btn-accent full" (click)="checkout()">
+          Finalizar compra
         </button>
-        <p class="note">El pago se procesa de forma segura con Stripe; verás el estado de la transacción al confirmarlo.</p>
-
-        @if (message()) {
-          <div class="alert alert-success" style="margin-top: 1rem">{{ message() }}</div>
-        }
-        @if (checkoutError()) {
-          <div class="alert alert-error" style="margin-top: 1rem">{{ checkoutError() }}</div>
-        }
-
-        @if (sale(); as completed) {
-          <div class="summary-row" style="margin-top: 1rem">
-            <span class="label">Orden</span>
-            <span>#{{ completed.id }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Estado del pago</span>
-            <span class="badge ok">{{ completed.payments[0]?.status || 'pendiente' }}</span>
-          </div>
-          <a class="btn btn-block" routerLink="/purchase-history" style="margin-top: 0.75rem">
-            Ver historial de compras
-          </a>
-        }
-
-        <a class="btn-ghost btn-block" routerLink="/catalog" style="margin-top: 0.5rem">Seguir comprando</a>
-      </aside>
-    </div>
-  }
+        <p class="secure">Pago seguro con cifrado SSL · Datos protegidos</p>
+      </div>
+    </aside>
+  </div>
 }
