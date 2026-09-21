@@ -30,6 +30,7 @@ export class App {
   readonly collapsed = signal(localStorage.getItem(SIDEBAR_KEY) === '1');
   readonly userMenuOpen = signal(false);
   readonly cartCount = signal(0);
+  readonly offline = signal(typeof navigator === 'undefined' ? false : !navigator.onLine);
 
   readonly isStaff = computed(() => {
     const role = this.user()?.role;
@@ -79,6 +80,10 @@ export class App {
 
   constructor() {
     this.auth.restoreSession().subscribe();
+
+    // Banner «Sin conexión» (estado offline del modelo de Figma).
+    window.addEventListener('online', () => this.offline.set(false));
+    window.addEventListener('offline', () => this.offline.set(true));
 
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))

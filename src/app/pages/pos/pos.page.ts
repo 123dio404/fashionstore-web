@@ -57,9 +57,10 @@ export class PosPage {
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
   readonly scan = signal('');
+  readonly cashReceived = signal('');
+  readonly paymentMethod = signal('efectivo');
 
   clientId = this.auth.currentUser()?.id ?? 0;
-  paymentMethod = 'efectivo';
 
   readonly branchName = computed(
     () => this.branches().find((branch) => branch.id === this.branchId())?.name ?? '—'
@@ -80,6 +81,21 @@ export class PosPage {
   readonly canSubmit = computed(
     () => this.lines().length > 0 && this.clientId > 0 && this.branchId() !== null
   );
+
+  /** Vuelto a entregar: solo aplica en pagos en efectivo, se calcula en el cliente. */
+  readonly receivedCash = computed(() => Number(this.cashReceived()) || 0);
+
+  readonly cashChange = computed(() => {
+    if (this.paymentMethod() !== 'efectivo') return 0;
+    return Math.max(0, this.receivedCash() - this.subtotal());
+  });
+
+  /** Cobro habilitado: en efectivo, el efectivo recibido debe cubrir el total (vacío = pago exacto). */
+  readonly canPay = computed(() => {
+    if (!this.canSubmit() || this.submitting()) return false;
+    if (this.paymentMethod() !== 'efectivo') return true;
+    return this.receivedCash() === 0 || this.receivedCash() >= this.subtotal();
+  });
 
   constructor() {
     this.branchesService.list().subscribe({
@@ -207,7 +223,7 @@ export class PosPage {
         client_id: this.clientId,
         items: this.lines(),
         paid: true,
-        payment_provider: this.paymentMethod === 'efectivo' ? 'cash' : this.paymentMethod
+        payment_provider: this.paymentMethod() === 'efectivo' ? 'cash' : this.paymentMethod()
       })
       .subscribe({
         next: (sale) => {

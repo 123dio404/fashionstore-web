@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ExperienceService } from '../../core/services/experience.service';
@@ -30,9 +30,20 @@ export class ChatbotPage {
   readonly sending = signal(false);
   readonly createDrawer = signal(false);
   readonly error = signal<string | null>(null);
+  readonly search = signal('');
 
   newTitle = '';
   draft = '';
+
+  readonly filteredConversations = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    if (!q) return this.conversations();
+    return this.conversations().filter(
+      (c) =>
+        (c.title || `Conversación #${c.id}`).toLowerCase().includes(q) ||
+        c.messages.some((m) => m.content.toLowerCase().includes(q))
+    );
+  });
 
   constructor() {
     this.loadConversations();

@@ -265,6 +265,43 @@
   font-size: 0.8rem;
 }
 
+/* Acordeones (patrón del prototipo: descripción/cuidado desplegables) */
+.pd-acc {
+  margin-top: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.pd-acc summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.8rem 0;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+}
+
+.pd-acc summary::-webkit-details-marker {
+  display: none;
+}
+
+.pd-acc summary app-ui-icon {
+  transition: transform 0.2s ease;
+}
+
+.pd-acc[open] summary app-ui-icon {
+  transform: rotate(90deg);
+}
+
+.pd-acc p {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  padding-bottom: 0.8rem;
+}
+
 @media (max-width: 1080px) {
   .pd {
     grid-template-columns: 1fr;

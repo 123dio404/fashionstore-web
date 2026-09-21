@@ -50,6 +50,15 @@ export class MarketingPage {
   readonly editingCollection = signal<CollectionResponse | null>(null);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
+  readonly statusFilter = signal<'todas' | 'vigente' | 'programada' | 'expirada' | 'inactiva'>('todas');
+
+  readonly statusOptions: Array<{ id: 'todas' | 'vigente' | 'programada' | 'expirada' | 'inactiva'; label: string }> = [
+    { id: 'todas', label: 'Todas' },
+    { id: 'vigente', label: 'Vigentes' },
+    { id: 'programada', label: 'Programadas' },
+    { id: 'expirada', label: 'Expiradas' },
+    { id: 'inactiva', label: 'Inactivas' }
+  ];
 
   promotionForm: PromotionCreate = { ...EMPTY_PROMOTION };
   collectionForm: CollectionCreate = { ...EMPTY_COLLECTION };
@@ -79,12 +88,61 @@ export class MarketingPage {
     return afterStart && beforeEnd;
   }
 
+  /** Estado derivado: vigente / programada / expirada / inactiva (normalización del prototipo). */
+  promotionStatus(promotion: PromotionResponse): 'vigente' | 'programada' | 'expirada' | 'inactiva' {
+    if (!promotion.is_active) return 'inactiva';
+    const today = new Date().toISOString().slice(0, 10);
+    if (promotion.end_date && promotion.end_date < today) return 'expirada';
+    if (promotion.start_date && promotion.start_date > today) return 'programada';
+    return 'vigente';
+  }
+
+  readonly filteredPromotions = computed(() => {
+    const status = this.statusFilter();
+    if (status === 'todas') return this.promotions();
+    return this.promotions().filter((p) => this.promotionStatus(p) === status);
+  });
+
+  /** Métricas derivadas a nivel cliente (el backend no expone usos todavía). */
+  readonly promoStats = computed(() => {
+    const items = this.promotions();
+    let vigente = 0;
+    let programada = 0;
+    let expirada = 0;
+    let prendas = 0;
+    for (const p of items) {
+      const status = this.promotionStatus(p);
+      if (status === 'vigente') vigente += 1;
+      if (status === 'programada') programada += 1;
+      if (status === 'expirada') expirada += 1;
+      prendas += p.product_ids.length;
+    }
+    return { vigente, programada, expirada, prendas };
+  });
+
   rangeLabel(promotion: PromotionResponse): string {
     if (!promotion.start_date && !promotion.end_date) return 'Sin fecha límite';
     if (promotion.start_date && promotion.end_date) {
       return `${promotion.start_date} → ${promotion.end_date}`;
     }
     return promotion.end_date ? `Hasta ${promotion.end_date}` : `Desde ${promotion.start_date}`;
+  }
+
+  statusLabel(promotion: PromotionResponse): string {
+    return this.promotionStatus(promotion)[0].toUpperCase() + this.promotionStatus(promotion).slice(1);
+  }
+
+  statusBadge(promotion: PromotionResponse): string {
+    switch (this.promotionStatus(promotion)) {
+      case 'vigente':
+        return 'ok';
+      case 'programada':
+        return 'info';
+      case 'expirada':
+        return 'neutral';
+      default:
+        return 'neutral';
+    }
   }
 
   openPromotionCreate(): void {

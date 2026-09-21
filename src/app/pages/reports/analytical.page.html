@@ -7,7 +7,12 @@
   </div>
 </div>
 
-@if (error()) {
+@if (serviceOff()) {
+  <div class="alert alert-warning">
+    El servicio de IA no está configurado en el backend. Pide a un administrador que lo habilite
+    para usar las consultas por voz o texto.
+  </div>
+} @else if (error()) {
   <div class="alert alert-error">{{ error() }}</div>
 }
 

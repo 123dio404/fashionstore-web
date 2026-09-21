@@ -420,6 +420,25 @@
   color: var(--brand-dark);
 }
 
+/* ─── Banner «Sin conexión» (estado offline del modelo) ───────────────── */
+.offline-banner {
+  position: fixed;
+  top: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-2);
+}
+
 @media (max-width: 1080px) {
   .topbar-search,
   .user-name {

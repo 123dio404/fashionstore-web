@@ -24,9 +24,41 @@
 <app-ui-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
 
 @if (activeTab() === 'promotions') {
+  <div class="kpi-grid">
+    <div class="stat">
+      <div class="value">{{ promoStats().vigente }}</div>
+      <div class="label">Vigentes</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ promoStats().programada }}</div>
+      <div class="label">Programadas</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ promoStats().expirada }}</div>
+      <div class="label">Expiradas</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ promoStats().prendas }}</div>
+      <div class="label">Prendas en promoción</div>
+    </div>
+  </div>
+
+  <div class="chip-row" style="margin-bottom: 1rem">
+    @for (option of statusOptions; track option.id) {
+      <button
+        type="button"
+        class="chip"
+        [class.selected]="statusFilter() === option.id"
+        (click)="statusFilter.set(option.id)"
+      >
+        {{ option.label }}
+      </button>
+    }
+  </div>
+
   <div class="table-card">
-    <h3>Promociones</h3>
-    @if (promotions().length === 0) {
+    <h3>Promociones ({{ filteredPromotions().length }})</h3>
+    @if (filteredPromotions().length === 0) {
       <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
         Todavía no hay promociones configuradas.
       </p>
@@ -43,7 +75,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (promotion of promotions(); track promotion.id) {
+          @for (promotion of filteredPromotions(); track promotion.id) {
             <tr>
               <td>
                 <div class="cell-stack">
@@ -63,10 +95,8 @@
               <td>{{ rangeLabel(promotion) }}</td>
               <td>{{ promotion.product_ids.length }}</td>
               <td>
-                <span class="badge" [class.ok]="isCurrent(promotion)" [class.neutral]="!promotion.is_active">
-                  {{
-                    !promotion.is_active ? 'Inactiva' : isCurrent(promotion) ? 'Vigente' : 'Programada'
-                  }}
+                <span class="badge" [class]="statusBadge(promotion)">
+                  {{ statusLabel(promotion) }}
                 </span>
               </td>
               <td>

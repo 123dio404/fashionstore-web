@@ -53,7 +53,7 @@
       <div class="table-card">
         <h3 class="order-head">
           <span>Orden #{{ entry.sale_id }}</span>
-          <span class="badge" [class.ok]="entry.sale_type === 'digital'">{{ entry.sale_type }}</span>
+          <span class="badge" [class]="typeBadge(entry.sale_type)">{{ entry.sale_type }}</span>
           <span class="spacer"></span>
           <span class="muted">{{ entry.sale_date | date: 'medium' }}</span>
           <strong>{{ entry.total | currency: 'USD' }}</strong>
