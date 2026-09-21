@@ -2,68 +2,532 @@
   display: block;
 }
 
-.rec-grid {
+/* ═══ CU18 — Recomendaciones IA (frame «Para ti · IA») ═══════════════════ */
+
+.recs-layout {
   display: grid;
-  gap: var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: 280px 1fr;
+  gap: 1.75rem;
+  align-items: start;
 }
 
-.rec-card {
+/* ─── Panel «Tu estilo» ─────────────────────────────────────────────── */
+.recs-aside {
+  position: sticky;
+  top: calc(var(--topbar-h) + 2rem);
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.recs-aside-head {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.recs-aside-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(224, 90, 71, 0.1);
+}
+
+.recs-aside-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.recs-aside-sub {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.recs-block {
+  margin-bottom: 1.25rem;
+}
+
+.recs-label {
+  margin: 0 0 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.recs-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.recs-label-row .recs-label {
   margin-bottom: 0;
 }
 
-.rec-head {
+.recs-soon {
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Colores — deshabilitado en el prototipo */
+.recs-colors {
+  opacity: 0.55;
+  user-select: none;
+  pointer-events: none;
+}
+
+.recs-swatches {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.recs-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.recs-swatch.light {
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+/* Presupuesto */
+.recs-budget {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.rec-score {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+.recs-budget input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5625rem 0.75rem;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  font-size: 0.8125rem;
 }
 
-.rec-score strong {
+.recs-budget input.is-error {
+  border-color: var(--brand);
+}
+
+.recs-budget-dash {
+  font-size: 0.8125rem;
+  color: var(--muted-2);
+}
+
+.recs-budget-error {
+  margin: 0.375rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--brand);
+}
+
+/* Botón principal del panel */
+.recs-generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.8125rem 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--text);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.recs-generate:hover {
+  background: #1f2937;
+}
+
+.recs-generate:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.recs-note {
+  margin: 0.625rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--muted-2);
+}
+
+/* ─── Resultados ────────────────────────────────────────────────────── */
+.recs-main {
+  min-width: 0;
+}
+
+.recs-head {
+  margin-bottom: 1.25rem;
+}
+
+.recs-title {
+  margin: 0 0 0.25rem;
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.75rem;
   font-weight: 400;
-  line-height: 1;
+  line-height: 1.15;
+  color: var(--text);
 }
 
-.rec-score span {
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.recs-sub {
+  margin: 0;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 
+/* Aviso del bloque activo: estado + acciones */
+.recs-blockbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.recs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+/* Card de recomendación (misma tarjeta de producto del prototipo) */
+.rec-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.rec-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.rec-thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: var(--bg);
+}
+
+.rec-thumb-initial {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  color: var(--muted-2);
+}
+
+.rec-para {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--brand);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.rec-fav {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rec-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0.875rem;
+}
+
 .rec-brand {
-  margin: 0;
-  font-size: 0.68rem;
-  letter-spacing: 0.07em;
+  margin: 0 0 0.2rem;
+  font-size: 0.625rem;
   text-transform: uppercase;
+  letter-spacing: 0.07em;
   color: var(--muted);
 }
 
 .rec-name {
-  margin: 0;
-  font-size: 1rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.rec-price {
-  margin: 0;
-  font-size: 1.05rem;
+.rec-match {
+  margin-bottom: 0.625rem;
+}
+
+.rec-match-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.rec-match-row span {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.rec-match-row strong {
+  font-size: 0.6875rem;
   font-weight: 700;
 }
 
-.rec-actions {
+.rec-match-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.rec-match-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.rec-reasons {
   display: flex;
-  gap: 0.4rem;
   flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.625rem;
+}
+
+.rec-reason {
+  padding: 0.125rem 0.5rem;
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.625rem;
+}
+
+.rec-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin-top: auto;
-  padding-top: 0.6rem;
+}
+
+.rec-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rec-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4375rem 0.875rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--text);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.rec-add:hover {
+  background: #1f2937;
+}
+
+/* Esqueleto de carga del prototipo (6 cards) */
+.rec-skel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.rec-skel-thumb {
+  height: 200px;
+  background: var(--bg);
+}
+
+.rec-skel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem;
+}
+
+.skel-line {
+  height: 12px;
+  border-radius: 4px;
+}
+
+.skel-btn {
+  height: 34px;
+  border-radius: 8px;
+}
+
+/* Estados vacíos (empty / sin resultados) */
+.recs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 5rem 0;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.recs-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(224, 90, 71, 0.08);
+}
+
+.recs-empty-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.recs-empty-msg {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  max-width: 24rem;
+}
+
+.recs-empty-btn {
+  margin-top: 0.25rem;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.recs-empty-btn:hover {
+  background: var(--surface-2);
+}
+
+/* ─── Mis recomendaciones anteriores ────────────────────────────────── */
+.history {
+  overflow: hidden;
+  margin-top: 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.history-title {
+  margin: 0;
+  padding: 1rem 1.25rem 0.875rem;
+  font-size: 1.15rem;
+}
+
+.history-empty {
+  margin: 0;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.history-scroll {
+  overflow-x: auto;
+}
+
+.history-scroll th {
+  background: var(--bg);
+}
+
+.history-scroll th:first-child,
+.history-scroll td:first-child {
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 1200px) {
+  .recs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1080px) {
+  .recs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .recs-aside {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .recs-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,183 +1,53 @@
-<div class="page-head">
-  <div>
-    <h2 class="page-title">Recomendaciones personalizadas</h2>
-    <p class="page-sub">
-      Sugerencias por categoría, marca, historial, talla, color, temporada y disponibilidad.
-    </p>
-  </div>
-  <div class="page-actions">
-    <button type="button" class="btn-primary" [disabled]="generating()" (click)="generate()">
-      {{ generating() ? 'Generando…' : 'Generar recomendaciones' }}
-    </button>
-  </div>
-</div>
-
-@if (error()) {
-  <div class="alert alert-error">{{ error() }}</div>
-}
-@if (message()) {
-  <div class="alert alert-success">{{ message() }}</div>
-}
-
-<div class="two-col">
-  <div>
-    @if (result(); as block) {
-      <div class="row" style="margin-bottom: 1rem">
-        <span class="badge info">{{ block.recommendation_type }}</span>
-        <span
-          class="badge"
-          [class.ok]="block.status === 'visto'"
-          [class.err]="block.status === 'descartado'"
-          [class.neutral]="block.status !== 'visto' && block.status !== 'descartado'"
-        >
-          {{ block.status }}
-        </span>
-        <span class="spacer"></span>
-        <span class="muted">{{ block.created_at | date: 'medium' }}</span>
-        <button type="button" class="btn btn-sm" (click)="markSeen(block)">Marcar bloque como visto</button>
-        <button type="button" class="btn-danger btn-sm" (click)="discard(block)">Descartar bloque</button>
+<div class="recs-layout">
+  <!-- Panel «Tu estilo» del prototipo (280px, sticky) -->
+  <aside class="recs-aside">
+    <div class="recs-aside-head">
+      <div class="recs-aside-icon">
+        <app-ui-icon [d]="icons.sparkles" [size]="18" color="var(--brand)" />
       </div>
-
-      @if (block.items.length === 0) {
-        <app-ui-empty
-          icon="✨"
-          title="Sin sugerencias"
-          message="Guarda tus preferencias o realiza alguna compra para que el motor tenga señales."
-        />
-      } @else {
-        <div class="rec-grid">
-          @for (item of block.items; track item.id) {
-            <article class="card rec-card">
-              <div class="rec-head">
-                <span class="rec-score">
-                  <strong>{{ score(item.score) }}</strong>
-                  <span>Coincidencia</span>
-                </span>
-                <span class="spacer"></span>
-                @if (item.available_stock !== null) {
-                  <span class="chip" [class.selected]="item.available_stock <= 2">
-                    {{
-                      item.available_stock === 0
-                        ? 'Sin stock'
-                        : item.available_stock <= 2
-                          ? 'Últimas ' + item.available_stock
-                          : item.available_stock + ' disponibles'
-                    }}
-                  </span>
-                }
-              </div>
-
-              <p class="rec-brand">{{ item.product?.brand || 'Sin marca' }}</p>
-              <h3 class="rec-name">
-                <a [routerLink]="['/catalog', item.product_id]">
-                  {{ item.product?.name || 'Producto #' + item.product_id }}
-                </a>
-              </h3>
-              <p class="rec-price">{{ item.product?.price | currency: 'USD' }}</p>
-
-              <div class="chip-row">
-                @for (reason of reasonChips(item.reason); track reason) {
-                  <span class="chip">{{ reason }}</span>
-                }
-              </div>
-
-              <div class="rec-actions">
-                <a class="btn btn-sm" [routerLink]="['/catalog', item.product_id]">Ver prenda</a>
-              </div>
-            </article>
-          }
-        </div>
-      }
-    } @else {
-      <app-ui-empty
-        icon="✨"
-        title="Todavía no hay sugerencias generadas"
-        message="Completa tus preferencias y pulsa «Generar recomendaciones» para ver prendas afines a tu estilo."
-      />
-    }
-
-    <section class="table-card">
-      <h3>Bloques anteriores</h3>
-      @if (history().length === 0) {
-        <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
-          Aún no has generado recomendaciones.
-        </p>
-      } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Sugerencias</th>
-              <th>Estado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (block of history(); track block.id) {
-              <tr>
-                <td>{{ block.created_at | date: 'short' }}</td>
-                <td>{{ block.recommendation_type }}</td>
-                <td>{{ block.items.length }}</td>
-                <td>
-                  <span
-                    class="badge"
-                    [class.ok]="block.status === 'visto'"
-                    [class.err]="block.status === 'descartado'"
-                    [class.info]="block.status === 'pendiente'"
-                  >
-                    {{ block.status }}
-                  </span>
-                </td>
-                <td>
-                  <div class="row-actions">
-                    <button type="button" class="btn btn-sm" (click)="result.set(block)">Ver</button>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </section>
-  </div>
-
-  <aside class="aside-card">
-    <h3 class="aside-title">Tu estilo</h3>
-
-    <div class="field">
-      <label for="r-brand">Marca preferida</label>
-      <input id="r-brand" placeholder="Ej. Zara" [(ngModel)]="preferredBrand" />
+      <div>
+        <h3 class="recs-aside-title">Tu estilo</h3>
+        <p class="recs-aside-sub">Configurar preferencias</p>
+      </div>
     </div>
 
-    <div class="field">
-      <label for="r-category">Categoría favorita</label>
-      <select id="r-category" [ngModel]="categoryId()" (ngModelChange)="categoryId.set($event)">
-        <option [ngValue]="null">Sin preferencia</option>
-        @for (category of categories(); track category.id) {
-          <option [ngValue]="category.id">{{ category.name }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="field">
-      <span class="field-label">Colores preferidos</span>
+    <!-- Marca: selección única -->
+    <div class="recs-block">
+      <p class="recs-label">Marca</p>
       <div class="chip-row">
-        @for (color of colors(); track color.id) {
+        @for (brand of brandOptions(); track brand) {
           <button
             type="button"
             class="chip"
-            [class.selected]="preferredColorList().includes(color.name)"
-            (click)="toggleColor(color.name)"
+            [class.selected]="selectedBrand === brand"
+            (click)="selectBrand(brand)"
           >
-            {{ color.name }}
+            {{ brand }}
           </button>
         }
       </div>
     </div>
 
-    <div class="field">
-      <span class="field-label">Tallas preferidas</span>
+    <!-- Categoría: selección única -->
+    <div class="recs-block">
+      <p class="recs-label">Categoría</p>
+      <div class="chip-row">
+        @for (category of categoryOptions(); track category.id) {
+          <button
+            type="button"
+            class="chip"
+            [class.selected]="selectedCategoryId === category.id"
+            (click)="selectCategory(category.id)"
+          >
+            {{ category.name }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Tallas: selección múltiple -->
+    <div class="recs-block">
+      <p class="recs-label">Tallas</p>
       <div class="chip-row">
         @for (size of sizes(); track size.id) {
           <button
@@ -192,23 +62,242 @@
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="field">
-        <label for="r-min">Precio mínimo</label>
-        <input id="r-min" type="number" min="0" [(ngModel)]="minPrice" />
+    <!-- Presupuesto: rango con validación -->
+    <div class="recs-block">
+      <p class="recs-label">Presupuesto</p>
+      <div class="recs-budget">
+        <input
+          type="number"
+          min="0"
+          placeholder="Mín $"
+          [class.is-error]="budgetError() !== null"
+          [(ngModel)]="minBudget"
+        />
+        <span class="recs-budget-dash">—</span>
+        <input
+          type="number"
+          min="0"
+          placeholder="Máx $"
+          [class.is-error]="budgetError() !== null"
+          [(ngModel)]="maxBudget"
+        />
       </div>
-      <div class="field">
-        <label for="r-max">Precio máximo</label>
-        <input id="r-max" type="number" min="0" [(ngModel)]="maxPrice" />
+      @if (budgetError(); as error) {
+        <p class="recs-budget-error">{{ error }}</p>
+      }
+    </div>
+
+    <!-- Colores: deshabilitado en el prototipo -->
+    <div class="recs-block recs-colors">
+      <div class="recs-label-row">
+        <p class="recs-label">Colores</p>
+        <span class="recs-soon">PRÓXIMAMENTE</span>
+      </div>
+      <div class="recs-swatches">
+        @for (swatch of colorSwatches; track swatch) {
+          <span
+            class="recs-swatch"
+            [class.light]="swatch === '#f4f4f5'"
+            [style.background]="swatch"
+            aria-hidden="true"
+          ></span>
+        }
       </div>
     </div>
 
-    <button type="button" class="btn btn-block" (click)="savePreferences()">
-      Guardar preferencias
+    <button type="button" class="recs-generate" [disabled]="generating()" (click)="generate()">
+      <app-ui-icon [d]="icons.sparkles" [size]="15" />
+      {{ generating() ? 'Generando…' : 'Generar recomendaciones' }}
     </button>
-    <p class="note">
-      Con marca, categoría, tallas y presupuesto el motor deja de sugerir solo por historial y pasa a
-      sugerir por estilo.
+    <p class="recs-note">
+      Al generar, tus preferencias se guardan para que el motor sugiera por estilo y no solo por
+      historial.
     </p>
   </aside>
+
+  <!-- Resultados -->
+  <section class="recs-main">
+    <div class="recs-head">
+      <h2 class="recs-title">Recomendaciones IA</h2>
+      <p class="recs-sub">{{ subtitle() }}</p>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+    @if (message()) {
+      <div class="alert alert-success">{{ message() }}</div>
+    }
+
+    @if (generating()) {
+      <div class="recs-grid" aria-busy="true">
+        @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+          <div class="rec-skel">
+            <div class="rec-skel-thumb skeleton"></div>
+            <div class="rec-skel-body">
+              <div class="skeleton skel-line" [style.width.%]="60"></div>
+              <div class="skeleton skel-line" [style.width.%]="85"></div>
+              <div class="skeleton skel-btn"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (result(); as block) {
+      <!-- Aviso del bloque activo: estado + acciones (CU18) -->
+      <div class="recs-blockbar">
+        <span
+          class="badge"
+          [class.ok]="block.status === 'visto'"
+          [class.err]="block.status === 'descartado'"
+          [class.info]="block.status === 'pendiente'"
+        >
+          {{ block.status }}
+        </span>
+        <span class="spacer"></span>
+        <span class="muted">{{ block.created_at | date: 'medium' }}</span>
+        <button type="button" class="btn btn-sm" (click)="markSeen(block)">
+          Marcar como visto
+        </button>
+        <button type="button" class="btn-secondary btn-sm" (click)="discard(block)">
+          Descartar
+        </button>
+      </div>
+
+      @if (block.items.length === 0) {
+        <div class="recs-empty">
+          <div class="recs-empty-icon">
+            <app-ui-icon [d]="icons.sparkles" [size]="30" color="var(--brand)" />
+          </div>
+          <p class="recs-empty-title">Sin resultados</p>
+          <p class="recs-empty-msg">
+            El presupuesto o la categoría seleccionados no tienen prendas disponibles.
+          </p>
+          <button type="button" class="recs-empty-btn" (click)="widenBudget()">
+            Ampliar presupuesto
+          </button>
+        </div>
+      } @else {
+        <div class="recs-grid">
+          @for (item of block.items; track item.id) {
+            <article class="rec-card" (click)="openProduct(item.product_id)">
+              <div class="rec-thumb">
+                <span class="rec-thumb-initial">{{ initials(item.product) }}</span>
+                <span class="rec-para">
+                  <app-ui-icon [d]="icons.sparkles" [size]="11" />
+                  Para ti
+                </span>
+                <button
+                  type="button"
+                  class="rec-fav"
+                  [attr.aria-label]="
+                    isFav(item.product_id) ? 'Quitar de favoritos' : 'Agregar a favoritos'
+                  "
+                  (click)="$event.stopPropagation(); toggleFav(item.product_id)"
+                >
+                  <app-ui-icon
+                    [d]="heart"
+                    [size]="13"
+                    [color]="isFav(item.product_id) ? 'var(--brand)' : 'var(--muted)'"
+                    [fill]="isFav(item.product_id) ? 'var(--brand)' : 'none'"
+                  />
+                </button>
+              </div>
+
+              <div class="rec-body">
+                <p class="rec-brand">{{ item.product?.brand || 'Sin marca' }}</p>
+                <p class="rec-name">{{ item.product?.name || 'Producto #' + item.product_id }}</p>
+
+                <div class="rec-match">
+                  <div class="rec-match-row">
+                    <span>Coincidencia</span>
+                    <strong [style.color]="matchColor(item.score)">{{ score(item.score) }}%</strong>
+                  </div>
+                  <div class="rec-match-bar">
+                    <div
+                      class="rec-match-fill"
+                      [style.width.%]="score(item.score)"
+                      [style.background]="matchColor(item.score)"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="rec-reasons">
+                  @for (reason of reasonChips(item.reason) | slice: 0 : 3; track reason) {
+                    <span class="rec-reason">{{ reason }}</span>
+                  }
+                </div>
+
+                <div class="rec-price-row">
+                  <span class="rec-price">{{ priceText(item.product?.price ?? 0) }}</span>
+                  <a class="rec-add" [routerLink]="['/catalog', item.product_id]">
+                    <app-ui-icon [d]="plus" [size]="12" />
+                    Agregar
+                  </a>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    } @else {
+      <div class="recs-empty">
+        <div class="recs-empty-icon">
+          <app-ui-icon [d]="icons.sparkles" [size]="30" color="var(--brand)" />
+        </div>
+        <p class="recs-empty-title">Sin recomendaciones aún</p>
+        <p class="recs-empty-msg">
+          Selecciona tus preferencias en el panel izquierdo y genera resultados personalizados.
+        </p>
+      </div>
+    }
+  </section>
 </div>
+
+<!-- CU18 · «Mis recomendaciones anteriores» -->
+<section class="history">
+  <h3 class="history-title">Mis recomendaciones anteriores</h3>
+  @if (history().length === 0) {
+    <p class="muted history-empty">Aún no has generado recomendaciones.</p>
+  } @else {
+    <div class="history-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Sugerencias</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (block of history(); track block.id) {
+            <tr>
+              <td>{{ block.created_at | date: 'short' }}</td>
+              <td>{{ block.recommendation_type }}</td>
+              <td>{{ block.items.length }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [class.ok]="block.status === 'visto'"
+                  [class.err]="block.status === 'descartado'"
+                  [class.info]="block.status === 'pendiente'"
+                >
+                  {{ block.status }}
+                </span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-sm" (click)="result.set(block)">Ver</button>
+                  <button type="button" class="btn-secondary btn-sm" (click)="discard(block)">
+                    Descartar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

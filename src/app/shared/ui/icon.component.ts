@@ -12,7 +12,7 @@ import { Component, Input } from '@angular/core';
       [attr.width]="size"
       [attr.height]="size"
       viewBox="0 0 24 24"
-      fill="none"
+      [attr.fill]="fill"
       [attr.stroke]="color"
       [attr.stroke-width]="strokeWidth"
       stroke-linecap="round"
@@ -25,7 +25,9 @@ import { Component, Input } from '@angular/core';
       }
     </svg>
   `,
-  styles: [':host { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }']
+  styles: [
+    ':host { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }',
+  ],
 })
 export class UiIconComponent {
   /** Uno o varios `d` de SVG (mismo formato que el array de paths de Figma). */
@@ -38,4 +40,5 @@ export class UiIconComponent {
   @Input() size = 18;
   @Input() color = 'currentColor';
   @Input() strokeWidth = 1.8;
+  @Input() fill = 'none';
 }
