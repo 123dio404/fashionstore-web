@@ -421,7 +421,14 @@ tbody tr {
   border-radius: var(--radius-lg);
 }
 .state-icon {
-  font-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font-size: 1.5rem;
   line-height: 1;
 }
 .state-title {
@@ -644,6 +651,7 @@ tbody tr {
   color: var(--text-2);
   font-size: 0.8rem;
   font-weight: 500;
+  cursor: pointer;
 }
 
 .chip.selected {

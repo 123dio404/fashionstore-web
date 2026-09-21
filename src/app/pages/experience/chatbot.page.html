@@ -18,7 +18,15 @@
 
 <div class="chat-layout">
   <aside class="chat-side">
-    @for (conversation of conversations(); track conversation.id) {
+    <div class="chat-search">
+      <input
+        type="search"
+        placeholder="Buscar conversaciones…"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      />
+    </div>
+    @for (conversation of filteredConversations(); track conversation.id) {
       <button
         type="button"
         class="chat-conv"
@@ -38,7 +46,13 @@
   <section class="chat-main">
     @if (active(); as conversation) {
       <header class="chat-head">
-        <strong>{{ conversation.title || 'Conversación #' + conversation.id }}</strong>
+        <span class="bot-avatar" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+      </span>
+        <div class="bot-meta">
+          <strong>Asistente FashionStore</strong>
+          <span class="bot-status"><i class="dot"></i>En línea</span>
+        </div>
         <span class="spacer"></span>
         <span class="badge neutral">{{ messages().length }} mensajes</span>
       </header>
@@ -55,14 +69,16 @@
           <p class="note">Escribe tu primera consulta o usa una sugerencia.</p>
         }
         @if (sending()) {
-          <div class="bubble typing">Escribiendo…</div>
+          <div class="bubble typing" aria-label="El asistente está escribiendo">
+            <span class="td"></span><span class="td"></span><span class="td"></span>
+          </div>
         }
       </div>
 
       <form class="chat-input" (ngSubmit)="send()">
         <input placeholder="Escribe tu mensaje…" [(ngModel)]="draft" name="draft" autocomplete="off" />
-        <button type="submit" class="btn-primary" [disabled]="!draft.trim() || sending()">
-          Enviar
+        <button type="submit" class="send-btn" [disabled]="!draft.trim() || sending()" aria-label="Enviar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </form>
     } @else {

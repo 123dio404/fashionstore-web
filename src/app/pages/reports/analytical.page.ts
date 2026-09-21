@@ -46,6 +46,13 @@ export class AnalyticalPage {
   readonly error = signal<string | null>(null);
   readonly history = signal<HistoryEntry[]>([]);
 
+  /** El motor no está disponible: el backend avisa cuando el servicio de IA no está configurado. */
+  readonly serviceOff = computed(() =>
+    /no configurad|not configured|api.?key|openai|disabled|sin servicio|no disponible/i.test(
+      this.error() ?? ''
+    )
+  );
+
   /** Métricas numéricas del resultado, listas para mostrar en tarjetas. */
   readonly metrics = computed<Metric[]>(() => {
     const raw = this.result()?.result ?? {};

@@ -136,10 +136,13 @@
       </div>
 
       @if (p.technical_metadata) {
-        <div class="pd-meta">
-          <p class="pd-label">Ficha técnica</p>
+        <details class="pd-acc">
+          <summary>
+            Ficha técnica
+            <app-ui-icon [d]="icons.chevronRight" [size]="14" color="var(--muted)" />
+          </summary>
           <p class="muted">{{ p.technical_metadata }}</p>
-        </div>
+        </details>
       }
     </aside>
   </div>

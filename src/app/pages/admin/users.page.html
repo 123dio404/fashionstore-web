@@ -61,7 +61,7 @@
             </td>
             <td>{{ user.email }}</td>
             <td>
-              <span class="badge" [class.info]="user.role === 'Administrador'">{{ user.role }}</span>
+              <span class="badge" [class]="roleBadge(user.role)">{{ user.role }}</span>
             </td>
             <td>
               <span class="badge" [class.ok]="user.is_active" [class.neutral]="!user.is_active">

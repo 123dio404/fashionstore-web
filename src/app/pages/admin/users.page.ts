@@ -54,6 +54,22 @@ export class UsersPage {
     return parts.map((part) => part.charAt(0).toUpperCase()).join('') || 'FS';
   }
 
+  /** Variante de badge por rol (patrón de color del prototipo web). */
+  roleBadge(role: Role | undefined): string {
+    switch (role) {
+      case Role.Administrador:
+        return 'err';
+      case Role.Encargado:
+        return 'warn';
+      case Role.Cajero:
+        return 'ok';
+      case Role.Cliente:
+        return 'info';
+      default:
+        return 'neutral';
+    }
+  }
+
   load(): void {
     this.users.list().subscribe({
       next: (data) => this.list.set(data),

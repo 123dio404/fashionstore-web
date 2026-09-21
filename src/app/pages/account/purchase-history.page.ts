@@ -62,4 +62,9 @@ export class PurchaseHistoryPage {
     this.endDate = '';
     this.load();
   }
+
+  /** Variante de badge por canal de venta (prototipo: digital verde, presencial azul). */
+  typeBadge(saleType: string): string {
+    return saleType === 'digital' ? 'ok' : 'info';
+  }
 }
