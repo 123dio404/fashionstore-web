@@ -1,31 +1,37 @@
 :root {
-  /* Marca — valor exacto extraído del logo exportado (Figma nodo 5:21) */
-  --brand: #8c3858;
-  --brand-dark: #6e2c45;
-  --brand-soft: #f7f2f7;
+  /* Marca — acento terracota del prototipo Figma Make (src/ui.tsx) */
+  --brand: #e05a47;
+  --brand-dark: #c24a38;
+  --brand-soft: #fceae6;
+  --accent: #e05a47;
+  --accent-dark: #c24a38;
+  --accent-soft: #fceae6;
   --on-brand: #ffffff;
-  /* Semánticos */
-  --success: #219e69;
-  --success-soft: #acdbc7;
-  --danger: #d94c52;
-  --danger-soft: #eca6a9;
-  --warning: #b45309;
-  --warning-soft: #fde68a;
-  --info: #3b5bdb;
-  --info-soft: #dce3fb;
-  /* Neutros */
-  --bg: #faf7f5;
+  /* Semánticos (paleta del prototipo) */
+  --success: #059669;
+  --success-soft: #ecfdf5;
+  --danger: #e05a47;
+  --danger-soft: #fef2f2;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+  --info: #2563eb;
+  --info-soft: #dbeafe;
+  /* Neutros del prototipo */
+  --bg: #f8f9fa;
   --surface: #ffffff;
-  --surface-2: #edeef0;
-  --border: #e3e6eb;
-  --text: #1f1f24;
-  --text-2: #3b3a3e;
-  --muted: #707582;
-  --muted-2: #a6a9b1;
-  /* Radios */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --surface-2: #f3f4f6;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --text: #111827;
+  --text-2: #374151;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --dark: #111827;
+  /* Radios (8 · 12 · 16 · 20 · pill) */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-pill: 999px;
   /* Espaciado */
   --space-1: 0.25rem;
@@ -35,8 +41,9 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   /* Sombras */
-  --shadow-1: 0 1px 2px rgba(31, 31, 36, 0.06);
-  --shadow-2: 0 6px 18px rgba(31, 31, 36, 0.08);
+  --shadow-1: 0 1px 2px rgba(17, 24, 39, 0.06);
+  --shadow-2: 0 6px 18px rgba(17, 24, 39, 0.08);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.06);
   /* Tipografías del diseño (mobile + prototipo web de Figma) */
   --font-display: 'DM Serif Display', 'Fraunces', Georgia, serif;
   --font-body: 'Inter', Arial, Helvetica, sans-serif;
@@ -125,7 +132,7 @@ td {
 }
 
 th {
-  background: #f9fafb;
+  background: var(--bg);
   color: var(--muted);
   text-transform: uppercase;
   font-size: 0.72rem;
@@ -170,12 +177,12 @@ button {
 
 .badge.info {
   background: var(--info-soft);
-  color: #2b3f9e;
+  color: var(--info);
 }
 
 .badge.err {
   background: var(--danger-soft);
-  color: #8f2f34;
+  color: var(--danger);
 }
 
 .badge.neutral {
@@ -265,6 +272,23 @@ button {
 }
 .btn-brand:hover {
   background: var(--brand);
+}
+
+/* Botones del prototipo: primario oscuro y acento terracota */
+.btn-dark {
+  background: var(--dark);
+  color: #ffffff;
+}
+.btn-dark:hover {
+  background: #1f2937;
+}
+
+.btn-accent {
+  background: var(--brand);
+  color: #ffffff;
+}
+.btn-accent:hover {
+  background: var(--brand-dark);
 }
 
 .btn-danger {
@@ -363,7 +387,7 @@ textarea:disabled {
 /* Badges: chips de estado (Figma: Badge + Cards) */
 .badge.ok {
   background: var(--success-soft);
-  color: #14603f;
+  color: var(--success);
 }
 .badge.warn {
   background: var(--warning-soft);
@@ -430,7 +454,7 @@ tbody tr {
 }
 .skeleton {
   border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, var(--surface-2) 25%, #f7f6f6 37%, var(--surface-2) 63%);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border-light) 37%, var(--surface-2) 63%);
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
 }
@@ -485,11 +509,11 @@ tbody tr {
 }
 .alert-success {
   background: var(--success-soft);
-  color: #14603f;
+  color: var(--success);
 }
 .alert-error {
   background: var(--danger-soft);
-  color: #8f2f34;
+  color: var(--danger);
 }
 
 /* ═══ Kit de página (composición del diseño web de Figma) ═════════════ */
@@ -1151,6 +1175,37 @@ tbody tr {
 
   body {
     background: #fff;
+  }
+}
+
+/* ═══ Toast global (acción completada) ═══════════════════════════════ */
+
+.app-toast {
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--dark);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

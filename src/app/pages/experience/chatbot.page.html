@@ -1,110 +1,79 @@
-<div class="page-head">
-  <div>
-    <h2 class="page-title">Asistente FashionStore</h2>
-    <p class="page-sub">
-      Soporte automatizado para tus consultas de pedidos, stock y estilo.
-    </p>
-  </div>
-  <div class="page-actions">
-    <button type="button" class="btn-primary" (click)="createDrawer.set(true)">
-      Nueva conversación
-    </button>
-  </div>
-</div>
-
-@if (error()) {
-  <div class="alert alert-error">{{ error() }}</div>
-}
-
 <div class="chat-layout">
-  <aside class="chat-side">
-    @for (conversation of conversations(); track conversation.id) {
-      <button
-        type="button"
-        class="chat-conv"
-        [class.active]="active()?.id === conversation.id"
-        (click)="open(conversation.id)"
-      >
-        <span class="chat-conv-title">{{ conversation.title || 'Conversación #' + conversation.id }}</span>
-        <span class="chat-conv-meta">
-          {{ conversation.messages.length }} mensajes · {{ conversation.updated_at | date: 'short' }}
-        </span>
-      </button>
-    } @empty {
-      <p class="note">Aún no tienes conversaciones.</p>
-    }
-  </aside>
-
-  <section class="chat-main">
-    @if (active(); as conversation) {
-      <header class="chat-head">
-        <strong>{{ conversation.title || 'Conversación #' + conversation.id }}</strong>
-        <span class="spacer"></span>
-        <span class="badge neutral">{{ messages().length }} mensajes</span>
-      </header>
-
-      <div class="chat-thread">
-        @for (message of messages(); track message.id) {
-          <div class="bubble" [class.user]="isUser(message)">
-            <p class="bubble-text">{{ message.content }}</p>
-            <span class="bubble-meta">
-              {{ isUser(message) ? 'Tú' : 'Asistente' }} · {{ message.created_at | date: 'shortTime' }}
-            </span>
-          </div>
-        } @empty {
-          <p class="note">Escribe tu primera consulta o usa una sugerencia.</p>
-        }
-        @if (sending()) {
-          <div class="bubble typing">Escribiendo…</div>
-        }
+  <section class="chat-panel">
+    <header class="chat-head">
+      <span class="bot-avatar">A</span>
+      <div class="bot-id">
+        <span class="bot-name">Aria · Asistente IA</span>
+        <span class="bot-status"><span class="dot"></span> En línea · responde al instante</span>
       </div>
+    </header>
 
-      <form class="chat-input" (ngSubmit)="send()">
-        <input placeholder="Escribe tu mensaje…" [(ngModel)]="draft" name="draft" autocomplete="off" />
-        <button type="submit" class="btn-primary" [disabled]="!draft.trim() || sending()">
-          Enviar
-        </button>
-      </form>
-    } @else {
-      <app-ui-empty
-        icon="💬"
-        title="Selecciona una conversación"
-        message="Elige una de la izquierda o crea una nueva para empezar a chatear."
+    <div class="chat-body">
+      @for (msg of messages(); track msg.id) {
+        <div class="msg-row" [class.user]="msg.from === 'user'">
+          @if (msg.from === 'bot') {
+            <span class="msg-avatar">A</span>
+          }
+          <div class="bubble" [class.mine]="msg.from === 'user'">
+            <p>{{ msg.text }}</p>
+            <span class="msg-time">{{ msg.time }}</span>
+          </div>
+        </div>
+      }
+
+      @if (typing()) {
+        <div class="msg-row">
+          <span class="msg-avatar">A</span>
+          <div class="bubble typing">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      }
+
+      <div #endRef></div>
+    </div>
+
+    <div class="suggestions">
+      @for (s of suggestions; track s) {
+        <button type="button" class="suggestion" (click)="send(s)">{{ s }}</button>
+      }
+    </div>
+
+    <div class="chat-input">
+      <input
+        type="text"
+        placeholder="Escribe un mensaje..."
+        [(ngModel)]="input"
+        (keyup.enter)="send()"
       />
-    }
+      <button type="button" class="send-btn" (click)="send()" aria-label="Enviar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      </button>
+    </div>
   </section>
 
-  <aside class="chat-context">
-    <h3 class="aside-title">Sugerencias</h3>
-    <div class="chip-row">
-      @for (suggestion of suggestions; track suggestion) {
-        <button type="button" class="chip" [disabled]="!active()" (click)="useSuggestion(suggestion)">
-          {{ suggestion }}
+  <aside class="quick-panel">
+    <p class="panel-title">Acciones rápidas</p>
+    <div class="quick-list">
+      @for (action of quickActions; track action.label) {
+        <button type="button" class="quick-btn" (click)="send(action.label)">
+          <span class="quick-icon">
+            <app-ui-icon [d]="action.icon" [size]="15" color="var(--muted)" />
+          </span>
+          <span class="quick-label">{{ action.label }}</span>
         </button>
       }
     </div>
 
-    <h3 class="aside-title" style="margin-top: 1.25rem">Contexto</h3>
-    <p class="note">
-      El asistente responde con la información del catálogo, las promociones vigentes y las reglas
-      de atención configuradas para la tienda.
-    </p>
+    <div class="aria-card">
+      <p class="aria-title">Aria · Asistente IA</p>
+      <p class="aria-text">
+        Disponible 24/7. Para consultas complejas, un agente humano te atenderá en
+        horario comercial.
+      </p>
+    </div>
   </aside>
 </div>
-
-<app-ui-drawer
-  [open]="createDrawer()"
-  title="Nueva conversación"
-  subtitle="Ponle un título para reconocerla después"
-  [width]="380"
-  (closed)="createDrawer.set(false)"
->
-  <div class="field">
-    <label for="c-title">Título</label>
-    <input id="c-title" placeholder="Ej. Consulta sobre mi pedido" [(ngModel)]="newTitle" />
-  </div>
-  <div drawer-actions>
-    <button type="button" class="btn" (click)="createDrawer.set(false)">Cancelar</button>
-    <button type="button" class="btn-primary" (click)="create()">Crear conversación</button>
-  </div>
-</app-ui-drawer>

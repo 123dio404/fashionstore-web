@@ -1,124 +1,171 @@
-<div class="row catalog-head">
-  <div>
-    <h2 style="margin: 0">Catálogo</h2>
-    <p class="muted" style="margin: 0.25rem 0 0">
-      Prendas disponibles en tienda y en línea.
-    </p>
-  </div>
-  <span class="spacer"></span>
-  <label class="catalog-search">
-    <app-ui-icon [d]="icons.search" [size]="15" color="var(--muted)" />
-    <input type="search" placeholder="Buscar por nombre o marca" [(ngModel)]="query" />
-  </label>
-</div>
-
 <div class="catalog-layout">
-  <aside class="catalog-filters card">
-    <div class="filter-head">
-      <h3 style="margin: 0">Filtros</h3>
-      <button type="button" class="btn btn-sm" (click)="clearFilters()">Limpiar</button>
-    </div>
+  <aside class="catalog-filters">
+    <div class="filter-card">
+      <div class="filter-head">
+        <span class="filter-title">Filtros</span>
+        <button type="button" class="link-accent" (click)="clearFilters()">Limpiar</button>
+      </div>
 
-    <div class="field">
-      <label for="f-category">Categoría</label>
-      <select id="f-category" [(ngModel)]="categoryId">
-        <option [ngValue]="null">Todas</option>
-        @for (category of categories(); track category.id) {
-          <option [ngValue]="category.id">{{ category.name }}</option>
+      <label class="search-box">
+        <app-ui-icon [d]="icons.search" [size]="13" color="var(--muted)" />
+        <input type="search" placeholder="Buscar..." [(ngModel)]="query" />
+      </label>
+
+      <p class="filter-label">Categoría</p>
+      <div class="chip-wrap">
+        @for (c of categories; track c) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="category === c"
+            (click)="category = c"
+          >
+            {{ c }}
+          </button>
+        }
+      </div>
+
+      <p class="filter-label">Marca</p>
+      <select [(ngModel)]="brand">
+        @for (b of brands; track b) {
+          <option [value]="b">{{ b }}</option>
         }
       </select>
-    </div>
 
-    <div class="field">
-      <label for="f-brand">Marca</label>
-      <select id="f-brand" [(ngModel)]="brand">
-        <option value="">Todas</option>
-        @for (item of brands; track item) {
-          <option [value]="item">{{ item }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="f-size">Talla</label>
-      <select id="f-size" [(ngModel)]="sizeId">
-        <option [ngValue]="null">Todas</option>
-        @for (size of sizes(); track size.id) {
-          <option [ngValue]="size.id">{{ size.name }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="f-color">Color</label>
-      <select id="f-color" [(ngModel)]="colorId">
-        <option [ngValue]="null">Todos</option>
-        @for (color of colors(); track color.id) {
-          <option [ngValue]="color.id">{{ color.name }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="field">
-      <span class="field-label">Rango de precio</span>
+      <p class="filter-label">Rango de precio</p>
       <div class="filter-prices">
         <input type="number" min="0" placeholder="Mín." [(ngModel)]="minPrice" />
         <input type="number" min="0" placeholder="Máx." [(ngModel)]="maxPrice" />
       </div>
-    </div>
 
-    <label class="filter-check">
-      <input type="checkbox" [(ngModel)]="onlyActive" />
-      <span>Solo prendas activas</span>
-    </label>
+      <label class="filter-check">
+        <input type="checkbox" [(ngModel)]="onSale" />
+        <span>Solo ofertas</span>
+      </label>
+    </div>
   </aside>
 
   <section class="catalog-results">
-    <div class="row catalog-toolbar">
-      <span class="muted">{{ filtered.length }} prendas</span>
+    <div class="toolbar">
+      <div>
+        <h2>Catálogo</h2>
+        <p class="muted">
+          {{ filtered.length }} prenda{{ filtered.length === 1 ? '' : 's' }} disponibles
+        </p>
+      </div>
       <span class="spacer"></span>
+
+      <div class="view-toggle">
+        <button
+          type="button"
+          [class.active]="view() === 'grid'"
+          (click)="view.set('grid')"
+          title="Cuadrícula"
+        >
+          <app-ui-icon [d]="icons.grid" [size]="15" />
+        </button>
+        <button
+          type="button"
+          [class.active]="view() === 'list'"
+          (click)="view.set('list')"
+          title="Lista"
+        >
+          <app-ui-icon [d]="icons.catalog" [size]="15" />
+        </button>
+      </div>
+
       <label class="sort">
-        <span class="muted">Ordenar por</span>
+        <span class="muted">Ordenar</span>
         <select [(ngModel)]="sort">
-          <option value="relevance">Relevancia</option>
-          <option value="price-asc">Precio: menor a mayor</option>
-          <option value="price-desc">Precio: mayor a menor</option>
-          <option value="name">Nombre (A-Z)</option>
+          @for (option of sorts; track option.v) {
+            <option [value]="option.v">{{ option.l }}</option>
+          }
         </select>
       </label>
     </div>
 
-    @if (loading()) {
-      <app-ui-skeleton [rows]="3" [height]="112" />
-    } @else if (error()) {
-      <app-ui-error [message]="error() ?? ''" (retry)="load()" />
-    } @else if (filtered.length === 0) {
-      <app-ui-empty
-        icon="🔎"
-        title="Sin prendas"
-        [message]="
-          query || hasFilters
-            ? 'Ninguna prenda coincide con los filtros seleccionados.'
-            : 'Todavía no hay productos en el catálogo.'
-        "
-      />
-    } @else {
+    @if (filtered.length === 0) {
+      <div class="empty-inline">
+        <p class="empty-title">Sin resultados</p>
+        <p class="muted">
+          Ninguna prenda coincide con tu búsqueda. Prueba con otros términos o ajusta los filtros.
+        </p>
+        <button type="button" class="btn btn-primary" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      </div>
+    } @else if (view() === 'grid') {
       <div class="catalog-grid">
-        @for (product of filtered; track product.id) {
-          <a class="product-card" [routerLink]="['/catalog', product.id]">
+        @for (p of filtered; track p.id) {
+          <a class="product-card" [routerLink]="['/catalog', p.id]">
             <div class="product-thumb">
-              <span class="product-initial">{{ initial(product) }}</span>
-              @if (!product.is_active) {
-                <span class="product-off">Inactivo</span>
+              <img [src]="p.image" [alt]="p.name" loading="lazy" />
+              <span class="badge-accent">-{{ p.discount }}%</span>
+              @if (p.isNew) {
+                <span class="badge-dark">NUEVO</span>
               }
+              <button
+                type="button"
+                class="fav-btn"
+                (click)="toggleFav(p.id, $event)"
+                aria-label="Marcar como favorito"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  [attr.fill]="isFav(p.id) ? 'var(--brand)' : 'none'"
+                  [attr.stroke]="isFav(p.id) ? 'var(--brand)' : 'var(--muted-2)'"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path [attr.d]="heartPath" />
+                </svg>
+              </button>
+              <button type="button" class="add-chip" (click)="add(p, $event)">
+                {{ addedId() === p.id ? '✓ Añadido' : '+ Añadir' }}
+              </button>
             </div>
             <div class="product-body">
-              <p class="product-brand">{{ product.brand || 'Sin marca' }}</p>
-              <p class="product-name">{{ product.name }}</p>
-              <p class="product-meta">
-                {{ categoryName(product) }} · {{ product.variants.length }} variantes
+              <p class="product-brand">{{ p.brand }}</p>
+              <p class="product-name">{{ p.name }}</p>
+              <p class="product-rating">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B">
+                  <path [attr.d]="starPath" />
+                </svg>
+                {{ p.rating }} ({{ p.reviews }})
               </p>
-              <p class="product-price">{{ product.price | currency: 'USD' }}</p>
+              <p class="product-price">
+                <span class="now">{{ p.price | currency: 'USD' }}</span>
+                <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
+              </p>
+            </div>
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="catalog-list">
+        @for (p of filtered; track p.id) {
+          <a class="product-row" [routerLink]="['/catalog', p.id]">
+            <div class="row-thumb">
+              <img [src]="p.image" [alt]="p.name" loading="lazy" />
+            </div>
+            <div class="row-body">
+              <p class="product-brand">{{ p.brand }} · {{ p.category }}</p>
+              <p class="row-name">{{ p.name }}</p>
+              <p class="product-rating">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B">
+                  <path [attr.d]="starPath" />
+                </svg>
+                {{ p.rating }} ({{ p.reviews }} reseñas)
+              </p>
+            </div>
+            <div class="row-side">
+              <p class="row-price">{{ p.price | currency: 'USD' }}</p>
+              <p class="was">{{ p.oldPrice | currency: 'USD' }}</p>
+              <button type="button" class="btn btn-dark btn-sm" (click)="add(p, $event)">
+                {{ addedId() === p.id ? '✓ Añadido' : 'Agregar' }}
+              </button>
             </div>
           </a>
         }

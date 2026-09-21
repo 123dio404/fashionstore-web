@@ -1,167 +1,168 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { ExperienceService } from '../../core/services/experience.service';
-import { ProductsService } from '../../core/services/products.service';
-import {
-  CategoryResponse,
-  ColorResponse,
-  RecommendationResponse,
-  SizeResponse
-} from '../../models';
-import { UiEmptyComponent } from '../../shared/ui/empty-state.component';
+import { BRANDS_LIST, CATEGORIES, FigmaProduct } from '../../core/figma-data';
+import { CatalogStore } from '../../core/services/catalog-store.service';
+
+interface StyleProfile {
+  brand: string;
+  category: string;
+  sizes: string[];
+  minPrice: number | null;
+  maxPrice: number | null;
+}
+
+interface ScoredProduct {
+  product: FigmaProduct;
+  score: number;
+  reasons: string[];
+  barColor: string;
+}
+
+const AI_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 /**
- * CU18 — Recomendaciones personalizadas: preferencias del cliente, sugerencias con su motivo,
- * cantidad disponible y estado del bloque.
+ * CU18 — Recomendaciones de IA (vista del cliente, web).
+ * Reproduce `design/figma-make/src/web/screens/AIRecsPage.tsx`.
  */
 @Component({
   selector: 'app-recommendations-page',
-  imports: [CommonModule, FormsModule, RouterLink, UiEmptyComponent],
+  imports: [CommonModule, CurrencyPipe, FormsModule, RouterLink],
   templateUrl: './recommendations.page.html',
-  styleUrl: './recommendations.page.scss'
+  styleUrl: './recommendations.page.scss',
 })
 export class RecommendationsPage {
-  private readonly experience = inject(ExperienceService);
-  private readonly products = inject(ProductsService);
+  readonly store = inject(CatalogStore);
 
-  readonly result = signal<RecommendationResponse | null>(null);
-  readonly history = signal<RecommendationResponse[]>([]);
-  readonly categories = signal<CategoryResponse[]>([]);
-  readonly colors = signal<ColorResponse[]>([]);
-  readonly sizes = signal<SizeResponse[]>([]);
-  readonly categoryId = signal<number | null>(null);
-  readonly preferredColors = signal<string[]>([]);
-  readonly preferredSizes = signal<number[]>([]);
-  readonly preferredColorList = this.preferredColors.asReadonly();
-  readonly preferredSizeList = this.preferredSizes.asReadonly();
-  readonly generating = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly message = signal<string | null>(null);
+  readonly categories = CATEGORIES.filter((c) => c !== 'Ofertas');
+  readonly brands = ['Todas las marcas', ...BRANDS_LIST];
+  readonly sizes = AI_SIZES;
 
-  preferredBrand = '';
-  minPrice: number | null = null;
-  maxPrice: number | null = null;
+  readonly results = signal<ScoredProduct[] | null>(null);
+  readonly loading = signal(false);
+  readonly addedId = signal<number | null>(null);
+  readonly budgetError = signal('');
 
-  constructor() {
-    this.loadPreferences();
-    this.loadHistory();
-    this.products.listCategories().subscribe((items) => this.categories.set(items));
-    this.products.listColors().subscribe((items) => this.colors.set(items));
-    this.products.listSizes().subscribe((items) => this.sizes.set(items));
-  }
+  readonly heartPath =
+    'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z';
 
-  /** La API devuelve la puntuación 0-100; se muestra redondeada como coincidencia. */
-  score(value: number): number {
-    return Math.round(Number(value) || 0);
-  }
+  profile: StyleProfile = {
+    brand: 'Todas las marcas',
+    category: 'Todas',
+    sizes: [],
+    minPrice: null,
+    maxPrice: null,
+  };
+  minInput = '';
+  maxInput = '';
 
-  /** El backend guarda los motivos como una lista separada por comas. */
-  reasonChips(reason: string | null): string[] {
-    if (!reason) return [];
-    return reason
-      .split(',')
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
-  }
-
-  toggleColor(name: string): void {
-    this.preferredColors.update((colors) =>
-      colors.includes(name) ? colors.filter((item) => item !== name) : [...colors, name]
+  get hasProfile(): boolean {
+    return (
+      this.profile.brand !== 'Todas las marcas' ||
+      this.profile.category !== 'Todas' ||
+      this.profile.sizes.length > 0 ||
+      Boolean(this.minInput) ||
+      Boolean(this.maxInput)
     );
   }
 
-  toggleSize(id: number): void {
-    this.preferredSizes.update((sizes) =>
-      sizes.includes(id) ? sizes.filter((item) => item !== id) : [...sizes, id]
-    );
+  toggleSize(size: string): void {
+    const sizes = this.profile.sizes.includes(size)
+      ? this.profile.sizes.filter((s) => s !== size)
+      : [...this.profile.sizes, size];
+    this.profile = { ...this.profile, sizes };
   }
 
-  loadPreferences(): void {
-    this.experience.getPreferences().subscribe({
-      next: (preferences) => {
-        if (!preferences) return;
-        this.preferredBrand = preferences.preferred_brand ?? '';
-        this.preferredColors.set(preferences.preferred_colors ?? []);
-        this.preferredSizes.set(preferences.preferred_sizes ?? []);
-        this.categoryId.set(preferences.category_id);
-        this.minPrice = preferences.min_price;
-        this.maxPrice = preferences.max_price;
-      },
-      error: (err: Error) => this.error.set(err.message)
-    });
+  isSize(size: string): boolean {
+    return this.profile.sizes.includes(size);
   }
 
-  loadHistory(): void {
-    this.experience.listRecommendations(10).subscribe({
-      next: (blocks) => {
-        this.history.set(blocks);
-        if (!this.result() && blocks.length > 0) {
-          this.result.set(blocks[0]);
-        }
-      },
-      error: (err: Error) => this.error.set(err.message)
-    });
+  setCategory(category: string): void {
+    this.profile = { ...this.profile, category };
   }
 
-  savePreferences(): void {
-    this.error.set(null);
-    this.message.set(null);
-    this.experience
-      .savePreferences({
-        category_id: this.categoryId(),
-        preferred_brand: this.preferredBrand || null,
-        preferred_colors: this.preferredColors(),
-        preferred_sizes: this.preferredSizes(),
-        min_price: this.minPrice,
-        max_price: this.maxPrice
-      })
-      .subscribe({
-        next: () => {
-          this.message.set('Preferencias guardadas.');
-          this.loadPreferences();
-        },
-        error: (err: Error) => this.error.set(err.message)
-      });
+  setBrand(brand: string): void {
+    this.profile = { ...this.profile, brand };
   }
 
   generate(): void {
-    this.generating.set(true);
-    this.error.set(null);
-    this.message.set(null);
-    this.experience.generateRecommendations(10).subscribe({
-      next: (block) => {
-        this.result.set(block);
-        this.message.set('Recomendaciones generadas.');
-        this.generating.set(false);
-        this.loadHistory();
-      },
-      error: (err: Error) => {
-        this.error.set(err.message);
-        this.generating.set(false);
-      }
-    });
+    const min = this.minInput ? Number(this.minInput) : null;
+    const max = this.maxInput ? Number(this.maxInput) : null;
+
+    if (min !== null && max !== null && min > max) {
+      this.budgetError.set('El precio mínimo no puede ser mayor al máximo');
+      return;
+    }
+    this.budgetError.set('');
+
+    const profile: StyleProfile = { ...this.profile, minPrice: min, maxPrice: max };
+    this.loading.set(true);
+
+    setTimeout(() => {
+      const scored = this.store
+        .products()
+        .map((product) => this.evaluate(product, profile))
+        .filter((item) => item.score >= 0)
+        .sort((a, b) => b.score - a.score);
+      this.results.set(scored);
+      this.loading.set(false);
+    }, 1200);
   }
 
-  markSeen(block: RecommendationResponse): void {
-    this.updateStatus(block.id, 'visto', 'Bloque marcado como visto.');
+  adjust(): void {
+    this.results.set(null);
   }
 
-  discard(block: RecommendationResponse): void {
-    this.updateStatus(block.id, 'descartado', 'Bloque descartado.');
+  isFav(id: number): boolean {
+    return this.store.isFav(id);
   }
 
-  private updateStatus(id: number, status: 'visto' | 'descartado', ok: string): void {
-    this.error.set(null);
-    this.experience.updateRecommendationStatus(id, status).subscribe({
-      next: (updated) => {
-        this.message.set(ok);
-        this.result.set(updated);
-        this.loadHistory();
-      },
-      error: (err: Error) => this.error.set(err.message)
-    });
+  toggleFav(id: number, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.store.toggleFav(id);
+  }
+
+  add(product: FigmaProduct, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.store.add(product);
+    this.addedId.set(product.id);
+    setTimeout(() => this.addedId.set(null), 1400);
+  }
+
+  /** Coincidencia 0-100; `-1` la descarta por presupuesto. */
+  private evaluate(product: FigmaProduct, profile: StyleProfile): ScoredProduct {
+    let score = 10;
+    const reasons: string[] = [];
+
+    if (profile.category !== 'Todas' && product.category === profile.category) {
+      score += 40;
+      reasons.push(`Categoría ${product.category}`);
+    }
+    if (profile.brand !== 'Todas las marcas' && product.brand === profile.brand) {
+      score += 25;
+      reasons.push(`Marca ${product.brand}`);
+    }
+    if (profile.sizes.some((size) => product.sizes.includes(size))) {
+      score += 25;
+      reasons.push('Tu talla disponible');
+    }
+    if (product.discount >= 25) reasons.push(`${product.discount}% descuento`);
+    if (product.isFeatured) reasons.push('Destacado');
+
+    if (profile.minPrice !== null && product.price < profile.minPrice) {
+      return { product, score: -1, reasons, barColor: '' };
+    }
+    if (profile.maxPrice !== null && product.price > profile.maxPrice) {
+      return { product, score: -1, reasons, barColor: '' };
+    }
+
+    const capped = Math.min(score, 100);
+    const barColor =
+      capped >= 70 ? 'var(--success)' : capped >= 40 ? 'var(--brand)' : 'var(--muted)';
+    return { product, score: capped, reasons, barColor };
   }
 }
