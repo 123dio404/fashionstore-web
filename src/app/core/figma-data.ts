@@ -440,3 +440,31 @@ export const DEMO_DATES: { short: string; day: string; full: string }[] = [
   { short: 'Sáb', day: '27', full: '27 sep 2026' },
   { short: 'Dom', day: '28', full: '28 sep 2026' },
 ];
+
+/** Imagen de reserva para prendas que no están en el catálogo demo. */
+const FALLBACK_IMAGE = `${U}1558618666-fcd25c85cd64?w=120&h=150&fit=crop&auto=format`;
+
+/**
+ * Imagen demo para las tablas del panel: busca la prenda del catálogo demo por
+ * nombre (el backend no expone imágenes). Devuelve un placeholder si no hay coincidencia.
+ */
+export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
+  const words = name
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 3);
+
+  let bestScore = 0;
+  let bestImage = fallback;
+
+  for (const product of PRODUCTS) {
+    const target = product.name.toLowerCase();
+    const score = words.filter((word) => target.includes(word)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestImage = product.image;
+    }
+  }
+
+  return bestImage;
+}

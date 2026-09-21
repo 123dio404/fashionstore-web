@@ -1209,3 +1209,48 @@ tbody tr {
   }
 }
 
+/* ═══ Panel: miniatura de prenda en tablas (diseño de Figma) ══════════ */
+
+.thumb-sm {
+  width: 2.4rem;
+  height: 3rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.thumb-sm img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ═══ Panel: KPI con variación ════════════════════════════════════════ */
+
+.stat .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.stat .delta {
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.stat .delta.up {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.stat .delta.down {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+
