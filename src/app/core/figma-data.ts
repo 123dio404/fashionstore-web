@@ -531,6 +531,17 @@ export function arModelFor(
   return category ? arModelForCategory(category) : AR_FALLBACK_MODEL;
 }
 
+/** CU17: qué renderiza el vestidor web — objeto 3D real o malla ajustada al cuerpo. */
+export type ArModelKind = 'garment' | 'shoe' | 'sunglasses';
+
+/** Clasifica el modelo del producto para que el probador cargue el objeto real. */
+export function arKindFor(modelUrl: string): ArModelKind {
+  const value = modelUrl.toLowerCase();
+  if (value.includes('sunglass')) return 'sunglasses';
+  if (value.includes('shoe')) return 'shoe';
+  return 'garment';
+}
+
 /** CU17: póster que corresponde al modelo mostrado. */
 export function arPreviewFor(modelUrl: string): string {
   const value = modelUrl.toLowerCase();
