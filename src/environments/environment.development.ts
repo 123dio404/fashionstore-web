@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000/api/v1',
+  apiUrl: 'https://fashionstore-backend-ph17.onrender.com/api/v1',
   appVersion: '3.2.1'
 };

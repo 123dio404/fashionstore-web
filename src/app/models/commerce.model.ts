@@ -89,6 +89,12 @@ export interface SaleItemResponse {
   stock_id: Id;
   quantity: number;
   unit_price: number;
+  variant_id?: Id | null;
+  product_id?: Id | null;
+  product_name?: string | null;
+  brand?: string | null;
+  size?: string | null;
+  color?: string | null;
 }
 
 export interface SalePaymentResponse {
