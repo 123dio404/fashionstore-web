@@ -4,13 +4,14 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DrawingUtils, NormalizedLandmark, PoseLandmarker, PoseLandmarkerResult } from '@mediapipe/tasks-vision';
 import { firstValueFrom } from 'rxjs';
 
-import { FigmaColor, FigmaProduct } from '../../core/figma-data';
+import { FigmaColor, FigmaProduct, arKindFor, arModelFor } from '../../core/figma-data';
 import { CatalogStore } from '../../core/services/catalog-store.service';
 import { ExperienceService } from '../../core/services/experience.service';
 import {
   FittingAppearance,
   Garment3DService,
   GarmentType,
+  ModelKind,
 } from '../../core/services/garment3d.service';
 import { FittingPose, PoseLandmarkerService } from '../../core/services/pose-landmarker.service';
 
@@ -104,6 +105,10 @@ export class FittingPage {
     return colors.length ? colors : ([{ name: 'Negro', hex: '#111827' }] as FigmaColor[]);
   });
 
+  /** CU17 — mismo modelo que muestra el detalle del catálogo (`arModelFor`). */
+  readonly modelUrl = computed(() => arModelFor(this.product()));
+  readonly modelKind = computed<ModelKind>(() => arKindFor(this.modelUrl()));
+
   readonly active = computed(() => this.phase() === 'ready');
 
   readonly statusLabel = computed(() => {
@@ -124,11 +129,12 @@ export class FittingPage {
 
   constructor() {
     this.route.paramMap.subscribe((params) => {
-      const id = Number(params.get('id'));
+      const id = Number(params.get('productId'));
       this.started.set(false);
       this.bodyDetected.set(false);
       this.notice.set(null);
       this.product.set(this.store.byId(id));
+      this.syncModel();
     });
   }
 
@@ -180,6 +186,22 @@ export class FittingPage {
     if (!host) return;
     this.garment.create(host, 640, 720);
     this.glReady = true;
+    this.syncModel();
+  }
+
+  /**
+   * Sincroniza el probador con el producto del catálogo: si el producto tiene un
+   * modelo 3D real (zapato/gafas) se carga ese objeto; si es ropa, se muestra la
+   * malla que se ajusta al cuerpo. Fallback: si no llega el modelo, queda la malla.
+   */
+  private syncModel(): void {
+    if (!this.glReady) return;
+    const kind = this.modelKind();
+    if (kind === 'garment') {
+      this.garment.useGarment(this.currentAppearance().type);
+      return;
+    }
+    void this.garment.loadModel(this.modelUrl(), kind).catch(() => undefined);
   }
 
   private async openCamera(): Promise<void> {

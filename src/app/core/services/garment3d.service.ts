@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { FittingPose } from './pose-landmarker.service';
 
 export type GarmentType = 'top' | 'dress' | 'bottom';
+export type ModelKind = 'garment' | 'shoe' | 'sunglasses';
 
 export interface FittingAppearance {
   type: GarmentType;
@@ -44,6 +46,13 @@ export class Garment3DService {
   private h = 0;
   private current: GarmentType = 'top';
 
+  /** Producto 3D real cargado (zapato/gafas) que reemplaza a la malla de cuerpo. */
+  private model: THREE.Object3D | null = null;
+  private modelKind: ModelKind = 'garment';
+  /** Dimensión máxima del modelo en unidades del glTF (para escalarlo a píxeles). */
+  private modelNaturalSize = 1;
+  private readonly loader = new GLTFLoader();
+
   /** Crea el contexto WebGL y anexa su lienzo transparente a la escena. */
   create(parent: HTMLElement, w: number, h: number): void {
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -71,10 +80,46 @@ export class Garment3DService {
 
   /** Cambia la silueta 3D (superior / vestido / pantalón). */
   setGarment(type: GarmentType): void {
-    if (type === this.current) return;
+    if (this.model || type === this.current) return;
     this.current = type;
     this.disposeParts();
     this.buildGarment(type);
+  }
+
+  /** Carga un producto 3D real (glb/gltf) y lo ancla a la pose del cuerpo. */
+  async loadModel(url: string, kind: ModelKind): Promise<void> {
+    this.unloadModel();
+    const gltf = await this.loader.loadAsync(url);
+    this.disposeParts();
+    const scene = gltf.scene;
+    scene.position.set(0, 0, 0);
+    const size = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
+    this.modelNaturalSize = Math.max(size.x, size.y, size.z, 0.001);
+    this.group.add(scene);
+    this.model = scene;
+    this.modelKind = kind;
+  }
+
+  /** Vuelve a la malla de cuerpo (tras haber usado un modelo real). */
+  useGarment(type: GarmentType): void {
+    this.unloadModel();
+    this.current = type;
+    this.disposeParts();
+    this.buildGarment(type);
+  }
+
+  unloadModel(): void {
+    if (!this.model) return;
+    this.model.removeFromParent();
+    this.model.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.geometry?.dispose();
+      const material = mesh.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(material)) material.forEach((entry) => entry?.dispose?.());
+      else material?.dispose?.();
+    });
+    this.model = null;
   }
 
   resize(w: number, h: number): void {
@@ -94,6 +139,11 @@ export class Garment3DService {
       return;
     }
     this.group.visible = true;
+
+    if (this.model) {
+      this.placeModel(pose);
+      return;
+    }
 
     const anchor = appearance.type === 'bottom' ? pose.hip : pose.neck;
     const wx = anchor.x - this.w / 2;
@@ -136,9 +186,37 @@ export class Garment3DService {
   }
 
   dispose(): void {
+    this.unloadModel();
     this.disposeParts();
     this.group.removeFromParent();
     this.renderer?.dispose();
+  }
+
+  /* ------------------------------------------------------- modelo real ---- */
+
+  /**
+   * Ancla el objeto 3D del producto a la pose (sin deformarlo): el zapato se
+   * apoya en los pies y las gafas se colocan a la altura de la cara, siempre
+   * siguiendo la posición y rotación del torso.
+   */
+  private placeModel(pose: FittingPose): void {
+    if (!this.model) return;
+    const anchor =
+      this.modelKind === 'shoe'
+        ? { x: pose.hip.x, y: pose.hip.y + pose.torso }
+        : { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.5 };
+
+    // Escala el objeto al tamaño que tendría en el cuerpo: el zapato al largo
+    // del pie y las gafas al ancho de la cara, respecto a la pose detectada.
+    const targetPx =
+      this.modelKind === 'shoe' ? pose.torso * 0.5 : pose.shoulderHalf * 0.75;
+    this.model.scale.setScalar(Math.max(targetPx / this.modelNaturalSize, 0.001));
+
+    const wx = anchor.x - this.w / 2;
+    const wy = this.h / 2 - anchor.y;
+    this.group.position.set(wx, wy, 0);
+    this.group.rotation.z = -pose.angle;
+    this.light.position.set(wx - this.w * 0.12, wy + this.h * 0.1, 60);
   }
 
   /* ------------------------------------------------------- geometries ----- */
