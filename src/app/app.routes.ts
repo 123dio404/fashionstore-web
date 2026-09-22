@@ -16,6 +16,9 @@ export const routes: Routes = [
   { path: 'catalog', loadComponent: () => import('./pages/catalog/catalog.page').then((m) => m.CatalogPage) },
   { path: 'catalog/:id', loadComponent: () => import('./pages/catalog/product-detail.page').then((m) => m.ProductDetailPage) },
 
+  // CU17 - Virtual fitting room (web AR on camera)
+  { path: 'fitting/:productId', loadComponent: () => import('./pages/fitting/fitting.page').then((m) => m.FittingPage) },
+
   // CU20 - Public promotions and collections (client view)
   { path: 'promotions', loadComponent: () => import('./pages/catalog/promotions.page').then((m) => m.PromotionsPage) },
 

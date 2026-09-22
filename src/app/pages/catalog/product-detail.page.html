@@ -191,8 +191,14 @@
         }
 
         <div class="ar-actions">
-          <button type="button" class="btn btn-accent" (click)="launchAr()">
-            Ver en Vestidor AR
+          <a
+            [routerLink]="['/fitting', p.id]"
+            class="btn btn-accent try-camera"
+          >
+            Probar en cámara (ajuste al cuerpo)
+          </a>
+          <button type="button" class="btn btn-ghost" (click)="launchAr()">
+            Ver modelo 3D en AR
           </button>
           <button type="button" class="btn btn-ghost" (click)="captureAr()">
             Capturar

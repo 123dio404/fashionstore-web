@@ -80,6 +80,11 @@ export interface ChatConversationResponse {
 export interface FittingSessionCreate {
   model_url?: string | null;
   model_format?: 'glb' | 'gltf' | null;
+  model_metadata?: Record<string, unknown> | null;
+}
+
+export interface FittingSessionStatusUpdate {
+  status: 'pendiente' | 'procesando' | 'completada' | 'fallida';
 }
 
 export interface FittingSessionResponse {

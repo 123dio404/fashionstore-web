@@ -11,6 +11,7 @@ import {
   ExecutiveAnalyticsResponse,
   FittingSessionCreate,
   FittingSessionResponse,
+  FittingSessionStatusUpdate,
   RecommendationResponse,
   RecommendationStatus,
   UserPreferenceResponse,
@@ -28,6 +29,9 @@ export class ExperienceService {
   }
   getFittingSession(id: number): Observable<FittingSessionResponse> {
     return this.http.get<FittingSessionResponse>(`${this.base}/virtual-fitting/sessions/${id}`);
+  }
+  completeFittingSession(id: number, data: FittingSessionStatusUpdate): Observable<FittingSessionResponse> {
+    return this.http.patch<FittingSessionResponse>(`${this.base}/virtual-fitting/sessions/${id}`, data);
   }
 
   // CU18 - Personalized recommendations
