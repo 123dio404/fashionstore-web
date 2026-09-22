@@ -2,7 +2,7 @@
   <div class="stage-center">
     <div class="spinner"></div>
     <p class="stage-title">Procesando pago…</p>
-    <p class="muted">Conectando con la pasarela. No cierres esta ventana.</p>
+    <p class="muted">{{ progress() || 'Conectando con la pasarela…' }}</p>
   </div>
 } @else if (stage() === 'done') {
   <div class="stage-center">
@@ -13,8 +13,41 @@
     </div>
     <h2 class="stage-title">¡Compra exitosa!</h2>
     <p class="muted">
-      Orden <strong>{{ orderId() }}</strong> confirmada. Recibirás un correo con el seguimiento.
+      Orden <strong>{{ orderId() }}</strong> registrada con la pasarela simulada.
+      @if (paymentReference()) {
+        Referencia del pago <strong>{{ paymentReference() }}</strong>.
+      }
     </p>
+
+    @if (invoice(); as doc) {
+      <div class="invoice-card">
+        <p class="section-label">Factura {{ doc.invoice_number }}</p>
+        <div class="invoice-row">
+          <span>Subtotal</span><span>{{ doc.subtotal | currency: 'USD' }}</span>
+        </div>
+        <div class="invoice-row">
+          <span>IVA ({{ taxPercent(doc.tax_rate) }}%)</span>
+          <span>{{ doc.tax | currency: 'USD' }}</span>
+        </div>
+        <div class="invoice-row total">
+          <span>Total</span><span>{{ doc.total | currency: 'USD' }}</span>
+        </div>
+        <p class="invoice-note">{{ doc.disclaimer }}</p>
+        <button type="button" class="btn btn-dark" (click)="downloadInvoice()">
+          Descargar factura PDF
+        </button>
+      </div>
+    }
+
+    @if (warnings().length > 0) {
+      <div class="invoice-card">
+        <p class="section-label">Fuera de la venta</p>
+        @for (warning of warnings(); track warning) {
+          <p class="warning-line">{{ warning }}</p>
+        }
+      </div>
+    }
+
     <div class="stage-actions">
       <a routerLink="/purchase-history" class="btn btn-dark">Ver mis compras</a>
       <a routerLink="/catalog" class="btn btn-outline" (click)="reset()">Seguir comprando</a>

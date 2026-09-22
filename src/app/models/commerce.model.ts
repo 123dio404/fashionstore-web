@@ -126,6 +126,24 @@ export interface ReceiptResponse {
   items: SaleItemResponse[];
 }
 
+/** CU11 — documento fiscal simulado de una venta (`POST /commerce/sales/{id}/invoice`). */
+export interface InvoiceResponse {
+  provider: string;
+  invoice_number: string;
+  sale_id: Id;
+  issued_at: string;
+  issuer_name: string;
+  issuer_tax_id: string | null;
+  customer_id: Id;
+  tax_rate: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
+  disclaimer: string;
+}
+
 export interface ReservationItemInput {
   stock_id: Id;
   quantity: number;

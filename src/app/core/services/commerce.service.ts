@@ -7,6 +7,7 @@ import {
   CartItemRequest,
   CartResponse,
   CheckoutRequest,
+  InvoiceResponse,
   PosSaleCreate,
   ReceiptResponse,
   ReservationCreate,
@@ -37,6 +38,16 @@ export class CommerceService {
   // CU11 - Checkout
   checkout(data: CheckoutRequest): Observable<SaleResponse> {
     return this.http.post<SaleResponse>(`${this.url}/cart/checkout`, data);
+  }
+  /** CU11 — documento fiscal simulado de una venta (IVA y descargo incluidos). */
+  getInvoice(saleId: number): Observable<InvoiceResponse> {
+    return this.http.post<InvoiceResponse>(`${this.url}/sales/${saleId}/invoice`, {});
+  }
+  /** CU11 — la misma factura en PDF, lista para descargar. */
+  invoicePdf(saleId: number): Observable<Blob> {
+    return this.http.get(`${this.url}/sales/${saleId}/invoice.pdf`, {
+      responseType: 'blob'
+    });
   }
 
   // CU12 - Sales / POS
