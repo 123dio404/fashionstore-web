@@ -17,6 +17,7 @@ import {
   STORES,
   arModelFor,
   arModelSourceFor,
+  arPreviewFor,
 } from '../../core/figma-data';
 import { CatalogStore } from '../../core/services/catalog-store.service';
 
@@ -71,6 +72,7 @@ export class ProductDetailPage {
   readonly arModes = AR_MODES;
   readonly arModel = computed(() => arModelFor(this.product()));
   readonly arSource = computed(() => arModelSourceFor(this.product()));
+  readonly arPoster = computed(() => arPreviewFor(this.arModel()));
 
   readonly isFav = computed(() => {
     const p = this.product();

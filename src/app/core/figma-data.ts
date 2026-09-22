@@ -74,6 +74,32 @@ export interface FigmaPurchase {
 const U = 'https://images.unsplash.com/photo-';
 const CARD = '?w=400&h=520&fit=crop&auto=format';
 
+/* ------------------------------------------------------------ CU17 ------ */
+
+/** Ruta base de los modelos publicados por el Khronos Group (`glTF-Sample-Assets`). */
+const AR_ASSETS =
+  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models';
+
+/** Calzado — `MaterialsVariantsShoe` (`.glb`, el mismo modelo que usa el móvil). */
+export const AR_SHOE_MODEL =
+  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb';
+
+/** Prendas de tela — `SheenCloth` (`.gltf` con su `.bin` y texturas hermanas). */
+export const AR_CLOTH_MODEL = `${AR_ASSETS}/SheenCloth/glTF/SheenCloth.gltf`;
+
+/** Accesorios — `SunglassesKhronos` (`.glb` autocontenido de 371 KB). */
+export const AR_SUNGLASSES_MODEL = `${AR_ASSETS}/SunglassesKhronos/glTF-Binary/SunglassesKhronos.glb`;
+
+/** Respaldo final del vestidor cuando no hay modelo ni categoría. */
+export const AR_FALLBACK_MODEL = AR_SHOE_MODEL;
+
+/** Vistas oficiales de cada modelo (póster mientras carga el 3D). */
+export const AR_PREVIEWS = {
+  cloth: `${AR_ASSETS}/SheenCloth/screenshot/screenshot.jpg`,
+  shoe: `${AR_ASSETS}/MaterialsVariantsShoe/screenshot/screenshot.jpg`,
+  sunglasses: `${AR_ASSETS}/SunglassesKhronos/screenshot/SunglassesKhronos.png`,
+} as const;
+
 export const PRODUCTS: FigmaProduct[] = [
   {
     id: 1,
@@ -196,6 +222,8 @@ export const PRODUCTS: FigmaProduct[] = [
     rating: 4.6,
     reviews: 349,
     isFeatured: true,
+    // CU17: `model_3d_url` explícito del producto (así lo cargaría el panel).
+    model3dUrl: AR_SHOE_MODEL,
   },
   {
     id: 6,
@@ -473,13 +501,9 @@ export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
 
 /* --------------------------------------------------------------- CU17 ----- */
 
-/**
- * Modelo 3D de respaldo del Vestidor Virtual (Khronos glTF Sample Models):
- * una zapatilla con variantes de materiales en `.glb`. Se usa cuando el producto
- * no trae `model_3d_url`, para que la sesión AR siempre tenga algo real que proyectar.
- */
-export const AR_FALLBACK_MODEL =
-  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb';
+// Los modelos 3D (`AR_SHOE_MODEL`, `AR_CLOTH_MODEL`, `AR_SUNGLASSES_MODEL`,
+// `AR_FALLBACK_MODEL`) y sus vistas previas (`AR_PREVIEWS`) se declaran arriba,
+// junto a `PRODUCTS`, porque los productos demo los referencian al construirse.
 
 /** Componente estándar que renderiza el 3D/AR (`index.html` lo carga del CDN de Google). */
 export const AR_VIEWER_TAG = 'model-viewer';
@@ -487,15 +511,40 @@ export const AR_VIEWER_TAG = 'model-viewer';
 /** Modos de AR del componente: Scene Viewer (Android), WebXR y Quick Look (iOS). */
 export const AR_MODES = 'scene-viewer webxr quick-look';
 
-/** CU17: modelo 3D del producto — `model_3d_url` real o el de respaldo. */
-export function arModelFor(product?: { model3dUrl?: string | null } | null): string {
+/** Modelo de demostración que corresponde a la categoría del producto. */
+export function arModelForCategory(category: string): string {
+  const value = category.toLowerCase();
+  if (value.includes('calz') || value.includes('zapat')) return AR_SHOE_MODEL;
+  if (value.includes('acces') || value.includes('gafa')) {
+    return AR_SUNGLASSES_MODEL;
+  }
+  return AR_CLOTH_MODEL;
+}
+
+/** CU17: modelo 3D — `model_3d_url` real, demo por categoría o respaldo. */
+export function arModelFor(
+  product?: { model3dUrl?: string | null; category?: string } | null,
+): string {
   const url = product?.model3dUrl?.trim();
-  return url ? url : AR_FALLBACK_MODEL;
+  if (url) return url;
+  const category = product?.category?.trim();
+  return category ? arModelForCategory(category) : AR_FALLBACK_MODEL;
+}
+
+/** CU17: póster que corresponde al modelo mostrado. */
+export function arPreviewFor(modelUrl: string): string {
+  const value = modelUrl.toLowerCase();
+  if (value.includes('sunglasses')) return AR_PREVIEWS.sunglasses;
+  if (value.includes('shoe')) return AR_PREVIEWS.shoe;
+  return AR_PREVIEWS.cloth;
 }
 
 /** CU17: origen del modelo que muestra el vestidor (trazabilidad del CU). */
-export function arModelSourceFor(product?: { model3dUrl?: string | null } | null): string {
-  return product?.model3dUrl?.trim()
-    ? 'model_3d_url del producto'
+export function arModelSourceFor(
+  product?: { model3dUrl?: string | null; category?: string } | null,
+): string {
+  if (product?.model3dUrl?.trim()) return 'model_3d_url del producto';
+  return product?.category?.trim()
+    ? 'modelo de demostración de la categoría'
     : 'modelo de respaldo del prototipo';
 }
