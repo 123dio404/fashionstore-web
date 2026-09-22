@@ -97,4 +97,6 @@ export interface AvailabilityResponse {
   physical_stock: number;
   reserved_stock: number;
   available_stock: number;
+  /** CU10/CU11 — fila de inventario que el carrito y el checkout usan para descontar. */
+  stock_id: Id;
 }

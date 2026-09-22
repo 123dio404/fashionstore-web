@@ -162,6 +162,49 @@
           }
         </div>
       }
+
+      <!-- CU17 — Vestidor Virtual AR: visor 3D real + sesión ARCore (Scene Viewer). -->
+      <div class="ar-card">
+        <div class="ar-head">
+          <p class="section-label">Vestidor virtual AR</p>
+          <span class="ar-badge">Escala 1:1</span>
+        </div>
+
+        @if (arReady()) {
+          <model-viewer
+            #arViewer
+            class="ar-viewer"
+            [attr.src]="arModel()"
+            [attr.alt]="'Modelo 3D de ' + p.name"
+            [attr.poster]="arPoster()"
+            [attr.ar-modes]="arModes"
+            ar
+            camera-controls
+            auto-rotate
+            ar-scale="fixed"
+            ar-placement="floor"
+            shadow-intensity="1"
+            (load)="probeAr()"
+          ></model-viewer>
+        } @else {
+          <div class="ar-loading">Cargando visor 3D…</div>
+        }
+
+        <div class="ar-actions">
+          <button type="button" class="btn btn-accent" (click)="launchAr()">
+            Ver en Vestidor AR
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="captureAr()">
+            Capturar
+          </button>
+        </div>
+
+        <p class="ar-meta">Modelo: {{ arSource() }}</p>
+        <p class="ar-meta ar-url">{{ arModel() }}</p>
+        @if (arNotice(); as notice) {
+          <p class="ar-notice">{{ notice }}</p>
+        }
+      </div>
     </aside>
   </div>
 } @else {

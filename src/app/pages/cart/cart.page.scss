@@ -334,3 +334,48 @@
     position: static;
   }
 }
+
+/* CU11 — resultado real del checkout (venta, pago simulado y factura) */
+.invoice-card {
+  width: 100%;
+  max-width: 26rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.invoice-card .section-label {
+  margin: 0 0 0.6rem;
+}
+
+.invoice-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.invoice-row.total {
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.invoice-note {
+  margin: 0.7rem 0 0.9rem;
+  font-size: 0.72rem;
+  color: var(--muted-2);
+}
+
+.warning-line {
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  color: var(--warning);
+}
