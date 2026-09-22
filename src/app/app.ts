@@ -4,6 +4,7 @@ import { filter } from 'rxjs';
 
 import { ICONS, NavGroup, NavItem, ROLE_META, navForRole } from './core/navigation';
 import { AuthService } from './core/services/auth.service';
+import { CatalogStore } from './core/services/catalog-store.service';
 import { CommerceService } from './core/services/commerce.service';
 import { Role } from './models';
 import { UiConfirmComponent } from './shared/ui/confirm-dialog.component';
@@ -19,6 +20,9 @@ const SIDEBAR_KEY = 'fashionstore_sidebar_collapsed';
   styleUrl: './app.scss'
 })
 export class App {
+  /** Estado del catálogo demo (carrito, favoritos y toast del prototipo). */
+  readonly catalogStore = inject(CatalogStore);
+
   private readonly auth = inject(AuthService);
   private readonly commerce = inject(CommerceService);
   private readonly router = inject(Router);

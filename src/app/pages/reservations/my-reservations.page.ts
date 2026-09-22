@@ -1,111 +1,166 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { ICONS } from '../../core/navigation';
-import { CommerceService } from '../../core/services/commerce.service';
-import { ReservationResponse, ReservationStatus } from '../../models';
-import { ConfirmService } from '../../shared/ui/confirm.service';
-import { UiEmptyComponent } from '../../shared/ui/empty-state.component';
-import { UiErrorComponent } from '../../shared/ui/error-state.component';
-import { UiIconComponent } from '../../shared/ui/icon.component';
-import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
+import {
+  DEMO_DATES,
+  FigmaProduct,
+  PRODUCTS,
+  STORES,
+  TIME_SLOTS,
+} from '../../core/figma-data';
+import { CatalogStore } from '../../core/services/catalog-store.service';
+import { inject } from '@angular/core';
 
-/** CU15 — Consultar y cancelar reservas (web): tarjetas con estado, probador y cancelación. */
+interface DemoReservation {
+  id: string;
+  productId: number;
+  size: string;
+  color: string;
+  date: string;
+  time: string;
+  storeId: string;
+  status: 'confirmada' | 'pendiente' | 'cancelada';
+  code: string;
+}
+
+const INITIAL: DemoReservation[] = [
+  {
+    id: 'RES-7842',
+    productId: 1,
+    size: 'M',
+    color: 'Negro',
+    date: '24 sep 2026',
+    time: '15:30',
+    storeId: 'centro',
+    status: 'confirmada',
+    code: 'FS-7842',
+  },
+  {
+    id: 'RES-7901',
+    productId: 5,
+    size: '40',
+    color: 'Blanco',
+    date: '28 sep 2026',
+    time: '11:00',
+    storeId: 'norte',
+    status: 'pendiente',
+    code: 'FS-7901',
+  },
+  {
+    id: 'RES-7650',
+    productId: 2,
+    size: 'S',
+    color: 'Terracota',
+    date: '10 sep 2026',
+    time: '14:00',
+    storeId: 'sur',
+    status: 'cancelada',
+    code: 'FS-7650',
+  },
+];
+
+const STATUS_MAP: Record<string, { label: string; tone: string }> = {
+  confirmada: { label: 'Confirmada', tone: 'ok' },
+  pendiente: { label: 'Pendiente', tone: 'warn' },
+  cancelada: { label: 'Cancelada', tone: 'danger' },
+};
+
+/**
+ * CU15 — Reservas de probador del cliente con imágenes del catálogo demo.
+ * Reproduce `design/figma-make/src/web/screens/ReservationsPage.tsx`.
+ */
 @Component({
   selector: 'app-my-reservations-page',
-  imports: [
-    CommonModule,
-    RouterLink,
-    UiEmptyComponent,
-    UiErrorComponent,
-    UiIconComponent,
-    UiSkeletonComponent
-  ],
+  imports: [CommonModule, FormsModule],
   templateUrl: './my-reservations.page.html',
-  styleUrl: './my-reservations.page.scss'
+  styleUrl: './my-reservations.page.scss',
 })
 export class MyReservationsPage {
-  private readonly commerce = inject(CommerceService);
-  private readonly confirm = inject(ConfirmService);
+  private readonly store = inject(CatalogStore);
 
-  readonly icons = ICONS;
-  readonly reservations = signal<ReservationResponse[]>([]);
-  readonly loading = signal(true);
-  readonly error = signal<string | null>(null);
-  readonly message = signal<string | null>(null);
+  readonly products = PRODUCTS;
+  readonly stores = STORES;
+  readonly slots = TIME_SLOTS;
+  readonly dates = DEMO_DATES;
 
-  constructor() {
-    this.load();
+  readonly reservations = signal<DemoReservation[]>([...INITIAL]);
+  readonly filter = signal<string>('all');
+  readonly showModal = signal(false);
+  readonly created = signal(false);
+
+  productId = PRODUCTS[0].id;
+  storeId = STORES[0].id;
+  date = '25 sep 2026';
+  time = TIME_SLOTS[0];
+  size = 'M';
+
+  get displayed(): DemoReservation[] {
+    const value = this.filter();
+    return value === 'all'
+      ? this.reservations()
+      : this.reservations().filter((item) => item.status === value);
   }
 
-  canCancel(reservation: ReservationResponse): boolean {
-    return (
-      reservation.status !== ReservationStatus.Cancelada &&
-      reservation.status !== ReservationStatus.Completada &&
-      reservation.status !== ReservationStatus.Reembolsada &&
-      reservation.status !== ReservationStatus.Devuelta
-    );
+  product(id: number): FigmaProduct | undefined {
+    return this.products.find((item) => item.id === id);
   }
 
-  /** Color del badge según el estado de la reserva (CU14 la avanza en tienda). */
-  statusClass(reservation: ReservationResponse): string {
-    switch (reservation.status) {
-      case ReservationStatus.Completada:
-        return 'ok';
-      case ReservationStatus.Cancelada:
-        return 'err';
-      case ReservationStatus.Reembolsada:
-      case ReservationStatus.Devuelta:
-        return 'neutral';
-      case ReservationStatus.EnProbador:
-      case ReservationStatus.EnTienda:
-      case ReservationStatus.Lista:
-        return 'warn';
-      default:
-        return 'info';
-    }
+  storeName(id: string): string {
+    return this.stores.find((item) => item.id === id)?.name ?? 'Sucursal';
   }
 
-  statusLabel(reservation: ReservationResponse): string {
-    return reservation.status.replace(/_/g, ' ');
+  statusLabel(status: string): string {
+    return STATUS_MAP[status]?.label ?? status;
   }
 
-  load(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.commerce.listReservations().subscribe({
-      next: (data) => {
-        this.reservations.set(data);
-        this.loading.set(false);
+  statusTone(status: string): string {
+    return STATUS_MAP[status]?.tone ?? 'neutral';
+  }
+
+  filterCount(): number {
+    return this.reservations().length;
+  }
+
+  openModal(): void {
+    this.created.set(false);
+    this.showModal.set(true);
+  }
+
+  closeModal(): void {
+    this.showModal.set(false);
+  }
+
+  confirm(): void {
+    const product = this.product(Number(this.productId));
+    if (!product) return;
+
+    const stamp = Date.now();
+    this.reservations.update((list) => [
+      {
+        id: `RES-${stamp % 100000}`,
+        productId: product.id,
+        size: this.size || product.sizes[0],
+        color: product.colors[0]?.name ?? '',
+        date: this.date,
+        time: this.time,
+        storeId: this.storeId,
+        status: 'confirmada',
+        code: `FS-${1000 + (stamp % 9000)}`,
       },
-      error: (err: Error) => {
-        this.error.set(err.message);
-        this.loading.set(false);
-      }
-    });
+      ...list,
+    ]);
+    this.created.set(true);
+    this.store.showToast(`Reserva confirmada · ${product.name}`);
   }
 
-  cancel(reservation: ReservationResponse): void {
-    void this.confirm
-      .ask({
-        title: 'Cancelar reserva',
-        message: `¿Seguro que quieres cancelar la reserva #${reservation.id}? Se liberará el stock reservado.`,
-        confirmLabel: 'Sí, cancelar',
-        danger: true
-      })
-      .then((confirmed) => {
-        if (!confirmed) return;
-        this.message.set(null);
-        this.commerce
-          .updateReservation(reservation.id, { status: ReservationStatus.Cancelada })
-          .subscribe({
-            next: () => {
-              this.message.set(`Reserva #${reservation.id} cancelada.`);
-              this.load();
-            },
-            error: (err: Error) => this.error.set(err.message)
-          });
-      });
+  cancel(id: string): void {
+    this.reservations.update((list) =>
+      list.map((item) =>
+        item.id === id ? { ...item, status: 'cancelada' as const } : item
+      )
+    );
+    this.store.showToast('Reserva cancelada');
   }
 }

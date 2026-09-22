@@ -1,149 +1,173 @@
-<nav class="pd-crumbs">
-  <a routerLink="/catalog">
-    <app-ui-icon class="pd-back" [d]="icons.chevronRight" [size]="13" color="var(--muted)" />
+<nav class="crumbs">
+  <a routerLink="/catalog" class="crumb-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
     Catálogo
   </a>
-  <app-ui-icon [d]="icons.chevronRight" [size]="12" color="var(--muted-2)" />
-  <span>{{ product()?.name || 'Prenda' }}</span>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2)" stroke-width="2" stroke-linecap="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+  <span class="crumb-current">{{ product()?.name ?? 'Prenda' }}</span>
 </nav>
 
-@if (loading()) {
-  <app-ui-skeleton [rows]="3" [height]="140" />
-} @else if (error()) {
-  <app-ui-error [message]="error() ?? ''" (retry)="load()" />
-} @else if (product(); as p) {
-  <div class="pd">
-    <div class="pd-gallery">
-      <div class="pd-hero">
-        <span class="pd-initial">{{ initial() }}</span>
-        @if (!p.is_active) {
-          <span class="pd-flag">Inactivo</span>
-        }
-      </div>
-      <p class="pd-hint">
-        Imagen de referencia no disponible: se muestra el monograma de la marca.
-      </p>
-      @if (p.model_3d_url) {
-        <p class="pd-hint">
-          Modelo 3D ({{ p.model_3d_format || 'glb' }}) disponible para el probador virtual en la app móvil.
-        </p>
+@if (product(); as p) {
+  <div class="detail-grid">
+    <div class="gallery">
+      @if (p.images.length > 1) {
+        <div class="thumbs">
+          @for (img of p.images; track img; let i = $index) {
+            <button
+              type="button"
+              class="thumb"
+              [class.active]="imgIdx() === i"
+              (click)="imgIdx.set(i)"
+            >
+              <img [src]="img" alt="" />
+            </button>
+          }
+        </div>
       }
+
+      <div class="main-image">
+        <img [src]="p.images[imgIdx()]" [alt]="p.name" />
+        <span class="badge-accent">-{{ p.discount }}%</span>
+        <button
+          type="button"
+          class="fav-btn"
+          (click)="toggleFav()"
+          aria-label="Marcar como favorito"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            [attr.fill]="isFav() ? 'var(--brand)' : 'none'"
+            [attr.stroke]="isFav() ? 'var(--brand)' : 'var(--dark)'"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <path [attr.d]="heartPath" />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <aside class="pd-panel">
-      <p class="pd-brand">{{ p.brand || 'Sin marca' }}</p>
-      <h2 class="pd-name">{{ p.name }}</h2>
-      <p class="pd-price">{{ p.price | currency: 'USD' }}</p>
-      <p class="pd-tax">Precio final · impuestos incluidos</p>
+    <aside class="info">
+      <p class="product-brand">{{ p.brand }} · {{ p.category }}</p>
+      <h1 class="title">{{ p.name }}</h1>
+      <p class="rating">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B">
+          <path [attr.d]="starPath" />
+        </svg>
+        {{ p.rating }} · {{ p.reviews }} reseñas
+      </p>
 
-      @if (sizeOptions().length > 0) {
-        <div class="pd-block">
-          <div class="pd-block-head">
-            <span class="pd-label">Talla</span>
-            @if (sizeId() === null) {
-              <span class="pd-warn">Selecciona una talla</span>
-            }
-          </div>
-          <div class="pd-chips">
-            @for (size of sizeOptions(); track size.id) {
-              <button
-                type="button"
-                class="pd-chip"
-                [class.selected]="sizeId() === size.id"
-                [class.off]="!hasVariant(size.id, null)"
-                (click)="sizeId.set(size.id)"
-              >
-                {{ size.name }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      @if (colorOptions().length > 0) {
-        <div class="pd-block">
-          <span class="pd-label">Color</span>
-          <div class="pd-chips">
-            @for (color of colorOptions(); track color.id) {
-              <button
-                type="button"
-                class="pd-chip"
-                [class.selected]="colorId() === color.id"
-                [class.off]="!hasVariant(null, color.id)"
-                (click)="colorId.set(color.id)"
-              >
-                {{ color.name }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      <div class="pd-block">
-        <label class="pd-label" for="pd-branch">Sucursal</label>
-        <select id="pd-branch" [ngModel]="branchId()" (ngModelChange)="branchId.set($event)">
-          @for (branch of branches(); track branch.id) {
-            <option [ngValue]="branch.id">{{ branch.name }}</option>
-          }
-        </select>
+      <div class="price-row">
+        <span class="price">{{ p.price | currency: 'USD' }}</span>
+        <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
+        <span class="save">
+          Ahorrás {{ (p.oldPrice - p.price) | currency: 'USD' }}
+        </span>
       </div>
 
-      <div class="pd-actions">
-        <div class="pd-qty">
-          <button type="button" (click)="setQuantity(quantity() - 1)">−</button>
-          <span>{{ quantity() }}</span>
-          <button type="button" (click)="setQuantity(quantity() + 1)">+</button>
+      <p class="section-label">Color · {{ colorName() }}</p>
+      <div class="color-row">
+        @for (c of p.colors; track c.name; let i = $index) {
+          <button
+            type="button"
+            class="color-dot"
+            [class.active]="colorIdx() === i"
+            [attr.aria-label]="c.name"
+            [attr.title]="c.name"
+            (click)="colorIdx.set(i)"
+          >
+            <span [style.background]="c.hex"></span>
+          </button>
+        }
+      </div>
+
+      <p class="section-label">Talla</p>
+      <div class="size-row">
+        @for (s of p.sizes; track s) {
+          <button
+            type="button"
+            class="size-chip"
+            [class.active]="size() === s"
+            (click)="size.set(s)"
+          >
+            {{ s }}
+          </button>
+        }
+      </div>
+      @if (!size()) {
+        <p class="hint">Selecciona una talla para continuar</p>
+      }
+
+      <div class="buy-row">
+        <div class="qty">
+          <button type="button" (click)="dec()" aria-label="Quitar uno">−</button>
+          <span>{{ qty() }}</span>
+          <button type="button" (click)="inc()" aria-label="Agregar uno">+</button>
         </div>
-        <button type="button" class="pd-add" [disabled]="!canAdd()" (click)="addToCart()">
+        <button
+          type="button"
+          class="btn buy-btn"
+          [class.is-added]="added()"
+          [disabled]="!size()"
+          (click)="add()"
+        >
           {{ added() ? '✓ Añadido al carrito' : 'Agregar al carrito' }}
         </button>
       </div>
-      <a class="pd-secondary" routerLink="/cart">Ver carrito</a>
 
-      @if (message()) {
-        <div class="alert alert-success">{{ message() }}</div>
-      }
-      @if (cartError()) {
-        <div class="alert alert-error">{{ cartError() }}</div>
-      }
+      <a routerLink="/cart" class="btn btn-outline full">Ver carrito</a>
 
-      <div class="pd-stock">
-        <p class="pd-label">Disponibilidad por sucursal</p>
-        @if (stockLoading()) {
-          <p class="muted">Consultando stock…</p>
-        } @else if (availability().length === 0) {
-          <p class="muted">Sin stock registrado para esta prenda.</p>
-        } @else {
-          @for (row of availability(); track row.branch_id) {
-            <div class="pd-stock-row" [class.current]="row.branch_id === branchId()">
-              <span>{{ row.name }}</span>
-              <span
-                [class.zero]="row.available === 0"
-                [class.low]="row.available > 0 && row.available <= 2"
-                [class.ok]="row.available > 2"
-              >
-                {{
-                  row.available === 0
-                    ? 'Sin stock'
-                    : row.available <= 2
-                      ? 'Últimas ' + row.available + ' unid.'
-                      : row.available + ' disponibles'
-                }}
-              </span>
-            </div>
-          }
+      <div class="stock-card">
+        <p class="section-label">Disponibilidad por sucursal</p>
+        @for (store of stores; track store.id) {
+          <div class="stock-row">
+            <span>{{ store.name }}</span>
+            <span
+              class="stock-value"
+              [class.ok]="stockTone(store.id) === 'ok'"
+              [class.low]="stockTone(store.id) === 'low'"
+              [class.out]="stockTone(store.id) === 'out'"
+            >
+              {{ stockLabel(store.id) }}
+            </span>
+          </div>
         }
       </div>
 
-      @if (p.technical_metadata) {
-        <details class="pd-acc">
-          <summary>
-            Ficha técnica
-            <app-ui-icon [d]="icons.chevronRight" [size]="14" color="var(--muted)" />
-          </summary>
-          <p class="muted">{{ p.technical_metadata }}</p>
-        </details>
+      @for (acc of accordions; track acc.id) {
+        <div class="acc">
+          <button type="button" class="acc-head" (click)="toggleAcc(acc.id)">
+            <span>{{ acc.label }}</span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--muted)"
+              stroke-width="2"
+              stroke-linecap="round"
+              [style.transform]="openAcc() === acc.id ? 'rotate(180deg)' : 'none'"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          @if (openAcc() === acc.id) {
+            <p class="acc-body">{{ acc.content }}</p>
+          }
+        </div>
       }
     </aside>
+  </div>
+} @else {
+  <div class="not-found">
+    <p class="empty-title">Prenda no encontrada</p>
+    <p class="muted">La prenda que buscas no está en el catálogo.</p>
+    <a routerLink="/catalog" class="btn btn-primary">Volver al catálogo</a>
   </div>
 }

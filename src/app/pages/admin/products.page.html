@@ -68,7 +68,9 @@
           <tr>
             <td>
               <div class="user-cell">
-                <span class="avatar-sm">{{ initial(product) }}</span>
+                <span class="thumb-sm">
+                  <img [src]="imageFor(product)" [alt]="product.name" loading="lazy" />
+                </span>
                 <div class="cell-stack">
                   <span class="cell-strong">{{ product.name }}</span>
                   <span class="cell-sub">

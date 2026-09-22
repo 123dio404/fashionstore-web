@@ -1,205 +1,79 @@
-@if (error()) {
-  <div class="alert alert-error">{{ error() }}</div>
-}
-
-<div class="chat-shell">
-  <!-- Conversaciones (240px) -->
-  <aside class="conv-col">
-    <div class="conv-head">
-      <p class="conv-title">Conversaciones</p>
-      <div class="conv-search">
-        <app-ui-icon [d]="icons.search" [size]="12" color="var(--muted)" />
-        <input
-          type="search"
-          placeholder="Buscar..."
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-        />
+<div class="chat-layout">
+  <section class="chat-panel">
+    <header class="chat-head">
+      <span class="bot-avatar">A</span>
+      <div class="bot-id">
+        <span class="bot-name">Aria · Asistente IA</span>
+        <span class="bot-status"><span class="dot"></span> En línea · responde al instante</span>
       </div>
-      <button type="button" class="conv-new" (click)="createDrawer.set(true)">
-        <app-ui-icon [d]="plus" [size]="12" />
-        Nueva conversación
-      </button>
+    </header>
+
+    <div class="chat-body">
+      @for (msg of messages(); track msg.id) {
+        <div class="msg-row" [class.user]="msg.from === 'user'">
+          @if (msg.from === 'bot') {
+            <span class="msg-avatar">A</span>
+          }
+          <div class="bubble" [class.mine]="msg.from === 'user'">
+            <p>{{ msg.text }}</p>
+            <span class="msg-time">{{ msg.time }}</span>
+          </div>
+        </div>
+      }
+
+      @if (typing()) {
+        <div class="msg-row">
+          <span class="msg-avatar">A</span>
+          <div class="bubble typing">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      }
+
+      <div #endRef></div>
     </div>
 
-    <div class="conv-list">
-      @for (conversation of filteredConversations(); track conversation.id) {
-        <button
-          type="button"
-          class="conv-item"
-          [class.active]="active()?.id === conversation.id"
-          (click)="open(conversation.id)"
-        >
-          <span class="conv-item-top">
-            <span class="conv-item-name">
-              {{ conversation.title || 'Conversación #' + conversation.id }}
-            </span>
-            <span class="conv-item-time">{{ conversation.updated_at | date: 'd MMM' }}</span>
-          </span>
-          <span class="conv-item-preview">
-            {{
-              conversation.messages[conversation.messages.length - 1]?.content ||
-                'Conversación vacía'
-            }}
-          </span>
-        </button>
-      } @empty {
-        <p class="note">Aún no tienes conversaciones.</p>
+    <div class="suggestions">
+      @for (s of suggestions; track s) {
+        <button type="button" class="suggestion" (click)="send(s)">{{ s }}</button>
       }
     </div>
-  </aside>
 
-  <!-- Chat central -->
-  <section class="chat-main">
-    @if (active(); as conversation) {
-      <header class="chat-head">
-        <div class="chat-bot-avatar" aria-hidden="true">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <path d="M9 9h.01M15 9h.01M9 15h6" />
-          </svg>
-        </div>
-        <div class="chat-bot-meta">
-          <strong>Aria · Asistente IA</strong>
-          <span class="chat-online"><i class="dot"></i>En línea</span>
-        </div>
-        <span class="spacer"></span>
-        <span class="chat-count">{{ messages().length }} mensajes</span>
-      </header>
-
-      <div class="chat-thread" #thread>
-        @for (message of messages(); track message.id) {
-          <div class="chat-msg" [class.from-user]="isUser(message)">
-            @if (!isUser(message)) {
-              <span class="msg-avatar">A</span>
-            }
-            <div class="msg-col">
-              <div class="msg-bubble">
-                <p class="msg-text">{{ message.content }}</p>
-              </div>
-              <span class="msg-time">
-                {{ isUser(message) ? 'Tú' : 'Aria' }} · {{ message.created_at | date: 'shortTime' }}
-              </span>
-            </div>
-          </div>
-        } @empty {
-          <p class="note">Escribe tu primera consulta o usa una sugerencia.</p>
-        }
-        @if (sending()) {
-          <div class="chat-msg" aria-label="El asistente está escribiendo">
-            <span class="msg-avatar">A</span>
-            <div class="msg-bubble typing">
-              <span class="td"></span><span class="td"></span><span class="td"></span>
-            </div>
-          </div>
-        }
-      </div>
-
-      <div class="chat-suggestions">
-        @for (suggestion of suggestions; track suggestion) {
-          <button type="button" class="suggestion-chip" (click)="ask(suggestion)">
-            {{ suggestion }}
-          </button>
-        }
-      </div>
-
-      <form class="chat-input" (ngSubmit)="send()">
-        <input
-          placeholder="Escribe un mensaje..."
-          [(ngModel)]="draft"
-          name="draft"
-          autocomplete="off"
-        />
-        <button
-          type="submit"
-          class="send-btn"
-          [disabled]="!draft.trim() || sending()"
-          aria-label="Enviar"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </button>
-      </form>
-    } @else {
-      <div class="chat-idle">
-        <div class="chat-idle-icon">
-          <svg
-            width="26"
-            height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--brand)"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <path d="M9 9h.01M15 9h.01M9 15h6" />
-          </svg>
-        </div>
-        <p class="chat-idle-title">Selecciona una conversación</p>
-        <p class="chat-idle-msg">
-          Elige una de la izquierda o crea una nueva para empezar a chatear con Aria.
-        </p>
-      </div>
-    }
+    <div class="chat-input">
+      <input
+        type="text"
+        placeholder="Escribe un mensaje..."
+        [(ngModel)]="input"
+        (keyup.enter)="send()"
+      />
+      <button type="button" class="send-btn" (click)="send()" aria-label="Enviar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      </button>
+    </div>
   </section>
 
-  <!-- Acciones rápidas (280px) -->
-  <aside class="quick-col">
-    <p class="quick-title">Acciones rápidas</p>
+  <aside class="quick-panel">
+    <p class="panel-title">Acciones rápidas</p>
     <div class="quick-list">
       @for (action of quickActions; track action.label) {
-        <button type="button" class="quick-item" (click)="ask(action.label)">
+        <button type="button" class="quick-btn" (click)="send(action.label)">
           <span class="quick-icon">
             <app-ui-icon [d]="action.icon" [size]="15" color="var(--muted)" />
           </span>
-          <span>{{ action.label }}</span>
+          <span class="quick-label">{{ action.label }}</span>
         </button>
       }
     </div>
+
     <div class="aria-card">
-      <p class="aria-name">Aria · Asistente IA</p>
+      <p class="aria-title">Aria · Asistente IA</p>
       <p class="aria-text">
-        Disponible 24/7. Para consultas complejas, un agente humano te atenderá en horario
-        comercial.
+        Disponible 24/7. Para consultas complejas, un agente humano te atenderá en
+        horario comercial.
       </p>
     </div>
   </aside>
 </div>
-
-<app-ui-drawer
-  [open]="createDrawer()"
-  title="Nueva conversación"
-  subtitle="Ponle un título para reconocerla después"
-  [width]="380"
-  (closed)="createDrawer.set(false)"
->
-  <div class="field">
-    <label for="c-title">Título</label>
-    <input id="c-title" placeholder="Ej. Consulta sobre mi pedido" [(ngModel)]="newTitle" />
-  </div>
-  <div drawer-actions>
-    <button type="button" class="btn" (click)="createDrawer.set(false)">Cancelar</button>
-    <button type="button" class="btn-primary" (click)="create()">Crear conversación</button>
-  </div>
-</app-ui-drawer>

@@ -1,98 +1,102 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { BranchesService } from '../../core/services/branches.service';
-import { CommerceService } from '../../core/services/commerce.service';
-import { BranchResponse, CartItemResponse, CartResponse, SaleResponse } from '../../models';
-import { UiEmptyComponent } from '../../shared/ui/empty-state.component';
-import { UiErrorComponent } from '../../shared/ui/error-state.component';
-import { UiSkeletonComponent } from '../../shared/ui/skeleton.component';
+import {
+  COUPON_CODE,
+  COUPON_RATE,
+  SHIPPING_HOME,
+  STORES,
+} from '../../core/figma-data';
+import { CatalogStore } from '../../core/services/catalog-store.service';
 
-/** CU10 carrito + CU11 compra digital (web): prendas a la izquierda, resumen y pago a la derecha. */
+type Delivery = 'home' | 'pickup';
+type Stage = 'cart' | 'processing' | 'done';
+
+/**
+ * CU10 / CU11 — Carrito y checkout con imágenes, cupón FASHION10 y entrega.
+ * Reproduce `design/figma-make/src/web/screens/CartPage.tsx` y `CheckoutPage.tsx`.
+ */
 @Component({
   selector: 'app-cart-page',
-  imports: [CommonModule, FormsModule, RouterLink, UiEmptyComponent, UiErrorComponent, UiSkeletonComponent],
+  imports: [CommonModule, CurrencyPipe, FormsModule, RouterLink],
   templateUrl: './cart.page.html',
-  styleUrl: './cart.page.scss'
+  styleUrl: './cart.page.scss',
 })
 export class CartPage {
-  private readonly commerce = inject(CommerceService);
-  private readonly branchesService = inject(BranchesService);
+  readonly store = inject(CatalogStore);
+  readonly stores = STORES;
 
-  readonly cart = signal<CartResponse | null>(null);
-  readonly branches = signal<BranchResponse[]>([]);
-  readonly sale = signal<SaleResponse | null>(null);
-  readonly loading = signal(true);
-  readonly checkingOut = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly message = signal<string | null>(null);
-  readonly checkoutError = signal<string | null>(null);
+  readonly couponCode = COUPON_CODE;
+  readonly shippingHome = SHIPPING_HOME;
+  readonly delivery = signal<Delivery>('home');
+  readonly storeId = signal('centro');
+  readonly stage = signal<Stage>('cart');
+  readonly couponApplied = signal(false);
+  readonly orderId = signal(this.newOrderId());
 
-  branchId: number | null = null;
+  coupon = '';
 
-  constructor() {
-    this.reload();
-    this.branchesService.list().subscribe((items) => this.branches.set(items));
+  readonly cartCount = this.store.cartCount;
+  readonly subtotal = this.store.subtotal;
+  readonly shipping = computed(() =>
+    this.delivery() === 'home' ? SHIPPING_HOME : 0
+  );
+  readonly discount = computed(() =>
+    this.couponApplied() ? this.subtotal() * COUPON_RATE : 0
+  );
+  readonly total = computed(
+    () => this.subtotal() + this.shipping() - this.discount()
+  );
+
+  applyCoupon(): void {
+    if (this.coupon.trim().toUpperCase() === COUPON_CODE) {
+      this.couponApplied.set(true);
+      this.store.showToast('Cupón FASHION10 aplicado (-10%)');
+    } else {
+      this.store.showToast('Cupón inválido. Prueba con FASHION10');
+    }
   }
 
-  itemCount(): number {
-    return (this.cart()?.items ?? []).reduce((total, item) => total + item.quantity, 0);
+  setDelivery(mode: Delivery): void {
+    this.delivery.set(mode);
   }
 
-  reload(): void {
-    this.loading.set(true);
-    this.error.set(null);
-    this.commerce.getCart().subscribe({
-      next: (data) => {
-        this.cart.set(data);
-        this.loading.set(false);
-      },
-      error: (err: Error) => {
-        this.error.set(err.message);
-        this.loading.set(false);
-      }
-    });
+  setStore(id: string): void {
+    this.storeId.set(id);
   }
 
-  setQuantity(item: CartItemResponse, quantity: number): void {
-    const value = Math.max(1, Number(quantity) || 1);
-    this.commerce.updateItem(item.id, value).subscribe({
-      next: (data) => this.cart.set(data),
-      error: (err: Error) => this.error.set(err.message)
-    });
+  inc(productId: number, size: string): void {
+    this.store.inc(productId, size);
   }
 
-  remove(item: CartItemResponse): void {
-    this.commerce.removeItem(item.id).subscribe({
-      next: (data) => this.cart.set(data),
-      error: (err: Error) => this.error.set(err.message)
-    });
+  dec(productId: number, size: string): void {
+    this.store.dec(productId, size);
   }
 
+  remove(productId: number, size: string): void {
+    this.store.remove(productId, size);
+  }
+
+  /** Checkout simulado (el backend real se integra por `CommerceService`). */
   checkout(): void {
-    if (!this.branchId) return;
-    this.checkingOut.set(true);
-    this.message.set(null);
-    this.checkoutError.set(null);
-    this.commerce
-      .checkout({
-        branch_id: this.branchId,
-        payment_provider: 'stripe',
-        idempotency_key: `web-${Date.now()}`
-      })
-      .subscribe({
-        next: (sale) => {
-          this.checkingOut.set(false);
-          this.sale.set(sale);
-          this.message.set('Compra registrada. El estado del pago lo confirma el backend.');
-          this.reload();
-        },
-        error: (err: Error) => {
-          this.checkingOut.set(false);
-          this.checkoutError.set(err.message);
-        }
-      });
+    if (this.cartCount() === 0) return;
+    this.stage.set('processing');
+    setTimeout(() => {
+      this.store.clearCart();
+      this.couponApplied.set(false);
+      this.coupon = '';
+      this.orderId.set(this.newOrderId());
+      this.stage.set('done');
+    }, 2200);
+  }
+
+  reset(): void {
+    this.stage.set('cart');
+  }
+
+  private newOrderId(): string {
+    return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
   }
 }

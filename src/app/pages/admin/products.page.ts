@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { demoImageFor } from '../../core/figma-data';
 import { ProductsService } from '../../core/services/products.service';
 import {
   CategoryResponse,
@@ -81,6 +82,9 @@ export class ProductsPage {
   initial(product: ProductResponse): string {
     return (product.brand || product.name).charAt(0).toUpperCase();
   }
+
+  /** Imagen demo para la fila: el backend no expone imágenes de prenda. */
+  readonly imageFor = (product: ProductResponse): string => demoImageFor(product.name);
 
   categoryName(product: ProductResponse): string {
     return (
