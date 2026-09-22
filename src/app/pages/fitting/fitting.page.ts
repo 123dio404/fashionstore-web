@@ -73,6 +73,10 @@ export class FittingPage {
   readonly fit = signal(1);
   readonly colorIdx = signal(0);
   readonly notice = signal<string | null>(null);
+  /** Diagnóstico en pantalla para saber en qué etapa se corta el vestidor. */
+  readonly dbg = signal('Iniciando…');
+  readonly dbgPose = signal<'cargando' | 'ok' | 'fallo'>('cargando');
+  readonly dbgGl = signal<'cargando' | 'ok' | 'fallo'>('cargando');
 
   readonly garmentOptions = [
     { value: 'auto' as GarmentChoice, label: 'Auto' },
@@ -210,8 +214,8 @@ export class FittingPage {
   }
 
   private colorHex(): string {
-    const index = Math.min(this.colorIdx(), this.colors().length);
-    return (this.colors()[index] ?? this.colors()[0]).hex;
+    const custom = this.colors()[this.colorIdx()];
+    return custom?.hex ?? '#111827';
   }
 
   private currentAppearance(): FittingAppearance {
@@ -226,8 +230,8 @@ export class FittingPage {
   private beginLoop(): void {
     cancelAnimationFrame(this.raf);
     const loop = (now: number): void => {
-      if (!this.cameraOn() || !this.glReady) return;
       this.raf = requestAnimationFrame(loop);
+      if (!this.cameraOn() || !this.glReady) return;
       this.tick(now);
     };
     this.raf = requestAnimationFrame(loop);
