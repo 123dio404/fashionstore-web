@@ -222,7 +222,7 @@ export class FittingPage {
     const inferred = this.autoType() ?? 'top';
     const type = this.type() === 'auto' ? inferred : (this.type() as GarmentType);
     const fit = this.size() !== 'M' ? (SIZE_FIT[this.size()] ?? 1) : this.fit();
-    return { type, color: this.colorHex(), fit, minConfidence: 0.4 };
+    return { type, color: this.colorHex(), fit, minConfidence: 0.3 };
   }
 
   /* --------------------------------------------------------- Detección ----- */
@@ -316,6 +316,14 @@ function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
+function sub(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return { x: a.x - b.x, y: a.y - b.y };
+}
+
+function unit(a: { x: number; y: number }) {
+  return { x: a.x / (Math.hypot(a.x, a.y) || 1), y: a.y / (Math.hypot(a.x, a.y) || 1) };
+}
+
 function toPose(result: PoseLandmarkerResult | null, w: number, h: number): FittingPose | null {
   const lm = result?.landmarks?.[0];
   if (!lm || lm.length < 25) return null;
@@ -323,27 +331,51 @@ function toPose(result: PoseLandmarkerResult | null, w: number, h: number): Fitt
   const rs = lm[LANDMARK.rightShoulder];
   const lh = lm[LANDMARK.leftHip];
   const rh = lm[LANDMARK.rightHip];
-  if (!ls || !rs || !lh || !rh) return null;
+  if (!ls || !rs) return null;
 
   const flip = (p: { x: number; y: number }) => ({ x: (1 - p.x) * w, y: p.y * h });
   const sL = flip(ls);
   const sR = flip(rs);
-  const hL = flip(lh);
-  const hR = flip(rh);
   const neck = mid(sL, sR);
-  const hip = mid(hL, hR);
+  const sw = dist(sL, sR);
 
-  const visibility =
-    (ls.visibility ?? 1) + (rs.visibility ?? 1) + (lh.visibility ?? 1) + (rh.visibility ?? 1);
+  const shoulderVis = ((ls.visibility ?? 0) + (rs.visibility ?? 0)) / 2;
+  if (shoulderVis < 0.3) return null;
+
+  // Eje del torso: perpendicular a la línea de hombros, siempre hacia abajo en el video.
+  const across = unit(sub(sL, sR));
+  let down: { x: number; y: number } = { x: -across.y, y: across.x };
+  if (down.y < 0) down = { x: -down.x, y: -down.y };
+
+  const hipVis = ((lh?.visibility ?? 0) + (rh?.visibility ?? 0)) / 2;
+  let hL: { x: number; y: number };
+  let hR: { x: number; y: number };
+  if (lh && rh && hipVis >= 0.5) {
+    hL = flip(lh);
+    hR = flip(rh);
+  } else {
+    // Cadera fuera de cuadro (sentado frente al escritorio): se estima bajo los
+    // hombros siguiendo el eje del torso (heurística del probador de referencia).
+    hL = {
+      x: neck.x + down.x * sw * 1.3 - across.x * sw * 0.15,
+      y: neck.y + down.y * sw * 1.3,
+    };
+    hR = {
+      x: neck.x + down.x * sw * 1.3 + across.x * sw * 0.15,
+      y: neck.y + down.y * sw * 1.3,
+    };
+  }
+
+  const hip = mid(hL, hR);
 
   return {
     neck,
     hip,
-    shoulderHalf: dist(sL, sR) / 2,
+    shoulderHalf: sw / 2,
     hipHalf: dist(hL, hR) / 2,
     torso: dist(neck, hip),
     angle: Math.atan2(sR.y - sL.y, sR.x - sL.x),
-    confidence: visibility / 4,
+    confidence: shoulderVis,
   };
 }
 
