@@ -39,6 +39,7 @@
     } @else {
       <div #mirror class="mirror">
         <video #video class="mirror-video" playsinline muted></video>
+        <canvas #overlay class="mirror-overlay"></canvas>
 
         @if (phase() === 'model') {
           <div class="overlay-pill">Cargando modelo de pose (BlazePose)…</div>
@@ -127,6 +128,17 @@
               <span [style.background]="'#111827'"></span>
             </button>
           </div>
+        </section>
+
+        <section class="control-group">
+          <label class="skeleton-toggle">
+            <input
+              type="checkbox"
+              [checked]="showSkeleton()"
+              (change)="onSkeleton($event)"
+            />
+            <span>Mostrar esqueleto (puntos de pose)</span>
+          </label>
         </section>
 
         <div class="action-row">

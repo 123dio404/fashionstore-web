@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { PoseLandmarkerResult } from '@mediapipe/tasks-vision';
+import { DrawingUtils, NormalizedLandmark, PoseLandmarker, PoseLandmarkerResult } from '@mediapipe/tasks-vision';
 import { firstValueFrom } from 'rxjs';
 
 import { FigmaColor, FigmaProduct } from '../../core/figma-data';
@@ -61,6 +61,7 @@ export class FittingPage {
 
   readonly mirror = viewChild<ElementRef<HTMLDivElement>>('mirror');
   readonly video = viewChild<ElementRef<HTMLVideoElement>>('video');
+  readonly overlay = viewChild<ElementRef<HTMLCanvasElement>>('overlay');
 
   readonly product = signal<FigmaProduct | undefined>(undefined);
   readonly started = signal(false);
@@ -73,6 +74,8 @@ export class FittingPage {
   readonly fit = signal(1);
   readonly colorIdx = signal(0);
   readonly notice = signal<string | null>(null);
+  /** Muestra los 33 landmarks + esqueleto para verificar que MediaPipe detecta la pose. */
+  readonly showSkeleton = signal(true);
   /** Diagnóstico en pantalla para saber en qué etapa se corta el vestidor. */
   readonly dbg = signal('Iniciando…');
   readonly dbgPose = signal<'cargando' | 'ok' | 'fallo'>('cargando');
@@ -91,6 +94,7 @@ export class FittingPage {
   private lastW = 0;
   private lastH = 0;
   private smooth: FittingPose | null = null;
+  private skeletonUtils: DrawingUtils | null = null;
   private savedSession = false;
   private glReady = false;
 
@@ -197,12 +201,17 @@ export class FittingPage {
     this.stream = null;
     this.cameraOn.set(false);
     this.bodyDetected.set(false);
+    this.clearSkeleton();
   }
 
   onFit(event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.fit.set(Number.isFinite(value) ? Math.min(this.MAX_FIT, Math.max(this.MIN_FIT, value)) : 1);
     this.size.set('M');
+  }
+
+  onSkeleton(event: Event): void {
+    this.showSkeleton.set((event.target as HTMLInputElement).checked);
   }
 
   pickSize(s: string): void {
@@ -252,6 +261,14 @@ export class FittingPage {
     }
 
     const result = this.pose.detect(video, now);
+    if (this.showSkeleton()) {
+      const lm = result?.landmarks?.[0];
+      if (lm && lm.length > 0) {
+        this.drawSkeleton(lm, w, h);
+      } else {
+        this.clearSkeleton();
+      }
+    }
     const raw = toPose(result, w, h);
     if (!raw) {
       this.bodyDetected.set(false);
@@ -264,6 +281,37 @@ export class FittingPage {
     this.garment.setGarment(this.currentAppearance().type);
     this.garment.update(this.smooth, this.currentAppearance());
     this.garment.render();
+  }
+
+  /* --------------------------------------------------------- Esqueleto ----- */
+
+  /**
+   * Debug CU17: pinta los 33 landmarks + conexiones de la pose encima del video.
+   * El canvas usa la misma transformación espejo que el video, así que las
+   * coordenadas normalizadas de MediaPipe se ven alineadas sobre el cuerpo.
+   */
+  private drawSkeleton(lm: NormalizedLandmark[], w: number, h: number): void {
+    const canvas = this.overlay()?.nativeElement;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    this.skeletonUtils ??= new DrawingUtils(ctx);
+    ctx.clearRect(0, 0, w, h);
+    this.skeletonUtils.drawConnectors(lm, PoseLandmarker.POSE_CONNECTIONS, {
+      color: '#00e5ff',
+      lineWidth: 2,
+    });
+    this.skeletonUtils.drawLandmarks(lm, { color: '#ffea00', radius: 3 });
+  }
+
+  private clearSkeleton(): void {
+    const canvas = this.overlay()?.nativeElement;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   /* --------------------------------------------------------- Captura ------- */
