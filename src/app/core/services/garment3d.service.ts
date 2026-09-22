@@ -101,6 +101,7 @@ export class Garment3DService {
       } else {
         this.fillLeg(part, pose, fit, part.leg);
       }
+      part.mesh.geometry.attributes['position'].needsUpdate = true;
       part.mesh.geometry.computeVertexNormals();
     }
   }
