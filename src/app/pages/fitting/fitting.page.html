@@ -1,0 +1,158 @@
+<div class="fitting-stage">
+  <header class="fitting-head">
+    <a routerLink="/catalog/{{ product()?.id }}" class="btn-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+      <span>Volver</span>
+    </a>
+    <div class="fitting-title">
+      <p class="eyebrow">Vestidor virtual · CU17</p>
+      <h1>{{ product()?.name ?? 'Probador en cámara' }}</h1>
+    </div>
+    <span class="status-pill" [class.on]="active()">{{ statusLabel() }}</span>
+  </header>
+
+  <main class="stage">
+    @if (!started()) {
+      <div class="gate">
+        <div class="gate-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+        </div>
+        <h2>Pruébate la prenda en cámara</h2>
+        <p class="gate-sub">
+          La prenda 3D se sobrepone a tu cuerpo y se ajusta a tus medidas: hombros y
+          caderas guían la malla en tiempo real.
+        </p>
+        <button type="button" class="btn btn-primary" (click)="start()">Activar cámara</button>
+        <p class="hint">Necesita permiso de cámara y un fondo iluminado. Se procesa en tu equipo.</p>
+      </div>
+    } @else if (error()) {
+      <div class="gate">
+        <p class="empty-title">No se pudo iniciar el vestidor</p>
+        <p class="muted">{{ error() }}</p>
+        <button type="button" class="btn btn-outline" (click)="start()">Reintentar</button>
+      </div>
+    } @else {
+      <div #mirror class="mirror">
+        <video #video class="mirror-video" playsinline muted></video>
+
+        @if (phase() === 'model') {
+          <div class="overlay-pill">Cargando modelo de pose (BlazePose)…</div>
+        } @else if (phase() === 'camera') {
+          <div class="overlay-pill">Esperando cámara…</div>
+        }
+
+        @if (active() && !bodyDetected()) {
+          <div class="overlay-pill soft">Aparece frente a la cámara, cuerpo completo</div>
+        }
+      </div>
+
+      <aside class="controls panel">
+        <section class="control-group">
+          <p class="caption">Tipo de prenda</p>
+          <div class="segmented">
+            @for (option of garmentOptions; track option.value) {
+              <button
+                type="button"
+                class="seg"
+                [class.active]="type() === option.value"
+                (click)="type.set(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+          <p class="caption-sublabel">
+            @if (autoType()) {
+              Detectado: {{ typeLabel(autoType()!) }}
+            } @else {
+              Modo manual
+            }
+          </p>
+        </section>
+
+        <section class="control-group">
+          <p class="caption">Talla</p>
+          <div class="size-row">
+            @for (s of sizes(); track s) {
+              <button
+                type="button"
+                class="size-chip"
+                [class.active]="size() === s"
+                (click)="pickSize(s)"
+              >
+                {{ s }}
+              </button>
+            }
+          </div>
+          <input
+            type="range"
+            [min]="MIN_FIT"
+            [max]="MAX_FIT"
+            [step]="0.02"
+            [value]="fit()"
+            (input)="onFit($event)"
+            aria-label="Ajuste fino de talla"
+          />
+          <span class="fit-value">{{ fitLabel() }}</span>
+        </section>
+
+        <section class="control-group">
+          <p class="caption">Color</p>
+          <div class="color-row">
+            @for (color of colors(); track color.hex; let i = $index) {
+              <button
+                type="button"
+                class="color-dot"
+                [class.active]="colorIdx() === i"
+                [attr.aria-label]="color.name"
+                [attr.title]="color.name"
+                (click)="colorIdx.set(i)"
+              >
+                <span [style.background]="color.hex"></span>
+              </button>
+            }
+            <button
+              type="button"
+              class="color-dot"
+              [class.active]="colorIdx() === colors().length"
+              [attr.aria-label]="'Personalizado'"
+              [attr.title]="'Negro'"
+              (click)="colorIdx.set(colors().length)"
+            >
+              <span [style.background]="'#111827'"></span>
+            </button>
+          </div>
+        </section>
+
+        <div class="action-row">
+          <button type="button" class="btn btn-accent" (click)="capture()" [disabled]="!active()">
+            Capturar foto
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="toggleCamera()"
+          >
+            {{ cameraOn() ? 'Pausar cámara' : 'Reanudar' }}
+          </button>
+        </div>
+        <p class="hint">
+          @if (notice()) {
+            {{ notice() }}
+          } @else {
+            Ajusta la barra para talla fina · la malla 3D sigue tus hombros, caderas y rotación del torso.
+          }
+        </p>
+      </aside>
+    }
+  </main>
+
+  <p class="footnote">
+    La prenda se dibuja en tu equipo en tiempo real: no sube nada al servidor salvo que guardes la sesión.
+  </p>
+</div>
