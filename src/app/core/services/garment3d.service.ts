@@ -50,6 +50,15 @@ export class Garment3DService {
     this.renderer.setClearColor(0x000000, 0);
     const canvas = this.renderer.domElement;
     canvas.className = 'mirror-canvas';
+    // El canvas se crea en runtime (appendChild), así que Angular no le aplica
+    // los estilos scoped del componente (_ngcontent). Se ponen inline para que
+    // quede encima del video, como el esqueleto.
+    canvas.style.position = 'absolute';
+    canvas.style.inset = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.objectFit = 'cover';
+    canvas.style.pointerEvents = 'none';
     parent.appendChild(canvas);
 
     this.scene.add(this.group);
