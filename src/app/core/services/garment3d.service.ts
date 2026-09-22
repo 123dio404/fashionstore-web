@@ -51,6 +51,9 @@ export class Garment3DService {
   private modelKind: ModelKind = 'garment';
   /** Dimensión máxima del modelo en unidades del glTF (para escalarlo a píxeles). */
   private modelNaturalSize = 1;
+  /** Par de zapatos: el modelo cargado se clona y se espeja para ambos pies. */
+  private shoeLeft: THREE.Object3D | null = null;
+  private shoeRight: THREE.Object3D | null = null;
   private readonly loader = new GLTFLoader();
 
   /** Crea el contexto WebGL y anexa su lienzo transparente a la escena. */
@@ -96,11 +99,23 @@ export class Garment3DService {
     this.disposeParts();
     const scene = gltf.scene;
     scene.position.set(0, 0, 0);
+    scene.rotation.set(0, 0, 0);
     const size = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
     this.modelNaturalSize = Math.max(size.x, size.y, size.z, 0.001);
     this.group.add(scene);
     this.model = scene;
     this.modelKind = kind;
+
+    // Los zapatos se muestran como par: el objeto cargado (que sirve de patrón)
+    // se oculta y se clonan dos copias espejadas para cada pie.
+    if (kind === 'shoe') {
+      scene.visible = false;
+      this.shoeLeft = scene.clone(true);
+      this.shoeRight = scene.clone(true);
+      this.shoeLeft.visible = true;
+      this.shoeRight.visible = true;
+      this.group.add(this.shoeLeft, this.shoeRight);
+    }
   }
 
   /** Vuelve a la malla de cuerpo (tras haber usado un modelo real). */
@@ -113,6 +128,12 @@ export class Garment3DService {
 
   unloadModel(): void {
     if (!this.model) return;
+    // Los clones del par comparten geometría/material con el patrón; se quitan
+    // antes de liberar los recursos del modelo que ya no se va a usar.
+    this.shoeLeft?.removeFromParent();
+    this.shoeRight?.removeFromParent();
+    this.shoeLeft = null;
+    this.shoeRight = null;
     this.model.removeFromParent();
     this.model.traverse((child) => {
       const mesh = child as THREE.Mesh;
@@ -205,16 +226,26 @@ export class Garment3DService {
    */
   private placeModel(pose: FittingPose): void {
     if (!this.model) return;
-    const anchor =
-      this.modelKind === 'shoe'
-        ? { x: pose.hip.x, y: pose.hip.y + pose.torso }
-        : { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.5 };
+    const isShoe = this.modelKind === 'shoe';
+    const anchor = isShoe
+      ? { x: pose.hip.x, y: pose.hip.y + pose.torso }
+      : { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.5 };
 
     // Escala el objeto al tamaño que tendría en el cuerpo: el zapato al largo
     // del pie y las gafas al ancho de la cara, respecto a la pose detectada.
-    const targetPx =
-      this.modelKind === 'shoe' ? pose.torso * 0.5 : pose.shoulderHalf * 0.75;
-    this.model.scale.setScalar(Math.max(targetPx / this.modelNaturalSize, 0.001));
+    const targetPx = isShoe ? pose.torso * 0.5 : pose.shoulderHalf * 0.75;
+    const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+    if (isShoe) {
+      // Par de zapatos: uno a cada lado del eje del torso, con el pie izquierdo
+      // espejado respecto al derecho. La suela se apoya en la línea del suelo.
+      const span = pose.hipHalf * 1.1;
+      this.shoeLeft?.position.set(-span, 0, 0);
+      this.shoeLeft?.scale.set(-scale, scale, scale);
+      this.shoeRight?.position.set(span, 0, 0);
+      this.shoeRight?.scale.set(scale, scale, scale);
+    } else {
+      this.model.scale.setScalar(scale);
+    }
 
     const wx = anchor.x - this.w / 2;
     const wy = this.h / 2 - anchor.y;
