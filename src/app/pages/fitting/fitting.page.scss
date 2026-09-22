@@ -156,6 +156,15 @@
   object-fit: cover;
 }
 
+.mirror-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+
 .mirror-video {
   transform: scaleX(-1);
 }
@@ -319,6 +328,22 @@ input[type='range'] {
 
   .btn {
     flex: 1;
+  }
+}
+
+.skeleton-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    accent-color: var(--brand);
+    width: auto;
   }
 }
 
