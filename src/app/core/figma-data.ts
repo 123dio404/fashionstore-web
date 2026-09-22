@@ -27,6 +27,8 @@ export interface FigmaProduct {
   reviews: number;
   isNew?: boolean;
   isFeatured?: boolean;
+  /** CU17: `model_3d_url` del producto cuando el panel lo carga (glb/gltf). */
+  model3dUrl?: string | null;
 }
 
 export interface FigmaBanner {
@@ -467,4 +469,33 @@ export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
   }
 
   return bestImage;
+}
+
+/* --------------------------------------------------------------- CU17 ----- */
+
+/**
+ * Modelo 3D de respaldo del Vestidor Virtual (Khronos glTF Sample Models):
+ * una zapatilla con variantes de materiales en `.glb`. Se usa cuando el producto
+ * no trae `model_3d_url`, para que la sesión AR siempre tenga algo real que proyectar.
+ */
+export const AR_FALLBACK_MODEL =
+  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb';
+
+/** Componente estándar que renderiza el 3D/AR (`index.html` lo carga del CDN de Google). */
+export const AR_VIEWER_TAG = 'model-viewer';
+
+/** Modos de AR del componente: Scene Viewer (Android), WebXR y Quick Look (iOS). */
+export const AR_MODES = 'scene-viewer webxr quick-look';
+
+/** CU17: modelo 3D del producto — `model_3d_url` real o el de respaldo. */
+export function arModelFor(product?: { model3dUrl?: string | null } | null): string {
+  const url = product?.model3dUrl?.trim();
+  return url ? url : AR_FALLBACK_MODEL;
+}
+
+/** CU17: origen del modelo que muestra el vestidor (trazabilidad del CU). */
+export function arModelSourceFor(product?: { model3dUrl?: string | null } | null): string {
+  return product?.model3dUrl?.trim()
+    ? 'model_3d_url del producto'
+    : 'modelo de respaldo del prototipo';
 }
