@@ -17,11 +17,11 @@ export interface FittingAppearance {
 
 interface GarmentPart {
   mesh: THREE.Mesh;
-  material: THREE.MeshLambertMaterial;
+  material: THREE.MeshStandardMaterial;
   pos: Float32Array;
   uSeg: number;
   vSeg: number;
-  /** 0 = torso (superior/vestido); -1/+1 = pierna izquierda/derecha. */
+  /** 0 = bloque superior (torso/vestido/caderas); -1/+1 = pierna izquierda/derecha. */
   leg: 0 | -1 | 1;
 }
 
@@ -71,7 +71,10 @@ export class Garment3DService {
     parent.appendChild(canvas);
 
     this.scene.add(this.group);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+    fill.position.set(-180, -120, 120);
+    this.scene.add(fill);
     this.scene.add(this.light);
     this.light.position.set(180, 240, 160);
     this.buildGarment(this.current);
@@ -156,7 +159,8 @@ export class Garment3DService {
     for (const part of this.parts) {
       part.material.color.set(appearance.color);
       if (part.leg === 0) {
-        this.fillTorso(part, pose, appearance.type, fit);
+        if (appearance.type === 'bottom') this.fillPelvis(part, pose, fit);
+        else this.fillTorso(part, pose, appearance.type, fit);
       } else {
         this.fillLeg(part, pose, fit, part.leg);
       }
@@ -222,13 +226,16 @@ export class Garment3DService {
   /* ------------------------------------------------------- geometries ----- */
 
   private buildGarment(type: GarmentType): void {
+    // Cada prenda es una malla curva cerrada (tubo elíptico) cuyos perfiles se
+    // regeneran por fotograma. Los pantalones unen un bloque de caderas + 2 piernas.
     const parts: { leg: 0 | -1 | 1; uSeg: number; vSeg: number }[] =
       type === 'bottom'
         ? [
-            { leg: -1, uSeg: 12, vSeg: 22 },
-            { leg: 1, uSeg: 12, vSeg: 22 },
+            { leg: 0, uSeg: 14, vSeg: 10 },
+            { leg: -1, uSeg: 10, vSeg: 20 },
+            { leg: 1, uSeg: 10, vSeg: 20 },
           ]
-        : [{ leg: 0, uSeg: 18, vSeg: 28 }];
+        : [{ leg: 0, uSeg: 22, vSeg: 28 }];
 
     for (const spec of parts) {
       const uCount = spec.uSeg + 1;
@@ -254,11 +261,13 @@ export class Garment3DService {
       geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       geometry.setIndex(new THREE.BufferAttribute(idx, 1));
 
-      const material = new THREE.MeshLambertMaterial({
+      const material = new THREE.MeshStandardMaterial({
         color: 0xe05a47,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.96,
+        opacity: 0.97,
+        roughness: 0.82,
+        metalness: 0,
       });
       const mesh = new THREE.Mesh(geometry, material);
       this.group.add(mesh);
@@ -266,50 +275,142 @@ export class Garment3DService {
     }
   }
 
+  /**
+   * Interpola un perfil de silueta dado por puntos de control (f ∈ [0,1],
+   * siendo 0 el borde superior de la pieza y 1 el dobladillo).
+   */
+  private spline(f: number, pts: Array<[number, number]>): number {
+    for (let i = 0; i < pts.length - 1; i += 1) {
+      const [f0, v0] = pts[i];
+      const [f1, v1] = pts[i + 1];
+      if (f <= f1) {
+        const t = (f - f0) / (f1 - f0);
+        return v0 + (v1 - v0) * t;
+      }
+    }
+    return pts[pts.length - 1][1];
+  }
+
+  /**
+   * Superior / vestido: tubo elíptico cerrado con cuello, caída de hombros,
+   * talle y caderas (vestido con vuelo tipo A). El tubo da volumen real: la
+   * mitad trasera queda oculta por profundidad y el dobladillo se ve elíptico.
+   */
   private fillTorso(
     part: GarmentPart,
     pose: FittingPose,
     type: GarmentType,
     fit: number,
   ): void {
+    const isDress = type === 'dress';
+    // Potencias de ancho respecto al hombro detectado: cuello → deltoide →
+    // brazo → talle → cadera → dobladillo.
+    const xPts: Array<[number, number]> = isDress
+      ? [
+          [0, 0.56],
+          [0.06, 1.16],
+          [0.12, 1.05],
+          [0.36, 0.82],
+          [0.62, 1.18],
+          [1, 1.98],
+        ]
+      : [
+          [0, 0.56],
+          [0.06, 1.16],
+          [0.12, 1.03],
+          [0.44, 0.74],
+          [0.74, 0.94],
+          [1, 1.04],
+        ];
+    // Perfil de profundidad (bulto del torso), fracción del torso.
+    const zPts: Array<[number, number]> = isDress
+      ? [
+          [0, 1.5],
+          [0.16, 2.2],
+          [0.44, 1.7],
+          [0.62, 1.9],
+          [1, 2.4],
+        ]
+      : [
+          [0, 1.5],
+          [0.16, 2.2],
+          [0.44, 1.6],
+          [0.72, 1.9],
+          [1, 2.1],
+        ];
+    const length = (isDress ? 1.8 : 1.25) * pose.torso * fit;
+    const depthBase = pose.torso * fit * 0.06;
+    // Escote: el borde superior baja al centro (frente de la prenda).
+    const collarDip = pose.torso * (isDress ? 0.05 : 0.048);
     const uCount = part.uSeg + 1;
     const vCount = part.vSeg + 1;
-    const isDress = type === 'dress';
-    const length = (isDress ? 2.05 : 1.28) * pose.torso * fit;
-    const depth = pose.torso * fit * 0.07;
     let i = 0;
     for (let v = 0; v < vCount; v += 1) {
       const f = v / part.vSeg;
-      const width =
-        pose.shoulderHalf * fit * (isDress ? 1.05 + 0.8 * f : 1.05 + 0.5 * f);
-      const y = -f * length;
+      const rx = this.spline(f, xPts) * pose.shoulderHalf * fit;
+      const rz = this.spline(f, zPts) * depthBase;
       for (let u = 0; u < uCount; u += 1) {
-        const uu = (u / part.uSeg) * 2 - 1;
-        part.pos[i++] = uu * width;
-        part.pos[i++] = y;
-        part.pos[i++] = depth * (0.3 - 0.3 * uu * uu);
+        const th = (u / part.uSeg) * Math.PI * 2;
+        const dip = v === 0 ? collarDip * Math.max(0, Math.cos(th)) : 0;
+        part.pos[i++] = rx * Math.sin(th);
+        part.pos[i++] = -f * length - dip;
+        part.pos[i++] = rz * Math.cos(th);
       }
     }
   }
 
-  private fillLeg(part: GarmentPart, pose: FittingPose, fit: number, dir: 0 | -1 | 1): void {
+  /** Pantalón: bloque de caderas/cintura desde donde cuelgan las dos piernas. */
+  private fillPelvis(part: GarmentPart, pose: FittingPose, fit: number): void {
+    const xPts: Array<[number, number]> = [
+      [0, 0.84],
+      [0.35, 0.97],
+      [0.7, 1.02],
+      [1, 1.0],
+    ];
+    const zPts: Array<[number, number]> = [
+      [0, 1.4],
+      [0.4, 1.9],
+      [1, 2.0],
+    ];
+    const length = pose.torso * fit * 0.5;
+    const depthBase = pose.torso * fit * 0.06;
     const uCount = part.uSeg + 1;
     const vCount = part.vSeg + 1;
-    const length = pose.torso * fit * 1.7;
-    const depth = pose.torso * fit * 0.06;
-    const gap = pose.hipHalf * fit * 0.55;
     let i = 0;
     for (let v = 0; v < vCount; v += 1) {
       const f = v / part.vSeg;
-      const legWidth = pose.hipHalf * fit * (0.92 + 0.28 * f);
-      const center = dir * (gap + legWidth / 2);
+      const rx = this.spline(f, xPts) * pose.hipHalf * fit;
+      const rz = this.spline(f, zPts) * depthBase;
+      for (let u = 0; u < uCount; u += 1) {
+        const th = (u / part.uSeg) * Math.PI * 2;
+        part.pos[i++] = rx * Math.sin(th);
+        // Cintura un poco por encima de la línea de caderas.
+        part.pos[i++] = pose.torso * fit * 0.06 - f * length;
+        part.pos[i++] = rz * Math.cos(th);
+      }
+    }
+  }
+
+  /** Pierna de pantalón: tubo cónico con entrepierna convergente hacia el pie. */
+  private fillLeg(part: GarmentPart, pose: FittingPose, fit: number, dir: 0 | -1 | 1): void {
+    const uCount = part.uSeg + 1;
+    const vCount = part.vSeg + 1;
+    const length = pose.torso * fit * 1.75;
+    const depthBase = pose.torso * fit * 0.05;
+    const hip = pose.hipHalf * fit;
+    let i = 0;
+    for (let v = 0; v < vCount; v += 1) {
+      const f = v / part.vSeg;
+      // Las piernas arrancan juntas bajo el bloque de caderas y se separan poco.
+      const cx = dir * (0.5 - 0.08 * f) * hip;
+      const rx = (0.42 - 0.18 * f) * hip;
+      const rz = (2.0 - 0.4 * f) * depthBase;
       const y = -f * length;
       for (let u = 0; u < uCount; u += 1) {
-        const t = u / part.uSeg;
-        const uu = t * 2 - 1;
-        part.pos[i++] = center + (t - 0.5) * legWidth;
+        const th = (u / part.uSeg) * Math.PI * 2;
+        part.pos[i++] = cx + rx * Math.sin(th);
         part.pos[i++] = y;
-        part.pos[i++] = depth * (0.22 - 0.22 * uu * uu);
+        part.pos[i++] = rz * Math.cos(th);
       }
     }
   }
