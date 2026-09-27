@@ -128,11 +128,11 @@ export class CartPage {
       const products = await firstValueFrom(this.products.list());
       const missing = await this.pushCartToServer(products, branch.id);
 
-      this.progress.set('Cobrando con la pasarela simulada…');
+      this.progress.set('Cobrando con pasarela Stripe…');
       const sale = await firstValueFrom(
         this.commerce.checkout({
           branch_id: branch.id,
-          payment_provider: 'simulado',
+          payment_provider: 'stripe',
           payment_status: PaymentStatus.Completado,
         })
       );
@@ -141,7 +141,7 @@ export class CartPage {
         sale.payments.length > 0 ? sale.payments[sale.payments.length - 1].reference : null
       );
 
-      this.progress.set('Emitiendo la factura…');
+      this.progress.set('Emitiendo factura fiscal simulada…');
       this.invoice.set(await firstValueFrom(this.commerce.getInvoice(sale.id)));
 
       this.orderId.set(`ORD-${sale.id}`);

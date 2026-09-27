@@ -135,7 +135,7 @@ export class Garment3DService {
     this.shoeLeft = null;
     this.shoeRight = null;
     this.model.removeFromParent();
-    this.model.traverse((child) => {
+    this.model.traverse((child: any) => {
       const mesh = child as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.geometry?.dispose();
