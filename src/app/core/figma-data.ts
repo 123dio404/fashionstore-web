@@ -79,33 +79,22 @@ const CARD = '?w=400&h=520&fit=crop&auto=format';
 const AR_ASSETS =
   'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models';
 
-/** Calzado — `MaterialsVariantsShoe` (`.glb` autocontenido con variantes de material). */
-export const AR_SHOE_MODEL =
-  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb';
+/** Modelos 3D oficiales de Khronos Group (.glb autocontenidos). */
+export const AR_SHOE_MODEL = '/models/MaterialsVariantsShoe.glb';
+export const AR_SUNGLASSES_MODEL = '/models/SunglassesKhronos.glb';
+export const AR_WATCH_MODEL = '/models/ChronographWatch.glb';
+export const AR_CLOTH_MODEL = '/models/SheenCloth.glb';
+export const AR_HEEL_MODEL = '/models/SheenHighHeel.glb';
+export const AR_RING_MODEL = '/models/ClearcoatRing.glb';
 
-/** Accesorios — `SunglassesKhronos` (`.glb` autocontenido de 371 KB). */
-export const AR_SUNGLASSES_MODEL = `${AR_ASSETS}/SunglassesKhronos/glTF-Binary/SunglassesKhronos.glb`;
-
-/** Accesorios / Joyería — `ChronographWatch` (`.glb` de alta definición PBR). */
-export const AR_WATCH_MODEL = `${AR_ASSETS}/ChronographWatch/glTF-Binary/ChronographWatch.glb`;
-
-/** Accesorios / Gorras — `cap.glb` (Gorra urbana deportiva). */
-export const AR_CAP_MODEL = '/models/cap.glb';
-
-/** Accesorios / Joyería — `necklace.glb` (Collar y dije colgante). */
-export const AR_NECKLACE_MODEL = '/models/necklace.glb';
-
-/** Accesorios / Sombreros — `hat.glb` (Sombrero elegante clásico). */
-export const AR_HAT_MODEL = '/models/hat.glb';
-
-/** Vistas oficiales de cada modelo (póster mientras carga el 3D). */
+/** Vistas oficiales de cada modelo (coinciden exactamente con la geometría 3D). */
 export const AR_PREVIEWS = {
-  shoe: `${AR_ASSETS}/MaterialsVariantsShoe/screenshot/screenshot.jpg`,
-  sunglasses: `${AR_ASSETS}/SunglassesKhronos/screenshot/SunglassesKhronos.png`,
-  watch: `${AR_ASSETS}/ChronographWatch/screenshot/screenshot.jpg`,
-  cap: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
-  necklace: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
-  hat: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
+  shoe: '/previews/shoe.jpg',
+  sunglasses: '/previews/sunglasses.png',
+  watch: '/previews/watch.jpg',
+  cloth: '/previews/cloth.jpg',
+  heel: '/previews/heel.jpg',
+  ring: '/previews/ring.jpg',
 } as const;
 
 export const PRODUCTS: FigmaProduct[] = [
@@ -207,30 +196,26 @@ export const PRODUCTS: FigmaProduct[] = [
   },
   {
     id: 5,
-    name: 'Sneakers Clásicas',
+    name: 'Sneakers Deportivas PBR',
     brand: 'Nike',
     category: 'Calzado',
-    price: 79.99,
-    oldPrice: 110,
-    discount: 27,
-    image: `${U}1605523741177-cd660595c2cf${CARD}`,
-    images: [
-      `${U}1605523741177-cd660595c2cf${CARD}`,
-      `${U}1656164753657-8ff832063a71${CARD}`,
-    ],
+    price: 89.99,
+    oldPrice: 120,
+    discount: 25,
+    image: AR_PREVIEWS.shoe,
+    images: [AR_PREVIEWS.shoe],
     colors: [
-      { name: 'Blanco', hex: '#F8F9FA' },
+      { name: 'Multicolor', hex: '#E05A47' },
       { name: 'Negro', hex: '#111827' },
-      { name: 'Terracota', hex: '#E05A47' },
+      { name: 'Blanco', hex: '#F8F9FA' },
     ],
-    sizes: ['36', '37', '38', '39', '40', '41', '42'],
+    sizes: ['38', '39', '40', '41', '42'],
     description:
-      'Zapatillas de caña alta con upper en canvas y suela de goma vulcanizada con grip antideslizante.',
+      'Zapatillas deportivas con múltiples variantes de materiales y texturas PBR realistas de Khronos. Suela ergonómica con amortiguación y grip dinámico. Modelo 3D interactivo en 360° y Realidad Aumentada.',
     stock: { Centro: 5, Norte: 3, Sur: 8 },
-    rating: 4.6,
+    rating: 4.8,
     reviews: 349,
     isFeatured: true,
-    // CU17: `model_3d_url` explícito del producto (así lo cargaría el panel).
     model3dUrl: AR_SHOE_MODEL,
   },
   {
@@ -297,27 +282,23 @@ export const PRODUCTS: FigmaProduct[] = [
     stock: { Centro: 9, Norte: 4, Sur: 3 },
     rating: 4.5,
     reviews: 278,
-    model3dUrl: AR_SHOE_MODEL,
   },
   {
     id: 9,
-    name: 'Gafas Aviator Black Edition',
+    name: 'Gafas de Sol Khronos Designer',
     brand: 'Ray-Studio',
     category: 'Accesorios',
     price: 49.99,
     oldPrice: 75.0,
     discount: 33,
-    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=520&fit=crop&auto=format',
-    images: [
-      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=520&fit=crop&auto=format',
-    ],
+    image: AR_PREVIEWS.sunglasses,
+    images: [AR_PREVIEWS.sunglasses],
     colors: [
       { name: 'Negro', hex: '#111827' },
-      { name: 'Dorado', hex: '#D4AF37' },
     ],
     sizes: ['Única'],
     description:
-      'Gafas de sol polarizadas estilo aviador con montura metálica ultraligera y protección UV400. Pruébatelas en vivo en el espejo frontal o inspecciónalas en tu espacio.',
+      'Gafas de sol de diseño contemporáneo en acetato negro pulido y lentes polarizadas con protección UV400. Modelo 3D oficial Khronos para probar en vivo con cámara frontal o inspeccionar a escala 1:1 en tu espacio.',
     stock: { Centro: 8, Norte: 6, Sur: 12 },
     rating: 4.9,
     reviews: 142,
@@ -332,17 +313,15 @@ export const PRODUCTS: FigmaProduct[] = [
     price: 139.99,
     oldPrice: 199.99,
     discount: 30,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=520&fit=crop&auto=format',
-    images: [
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=520&fit=crop&auto=format',
-    ],
+    image: AR_PREVIEWS.watch,
+    images: [AR_PREVIEWS.watch],
     colors: [
       { name: 'Plata', hex: '#E5E7EB' },
-      { name: 'Negro', hex: '#111827' },
+      { name: 'Cuero', hex: '#8B5A2B' },
     ],
     sizes: ['42mm'],
     description:
-      'Reloj analógico cronógrafo de precisión con correa de piel genuina y caja de acero inoxidable cepillado. Inspección 3D en 360° y escala 1:1 en AR.',
+      'Reloj analógico cronógrafo de precisión con correa de piel genuina pespunteada y caja de acero inoxidable cepillado. Modelo 3D oficial Khronos con texturizado PBR y escala 1:1 en Realidad Aumentada.',
     stock: { Centro: 4, Norte: 3, Sur: 7 },
     rating: 4.8,
     reviews: 89,
@@ -351,78 +330,72 @@ export const PRODUCTS: FigmaProduct[] = [
   },
   {
     id: 11,
-    name: 'Gorra Urbana Snapback',
-    brand: 'Nike',
+    name: 'Foulard de Seda Técnica Sheen',
+    brand: 'Atelier Privé',
     category: 'Accesorios',
-    price: 34.99,
-    oldPrice: 45.0,
-    discount: 22,
-    image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
-    images: [
-      'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
-    ],
+    price: 44.99,
+    oldPrice: 65.0,
+    discount: 30,
+    image: AR_PREVIEWS.cloth,
+    images: [AR_PREVIEWS.cloth],
     colors: [
-      { name: 'Negro', hex: '#111827' },
-      { name: 'Rojo', hex: '#DC2626' },
+      { name: 'Terracota', hex: '#E05A47' },
+      { name: 'Oro', hex: '#D4AF37' },
     ],
-    sizes: ['Ajustable'],
+    sizes: ['Única'],
     description:
-      'Gorra de visera plana y diseño streetwear con broche ajustable posterior. Modelo 3D interactivo para probador virtual y visualización en tu espacio.',
+      'Foulard de alta costura con tejido técnico microfibra y simulación física de pliegues con efecto tornasolado Sheen PBR de Khronos. Modelo 3D oficial con drapeado realista.',
     stock: { Centro: 10, Norte: 8, Sur: 15 },
     rating: 4.8,
-    reviews: 112,
+    reviews: 76,
     isNew: true,
-    model3dUrl: AR_CAP_MODEL,
+    model3dUrl: AR_CLOTH_MODEL,
   },
   {
     id: 12,
-    name: 'Collar Colgante Black Panther',
-    brand: 'Atelier Privé',
-    category: 'Accesorios',
-    price: 59.99,
-    oldPrice: 85.0,
-    discount: 29,
-    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
-    images: [
-      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
-    ],
+    name: 'Zapatos de Tacón Velvet Luxe',
+    brand: 'Massimo',
+    category: 'Calzado',
+    price: 89.99,
+    oldPrice: 125.0,
+    discount: 28,
+    image: AR_PREVIEWS.heel,
+    images: [AR_PREVIEWS.heel],
     colors: [
-      { name: 'Plata', hex: '#E5E7EB' },
       { name: 'Negro', hex: '#111827' },
+      { name: 'Vino', hex: '#8C3858' },
     ],
-    sizes: ['50cm'],
+    sizes: ['36', '37', '38', '39', '40'],
     description:
-      'Collar con cadena de eslabones pulidos y dije emblemático de alta definición. Visualización 3D en 360° y prueba virtual en el cuello.',
+      'Zapatos de salón de tacón alto en terciopelo fino con acabado satinado y brillo especular de alta definición Khronos. Modelo 3D oficial con geometría detallada para probarse en Realidad Aumentada.',
     stock: { Centro: 6, Norte: 4, Sur: 9 },
     rating: 4.9,
-    reviews: 88,
+    reviews: 94,
     isFeatured: true,
-    model3dUrl: AR_NECKLACE_MODEL,
+    model3dUrl: AR_HEEL_MODEL,
   },
   {
     id: 13,
-    name: 'Sombrero Elegante Fedora',
-    brand: 'Massimo',
+    name: 'Anillo Solitario Titanio & Carbono',
+    brand: 'Kronos Luxe',
     category: 'Accesorios',
-    price: 49.99,
-    oldPrice: 69.99,
-    discount: 28,
-    image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
-    images: [
-      'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
-    ],
+    price: 69.99,
+    oldPrice: 95.0,
+    discount: 26,
+    image: AR_PREVIEWS.ring,
+    images: [AR_PREVIEWS.ring],
     colors: [
-      { name: 'Negro', hex: '#111827' },
-      { name: 'Camel', hex: '#C4A882' },
+      { name: 'Plata', hex: '#E5E7EB' },
+      { name: 'Carbono', hex: '#1F2937' },
     ],
-    sizes: ['M', 'L'],
+    sizes: ['16mm', '18mm', '20mm'],
     description:
-      'Sombrero clásico estilo fedora en fieltro fino con cinta de contraste. Modelo 3D disponible para probar en la cabeza en tiempo real.',
+      'Anillo de diseño contemporáneo forjado en titanio aeroespacial y fibra de carbono con acabado clearcoat protector multicapa. Modelo 3D oficial Khronos de joyería.',
     stock: { Centro: 5, Norte: 3, Sur: 4 },
     rating: 4.7,
     reviews: 54,
     isNew: true,
-    model3dUrl: AR_HAT_MODEL,
+    model3dUrl: AR_RING_MODEL,
   },
 ];
 
@@ -658,15 +631,17 @@ export function arModelFor(
 }
 
 /** Clasificación del objeto 3D para el probador interactivo. */
-export type ArModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch' | 'headwear' | 'necklace';
+export type ArModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch' | 'headwear' | 'necklace' | 'ring' | 'cloth';
 
 /** Clasifica el modelo del producto para cargarlo con el anclaje y escala correspondientes. */
 export function arKindFor(modelUrl?: string | null): ArModelKind {
   if (!modelUrl) return 'garment';
   const value = modelUrl.toLowerCase();
   if (value.includes('sunglass')) return 'sunglasses';
-  if (value.includes('shoe')) return 'shoe';
+  if (value.includes('shoe') || value.includes('heel')) return 'shoe';
   if (value.includes('watch')) return 'watch';
+  if (value.includes('ring')) return 'ring';
+  if (value.includes('cloth')) return 'cloth';
   if (value.includes('cap') || value.includes('hat')) return 'headwear';
   if (value.includes('necklace')) return 'necklace';
   return 'garment';
@@ -676,10 +651,11 @@ export function arKindFor(modelUrl?: string | null): ArModelKind {
 export function arPreviewFor(modelUrl?: string | null): string {
   if (!modelUrl) return AR_PREVIEWS.shoe;
   const value = modelUrl.toLowerCase();
-  if (value.includes('sunglasses')) return AR_PREVIEWS.sunglasses;
+  if (value.includes('sunglass')) return AR_PREVIEWS.sunglasses;
   if (value.includes('watch')) return AR_PREVIEWS.watch;
-  if (value.includes('cap')) return AR_PREVIEWS.cap;
-  if (value.includes('hat')) return AR_PREVIEWS.hat;
-  if (value.includes('necklace')) return AR_PREVIEWS.necklace;
+  if (value.includes('heel')) return AR_PREVIEWS.heel;
+  if (value.includes('cloth')) return AR_PREVIEWS.cloth;
+  if (value.includes('ring')) return AR_PREVIEWS.ring;
+  if (value.includes('shoe')) return AR_PREVIEWS.shoe;
   return AR_PREVIEWS.shoe;
 }

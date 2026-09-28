@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FittingPose } from './pose-landmarker.service';
 
 export type GarmentType = 'top' | 'dress' | 'bottom';
-export type ModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch' | 'headwear' | 'necklace';
+export type ModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch' | 'headwear' | 'necklace' | 'ring' | 'cloth';
 
 export interface FittingAppearance {
   type: GarmentType;
@@ -301,9 +301,23 @@ export class Garment3DService {
       return;
     }
 
-    // Modelo 3D de prenda real (torso / cuerpo)
-    const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.32 };
-    const targetPx = pose.shoulderHalf * 2.2;
+    if (kind === 'ring') {
+      // Anillo anclado a la mano / muñeca
+      const anchor = { x: pose.hip.x - pose.shoulderHalf * 0.85, y: pose.hip.y + pose.torso * 0.15 };
+      const targetPx = pose.shoulderHalf * 0.55;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 15);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx, wy + 40, 80);
+      return;
+    }
+
+    // Modelo 3D de tela/prenda real (torso / cuerpo, ej. SheenCloth)
+    const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.28 };
+    const targetPx = pose.shoulderHalf * 2.1;
     const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
     this.model.scale.set(scale, scale, scale);
     const wx = anchor.x - this.w / 2;
