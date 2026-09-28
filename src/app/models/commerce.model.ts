@@ -67,6 +67,22 @@ export interface CheckoutRequest {
   payment_status?: PaymentStatus;
   payment_reference?: string | null;
   idempotency_key?: string | null;
+  card_token?: string | null;
+  simulate_rejection?: boolean;
+}
+
+export interface QrPaymentRequest {
+  amount?: number | null;
+  currency?: string;
+  description?: string;
+}
+
+export interface QrPaymentResponse {
+  reference: string;
+  qr_code_base64: string;
+  payment_url: string;
+  amount: number;
+  currency: string;
 }
 
 export interface SaleItemInput {

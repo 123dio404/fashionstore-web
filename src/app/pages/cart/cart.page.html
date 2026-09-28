@@ -13,9 +13,11 @@
     </div>
     <h2 class="stage-title">¡Compra exitosa!</h2>
     <p class="muted">
-      Orden <strong>{{ orderId() }}</strong> registrada con la pasarela simulada.
+      Orden <strong>{{ orderId() }}</strong> registrada con éxito.
+      <br />
+      Método de pago: <strong>{{ selectedPaymentLabel() }}</strong>.
       @if (paymentReference()) {
-        Referencia del pago <strong>{{ paymentReference() }}</strong>.
+        <br />Referencia de transacción: <strong>{{ paymentReference() }}</strong>.
       }
     </p>
 
@@ -95,6 +97,7 @@
     </section>
 
     <aside class="cart-side">
+      <!-- Método de entrega -->
       <div class="side-card">
         <p class="side-title">Método de entrega</p>
         <div class="delivery-row">
@@ -132,6 +135,138 @@
         }
       </div>
 
+      <!-- Método de pago (Pasarela Stripe, QR y Efectivo) -->
+      <div class="side-card payment-method-card">
+        <p class="side-title">Método de pago (Stripe & Efectivo)</p>
+        <div class="payment-tabs">
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod() === 'card'"
+            (click)="setPaymentMethod('card')"
+          >
+            <svg class="pay-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            <span>Tarjeta Stripe</span>
+          </button>
+
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod() === 'qr'"
+            (click)="setPaymentMethod('qr')"
+          >
+            <svg class="pay-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span>Stripe QR</span>
+          </button>
+
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod() === 'cash'"
+            (click)="setPaymentMethod('cash')"
+          >
+            <svg class="pay-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="6" width="20" height="12" rx="2"/>
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M6 12h.01M18 12h.01"/>
+            </svg>
+            <span>Efectivo</span>
+          </button>
+        </div>
+
+        <!-- Opción 1: Tarjeta Stripe -->
+        @if (paymentMethod() === 'card') {
+          <div class="pay-details">
+            <p class="pay-hint">Selecciona una tarjeta para validar o simular rechazo bancario:</p>
+            <div class="cards-list">
+              @for (c of cards; track c.id) {
+                <button
+                  type="button"
+                  class="card-opt"
+                  [class.active]="cardId() === c.id"
+                  (click)="setCardId(c.id)"
+                >
+                  <div class="card-opt-left">
+                    <span class="card-swatch" [style.background]="c.color"></span>
+                    <span class="card-opt-label">{{ c.label }}</span>
+                  </div>
+                  <span class="card-badge" [class.success]="!c.simulateRejection" [class.danger]="c.simulateRejection">
+                    {{ c.badge }}
+                  </span>
+                </button>
+              }
+            </div>
+            <p class="pay-note">
+              Conectado a la pasarela Stripe. <strong>Visa</strong> aprueba la transacción;
+              <strong>Mastercard</strong> simula un rechazo bancario (402) sin debitar stock ni vaciar el carrito.
+            </p>
+          </div>
+        }
+
+        <!-- Opción 2: Stripe QR -->
+        @if (paymentMethod() === 'qr') {
+          <div class="pay-details qr-box">
+            @if (loadingQr()) {
+              <div class="qr-loading">
+                <div class="mini-spinner"></div>
+                <p>Generando código QR dinámico con Stripe…</p>
+              </div>
+            } @else if (qrCodeBase64(); as qr) {
+              <div class="qr-content">
+                <div class="qr-frame">
+                  <img [src]="qr" alt="Código QR Stripe" class="qr-image" />
+                </div>
+                <p class="qr-title">Escanea para pagar con Stripe</p>
+                <p class="qr-desc">
+                  Monto total: <strong>{{ total() | currency: 'USD' }}</strong>. Escanea con tu móvil o cámara para abonar.
+                </p>
+                @if (qrPaymentUrl(); as url) {
+                  <a [href]="url" target="_blank" rel="noopener noreferrer" class="qr-link">
+                    Abrir pasarela Stripe directamente ↗
+                  </a>
+                }
+                <button type="button" class="btn-text-sm" (click)="loadQrPayment()">
+                  ↺ Actualizar código QR
+                </button>
+              </div>
+            } @else {
+              <div class="qr-failed">
+                <p>No se pudo generar el código QR.</p>
+                <button type="button" class="btn btn-dark btn-sm" (click)="loadQrPayment()">
+                  Reintentar QR
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Opción 3: Efectivo -->
+        @if (paymentMethod() === 'cash') {
+          <div class="pay-details cash-box">
+            <div class="cash-icon-wrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                <circle cx="12" cy="12" r="2"/>
+              </svg>
+            </div>
+            <p class="cash-title">Pago en efectivo / contra entrega</p>
+            <p class="cash-desc">
+              Abona en efectivo en la sucursal seleccionada al retirar, o contra entrega al recibir tu pedido en domicilio.
+            </p>
+            <span class="cash-badge">Sin recargos adicionales</span>
+          </div>
+        }
+      </div>
+
+      <!-- Código de descuento -->
       <div class="side-card">
         <p class="side-title">Código de descuento</p>
         <div class="coupon-row">
@@ -152,8 +287,37 @@
         </div>
       </div>
 
+      <!-- Resumen del pedido -->
       <div class="side-card">
         <p class="side-title">Resumen del pedido</p>
+
+        @if (paymentError(); as err) {
+          <div class="payment-error-banner" role="alert">
+            <div class="banner-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div class="banner-body">
+              <p class="banner-title">Pago Rechazado por Stripe</p>
+              <p class="banner-msg">{{ err }}</p>
+              <p class="banner-tip">
+                Tu carrito y existencias se mantienen intactos. Selecciona otra tarjeta o método de pago para reintentar.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="banner-close"
+              (click)="paymentError.set(null)"
+              aria-label="Cerrar advertencia"
+            >
+              ✕
+            </button>
+          </div>
+        }
+
         <div class="sum-row">
           <span>Subtotal ({{ cartCount() }} art.)</span>
           <span>{{ subtotal() | currency: 'USD' }}</span>
@@ -175,9 +339,9 @@
           <span>{{ total() | currency: 'USD' }}</span>
         </div>
         <button type="button" class="btn btn-accent full" (click)="checkout()">
-          Finalizar compra
+          {{ checkoutButtonLabel() }}
         </button>
-        <p class="secure">Pago seguro con cifrado SSL · Datos protegidos</p>
+        <p class="secure">Pasarela Stripe integrada · SSL 256-bit · Datos protegidos</p>
       </div>
     </aside>
   </div>

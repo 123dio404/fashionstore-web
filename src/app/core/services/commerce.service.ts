@@ -9,6 +9,8 @@ import {
   CheckoutRequest,
   InvoiceResponse,
   PosSaleCreate,
+  QrPaymentRequest,
+  QrPaymentResponse,
   ReceiptResponse,
   ReservationCreate,
   ReservationResponse,
@@ -35,7 +37,10 @@ export class CommerceService {
     return this.http.delete<CartResponse>(`${this.url}/cart/items/${itemId}`);
   }
 
-  // CU11 - Checkout
+  // CU11 - Checkout & Payments
+  createQrPayment(data: QrPaymentRequest): Observable<QrPaymentResponse> {
+    return this.http.post<QrPaymentResponse>(`${this.url}/payments/qr`, data);
+  }
   checkout(data: CheckoutRequest): Observable<SaleResponse> {
     return this.http.post<SaleResponse>(`${this.url}/cart/checkout`, data);
   }
