@@ -70,8 +70,8 @@ export class CartPage {
       label: 'Visa •••• 4242',
       token: 'pm_card_visa',
       simulateRejection: false,
-      badge: 'Fondos Disponibles',
-      badgeClass: 'badge-success',
+      expiry: 'Exp. 12/28',
+      brand: 'VISA',
       color: '#1a1f71',
     },
     {
@@ -79,8 +79,8 @@ export class CartPage {
       label: 'Mastercard •••• 0002',
       token: 'pm_card_declined',
       simulateRejection: true,
-      badge: 'Fondos Insuficientes',
-      badgeClass: 'badge-danger',
+      expiry: 'Exp. 09/27',
+      brand: 'MC',
       color: '#eb001b',
     },
   ];

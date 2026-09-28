@@ -193,7 +193,7 @@
         <!-- Opción 1: Tarjeta Stripe -->
         @if (paymentMethod() === 'card') {
           <div class="pay-details">
-            <p class="pay-hint">Selecciona la tarjeta para procesar el pago:</p>
+            <p class="pay-hint">Tarjetas registradas para pago seguro:</p>
             <div class="cards-list">
               @for (c of cards; track c.id) {
                 <button
@@ -204,17 +204,17 @@
                 >
                   <div class="card-opt-left">
                     <span class="card-swatch" [style.background]="c.color"></span>
-                    <span class="card-opt-label">{{ c.label }}</span>
+                    <div class="card-meta-text">
+                      <span class="card-opt-label">{{ c.label }}</span>
+                      <span class="card-expiry">{{ c.expiry }}</span>
+                    </div>
                   </div>
-                  <span class="card-badge" [class.success]="!c.simulateRejection" [class.danger]="c.simulateRejection">
-                    {{ c.badge }}
-                  </span>
+                  <span class="card-brand-badge">{{ c.brand }}</span>
                 </button>
               }
             </div>
             <p class="pay-note">
-              Conectado a la pasarela Stripe. <strong>Visa</strong> aprueba la transacción;
-              <strong>Mastercard</strong> será declinada por fondos insuficientes ante Stripe (sin debitar existencias ni vaciar el carrito).
+              Transacción protegida mediante tokenización y cifrado TLS 1.3 a través de Stripe.
             </p>
           </div>
         }
