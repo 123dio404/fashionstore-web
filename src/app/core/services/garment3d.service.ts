@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FittingPose } from './pose-landmarker.service';
 
 export type GarmentType = 'top' | 'dress' | 'bottom';
-export type ModelKind = 'garment' | 'shoe' | 'sunglasses';
+export type ModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch';
 
 export interface FittingAppearance {
   type: GarmentType;
@@ -226,39 +226,68 @@ export class Garment3DService {
    */
   private placeModel(pose: FittingPose): void {
     if (!this.model) return;
-    const isShoe = this.modelKind === 'shoe';
-    const anchor = isShoe
-      ? { x: pose.hip.x, y: pose.hip.y + pose.torso }
-      : { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.5 };
+    const kind = this.modelKind;
 
-    // Escala el objeto al tamaño que tendría en el cuerpo: el zapato al largo
-    // del pie y las gafas al ancho de la cara, respecto a la pose detectada.
-    const targetPx = isShoe ? pose.torso * 0.5 : pose.shoulderHalf * 0.75;
-    const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
-    if (isShoe) {
-      // Par de zapatos: uno a cada lado del eje del torso, con el pie izquierdo
-      // espejado respecto al derecho. La suela se apoya en la línea del suelo.
+    if (kind === 'shoe') {
+      const anchor = { x: pose.hip.x, y: pose.hip.y + pose.torso };
+      const targetPx = pose.torso * 0.48;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
       const span = pose.hipHalf * 1.1;
       this.shoeLeft?.position.set(-span, 0, 0);
       this.shoeLeft?.scale.set(-scale, scale, scale);
       this.shoeRight?.position.set(span, 0, 0);
       this.shoeRight?.scale.set(scale, scale, scale);
-    } else {
-      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 0);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx - this.w * 0.12, wy + this.h * 0.1, 60);
+      return;
     }
 
+    if (kind === 'sunglasses') {
+      // Anclaje sobre la cara (entre ojos y nariz)
+      const anchor = { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.42 };
+      const targetPx = pose.shoulderHalf * 0.82;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 15);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx, wy + 50, 90);
+      return;
+    }
+
+    if (kind === 'watch') {
+      // Reloj colocado al costado izquierdo del torso a la altura de la cadera
+      const anchor = { x: pose.hip.x - pose.shoulderHalf * 0.85, y: pose.hip.y + pose.torso * 0.05 };
+      const targetPx = pose.shoulderHalf * 0.65;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 10);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx, wy + 40, 80);
+      return;
+    }
+
+    // Modelo 3D de prenda real (ej. Corset.glb)
+    const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.32 };
+    const targetPx = pose.shoulderHalf * 2.2;
+    const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+    this.model.scale.set(scale, scale, scale);
     const wx = anchor.x - this.w / 2;
     const wy = this.h / 2 - anchor.y;
     this.group.position.set(wx, wy, 0);
     this.group.rotation.z = -pose.angle;
-    this.light.position.set(wx - this.w * 0.12, wy + this.h * 0.1, 60);
+    this.light.position.set(wx - this.w * 0.1, wy + this.h * 0.15, 90);
   }
 
   /* ------------------------------------------------------- geometries ----- */
 
   private buildGarment(type: GarmentType): void {
-    // Cada prenda es una malla curva cerrada (tubo elíptico) cuyos perfiles se
-    // regeneran por fotograma. Los pantalones unen un bloque de caderas + 2 piernas.
     const parts: { leg: 0 | -1 | 1; uSeg: number; vSeg: number }[] =
       type === 'bottom'
         ? [
@@ -293,12 +322,12 @@ export class Garment3DService {
       geometry.setIndex(new THREE.BufferAttribute(idx, 1));
 
       const material = new THREE.MeshStandardMaterial({
-        color: 0xe05a47,
+        color: 0x1f2937,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.97,
-        roughness: 0.82,
-        metalness: 0,
+        opacity: 0.92,
+        roughness: 0.88,
+        metalness: 0.05,
       });
       const mesh = new THREE.Mesh(geometry, material);
       this.group.add(mesh);

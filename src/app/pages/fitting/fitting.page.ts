@@ -75,8 +75,8 @@ export class FittingPage {
   readonly fit = signal(1);
   readonly colorIdx = signal(0);
   readonly notice = signal<string | null>(null);
-  /** Muestra los 33 landmarks + esqueleto para verificar que MediaPipe detecta la pose. */
-  readonly showSkeleton = signal(true);
+  /** Muestra los 33 landmarks + esqueleto (desactivado por defecto para vista comercial limpia). */
+  readonly showSkeleton = signal(false);
   /** Diagnóstico en pantalla para saber en qué etapa se corta el vestidor. */
   readonly dbg = signal('Iniciando…');
   readonly dbgPose = signal<'cargando' | 'ok' | 'fallo'>('cargando');
@@ -196,12 +196,17 @@ export class FittingPage {
    */
   private syncModel(): void {
     if (!this.glReady) return;
+    const url = this.modelUrl();
     const kind = this.modelKind();
-    if (kind === 'garment') {
-      this.garment.useGarment(this.currentAppearance().type);
+    if (url) {
+      void this.garment
+        .loadModel(url, kind)
+        .catch(() => {
+          this.garment.useGarment(this.currentAppearance().type);
+        });
       return;
     }
-    void this.garment.loadModel(this.modelUrl(), kind).catch(() => undefined);
+    this.garment.useGarment(this.currentAppearance().type);
   }
 
   private async openCamera(): Promise<void> {

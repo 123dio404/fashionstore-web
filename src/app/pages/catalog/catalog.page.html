@@ -104,6 +104,9 @@
               @if (p.isNew) {
                 <span class="badge-dark">NUEVO</span>
               }
+              @if (p.model3dUrl) {
+                <span class="badge-3d">3D · AR</span>
+              }
               <button
                 type="button"
                 class="fav-btn"

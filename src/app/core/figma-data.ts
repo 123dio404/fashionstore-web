@@ -76,28 +76,28 @@ const CARD = '?w=400&h=520&fit=crop&auto=format';
 
 /* ------------------------------------------------------------ CU17 ------ */
 
-/** Ruta base de los modelos publicados por el Khronos Group (`glTF-Sample-Assets`). */
 const AR_ASSETS =
   'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models';
 
-/** Calzado — `MaterialsVariantsShoe` (`.glb`, el mismo modelo que usa el móvil). */
+/** Calzado — `MaterialsVariantsShoe` (`.glb` autocontenido con variantes de material). */
 export const AR_SHOE_MODEL =
   'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MaterialsVariantsShoe/glTF-Binary/MaterialsVariantsShoe.glb';
-
-/** Prendas de tela — `SheenCloth` (`.gltf` con su `.bin` y texturas hermanas). */
-export const AR_CLOTH_MODEL = `${AR_ASSETS}/SheenCloth/glTF/SheenCloth.gltf`;
 
 /** Accesorios — `SunglassesKhronos` (`.glb` autocontenido de 371 KB). */
 export const AR_SUNGLASSES_MODEL = `${AR_ASSETS}/SunglassesKhronos/glTF-Binary/SunglassesKhronos.glb`;
 
-/** Respaldo final del vestidor cuando no hay modelo ni categoría. */
-export const AR_FALLBACK_MODEL = AR_SHOE_MODEL;
+/** Accesorios / Joyería — `ChronographWatch` (`.glb` de alta definición PBR). */
+export const AR_WATCH_MODEL = `${AR_ASSETS}/ChronographWatch/glTF-Binary/ChronographWatch.glb`;
+
+/** Alta costura femenina — `Corset` (`.glb` prenda real con costuras). */
+export const AR_CORSET_MODEL = `${AR_ASSETS}/Corset/glTF-Binary/Corset.glb`;
 
 /** Vistas oficiales de cada modelo (póster mientras carga el 3D). */
 export const AR_PREVIEWS = {
-  cloth: `${AR_ASSETS}/SheenCloth/screenshot/screenshot.jpg`,
   shoe: `${AR_ASSETS}/MaterialsVariantsShoe/screenshot/screenshot.jpg`,
   sunglasses: `${AR_ASSETS}/SunglassesKhronos/screenshot/SunglassesKhronos.png`,
+  watch: `${AR_ASSETS}/ChronographWatch/screenshot/screenshot.jpg`,
+  corset: `${AR_ASSETS}/Corset/screenshot/screenshot.jpg`,
 } as const;
 
 export const PRODUCTS: FigmaProduct[] = [
@@ -289,6 +289,82 @@ export const PRODUCTS: FigmaProduct[] = [
     stock: { Centro: 9, Norte: 4, Sur: 3 },
     rating: 4.5,
     reviews: 278,
+    model3dUrl: AR_SHOE_MODEL,
+  },
+  {
+    id: 9,
+    name: 'Gafas Aviator Black Edition',
+    brand: 'Ray-Studio',
+    category: 'Accesorios',
+    price: 49.99,
+    oldPrice: 75.0,
+    discount: 33,
+    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=520&fit=crop&auto=format',
+    images: [
+      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=520&fit=crop&auto=format',
+    ],
+    colors: [
+      { name: 'Negro', hex: '#111827' },
+      { name: 'Dorado', hex: '#D4AF37' },
+    ],
+    sizes: ['Única'],
+    description:
+      'Gafas de sol polarizadas estilo aviador con montura metálica ultraligera y protección UV400. Pruébatelas en vivo en el espejo frontal o inspecciónalas en tu espacio.',
+    stock: { Centro: 8, Norte: 6, Sur: 12 },
+    rating: 4.9,
+    reviews: 142,
+    isFeatured: true,
+    model3dUrl: AR_SUNGLASSES_MODEL,
+  },
+  {
+    id: 10,
+    name: 'Reloj Cronógrafo Imperial',
+    brand: 'Kronos Luxe',
+    category: 'Accesorios',
+    price: 139.99,
+    oldPrice: 199.99,
+    discount: 30,
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=520&fit=crop&auto=format',
+    images: [
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=520&fit=crop&auto=format',
+    ],
+    colors: [
+      { name: 'Plata', hex: '#E5E7EB' },
+      { name: 'Negro', hex: '#111827' },
+    ],
+    sizes: ['42mm'],
+    description:
+      'Reloj analógico cronógrafo de precisión con correa de piel genuina y caja de acero inoxidable cepillado. Inspección 3D en 360° y escala 1:1 en AR.',
+    stock: { Centro: 4, Norte: 3, Sur: 7 },
+    rating: 4.8,
+    reviews: 89,
+    isNew: true,
+    model3dUrl: AR_WATCH_MODEL,
+  },
+  {
+    id: 11,
+    name: 'Top Corsé Alta Costura',
+    brand: 'Atelier Privé',
+    category: 'Mujer',
+    price: 79.99,
+    oldPrice: 115.0,
+    discount: 30,
+    image: 'https://images.unsplash.com/photo-1551803091-e20673f15770?w=400&h=520&fit=crop&auto=format',
+    images: [
+      'https://images.unsplash.com/photo-1551803091-e20673f15770?w=400&h=520&fit=crop&auto=format',
+    ],
+    colors: [
+      { name: 'Negro', hex: '#111827' },
+      { name: 'Beige', hex: '#D4C5A9' },
+    ],
+    sizes: ['XS', 'S', 'M', 'L'],
+    description:
+      'Corsé estructurado de diseño contemporáneo con varillas flexibles y acabado satinado de alta costura. Modelo 3D disponible para ajuste al cuerpo en probador virtual.',
+    stock: { Centro: 5, Norte: 2, Sur: 6 },
+    rating: 4.7,
+    reviews: 64,
+    isNew: true,
+    model3dUrl: AR_CORSET_MODEL,
   },
 ];
 
@@ -501,9 +577,8 @@ export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
 
 /* --------------------------------------------------------------- CU17 ----- */
 
-// Los modelos 3D (`AR_SHOE_MODEL`, `AR_CLOTH_MODEL`, `AR_SUNGLASSES_MODEL`,
-// `AR_FALLBACK_MODEL`) y sus vistas previas (`AR_PREVIEWS`) se declaran arriba,
-// junto a `PRODUCTS`, porque los productos demo los referencian al construirse.
+// Los modelos 3D (`AR_SHOE_MODEL`, `AR_SUNGLASSES_MODEL`, `AR_WATCH_MODEL`,
+// `AR_CORSET_MODEL`) se declaran arriba junto a `PRODUCTS`.
 
 /** Componente estándar que renderiza el 3D/AR (`index.html` lo carga del CDN de Google). */
 export const AR_VIEWER_TAG = 'model-viewer';
@@ -511,51 +586,38 @@ export const AR_VIEWER_TAG = 'model-viewer';
 /** Modos de AR del componente: Scene Viewer (Android), WebXR y Quick Look (iOS). */
 export const AR_MODES = 'scene-viewer webxr quick-look';
 
-/** Modelo de demostración que corresponde a la categoría del producto. */
-export function arModelForCategory(category: string): string {
-  const value = category.toLowerCase();
-  if (value.includes('calz') || value.includes('zapat')) return AR_SHOE_MODEL;
-  if (value.includes('acces') || value.includes('gafa')) {
-    return AR_SUNGLASSES_MODEL;
-  }
-  return AR_CLOTH_MODEL;
+/** Indica si un producto cuenta con un modelo 3D real disponible. */
+export function hasAr(product?: { model3dUrl?: string | null } | null): boolean {
+  return !!product?.model3dUrl?.trim();
 }
 
-/** CU17: modelo 3D — `model_3d_url` real, demo por categoría o respaldo. */
+/** Devuelve la URL del modelo 3D del producto o null si no tiene modelo propio. */
 export function arModelFor(
-  product?: { model3dUrl?: string | null; category?: string } | null,
-): string {
+  product?: { model3dUrl?: string | null } | null,
+): string | null {
   const url = product?.model3dUrl?.trim();
-  if (url) return url;
-  const category = product?.category?.trim();
-  return category ? arModelForCategory(category) : AR_FALLBACK_MODEL;
+  return url || null;
 }
 
-/** CU17: qué renderiza el vestidor web — objeto 3D real o malla ajustada al cuerpo. */
-export type ArModelKind = 'garment' | 'shoe' | 'sunglasses';
+/** Clasificación del objeto 3D para el probador interactivo. */
+export type ArModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch';
 
-/** Clasifica el modelo del producto para que el probador cargue el objeto real. */
-export function arKindFor(modelUrl: string): ArModelKind {
+/** Clasifica el modelo del producto para cargarlo con el anclaje y escala correspondientes. */
+export function arKindFor(modelUrl?: string | null): ArModelKind {
+  if (!modelUrl) return 'garment';
   const value = modelUrl.toLowerCase();
   if (value.includes('sunglass')) return 'sunglasses';
   if (value.includes('shoe')) return 'shoe';
+  if (value.includes('watch')) return 'watch';
   return 'garment';
 }
 
-/** CU17: póster que corresponde al modelo mostrado. */
-export function arPreviewFor(modelUrl: string): string {
+/** Póster oficial que corresponde al modelo mostrado mientras descarga el binario GLB. */
+export function arPreviewFor(modelUrl?: string | null): string {
+  if (!modelUrl) return AR_PREVIEWS.shoe;
   const value = modelUrl.toLowerCase();
   if (value.includes('sunglasses')) return AR_PREVIEWS.sunglasses;
-  if (value.includes('shoe')) return AR_PREVIEWS.shoe;
-  return AR_PREVIEWS.cloth;
-}
-
-/** CU17: origen del modelo que muestra el vestidor (trazabilidad del CU). */
-export function arModelSourceFor(
-  product?: { model3dUrl?: string | null; category?: string } | null,
-): string {
-  if (product?.model3dUrl?.trim()) return 'model_3d_url del producto';
-  return product?.category?.trim()
-    ? 'modelo de demostración de la categoría'
-    : 'modelo de respaldo del prototipo';
+  if (value.includes('watch')) return AR_PREVIEWS.watch;
+  if (value.includes('corset')) return AR_PREVIEWS.corset;
+  return AR_PREVIEWS.shoe;
 }

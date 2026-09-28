@@ -16,8 +16,8 @@ import {
   FigmaProduct,
   STORES,
   arModelFor,
-  arModelSourceFor,
   arPreviewFor,
+  hasAr,
 } from '../../core/figma-data';
 import { CatalogStore } from '../../core/services/catalog-store.service';
 
@@ -79,8 +79,8 @@ export class ProductDetailPage {
   readonly arAvailable = signal(false);
   readonly arNotice = signal<string | null>(null);
   readonly arModes = AR_MODES;
+  readonly hasAr = computed(() => hasAr(this.product()));
   readonly arModel = computed(() => arModelFor(this.product()));
-  readonly arSource = computed(() => arModelSourceFor(this.product()));
   readonly arPoster = computed(() => arPreviewFor(this.arModel()));
 
   readonly isFav = computed(() => {

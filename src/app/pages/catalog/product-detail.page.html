@@ -169,54 +169,54 @@
         </div>
       }
 
-      <!-- Probador Virtual AR: visor 3D real + sesión ARCore (Scene Viewer) -->
-      <div class="ar-card">
-        <div class="ar-head">
-          <p class="section-label">Probador virtual AR</p>
-          <span class="ar-badge">Escala 1:1</span>
+      <!-- Visualizador 3D y Realidad Aumentada (solo si el producto tiene modelo 3D real) -->
+      @if (hasAr()) {
+        <div class="ar-card">
+          <div class="ar-head">
+            <p class="section-label">Visualizador 3D y Realidad Aumentada</p>
+            <span class="ar-badge">Escala 1:1</span>
+          </div>
+
+          @if (arReady()) {
+            <model-viewer
+              #arViewer
+              class="ar-viewer"
+              [attr.src]="arModel()"
+              [attr.alt]="'Modelo 3D de ' + p.name"
+              [attr.poster]="arPoster()"
+              [attr.ar-modes]="arModes"
+              ar
+              camera-controls
+              auto-rotate
+              ar-scale="fixed"
+              ar-placement="floor"
+              shadow-intensity="1"
+              (load)="probeAr()"
+            ></model-viewer>
+          } @else {
+            <div class="ar-loading">Cargando visor 3D…</div>
+          }
+
+          <div class="ar-actions">
+            <a
+              [routerLink]="['/fitting', p.id]"
+              class="btn btn-accent try-camera"
+            >
+              Probar en Espejo Virtual (Cámara frontal)
+            </a>
+            <button type="button" class="btn btn-ghost" (click)="launchAr()">
+              Ver en tu espacio (AR 1:1)
+            </button>
+            <button type="button" class="btn btn-ghost" (click)="captureAr()">
+              Capturar
+            </button>
+          </div>
+
+          @if (arNotice(); as notice) {
+            <p class="ar-notice">{{ notice }}</p>
+          }
         </div>
-
-        @if (arReady()) {
-          <model-viewer
-            #arViewer
-            class="ar-viewer"
-            [attr.src]="arModel()"
-            [attr.alt]="'Modelo 3D de ' + p.name"
-            [attr.poster]="arPoster()"
-            [attr.ar-modes]="arModes"
-            ar
-            camera-controls
-            auto-rotate
-            ar-scale="fixed"
-            ar-placement="floor"
-            shadow-intensity="1"
-            (load)="probeAr()"
-          ></model-viewer>
-        } @else {
-          <div class="ar-loading">Cargando visor 3D…</div>
-        }
-
-        <div class="ar-actions">
-          <a
-            [routerLink]="['/fitting', p.id]"
-            class="btn btn-accent try-camera"
-          >
-            Probar en cámara (ajuste al cuerpo)
-          </a>
-          <button type="button" class="btn btn-ghost" (click)="launchAr()">
-            Ver modelo 3D en AR
-          </button>
-          <button type="button" class="btn btn-ghost" (click)="captureAr()">
-            Capturar
-          </button>
-        </div>
-
-        <p class="ar-meta">Modelo: {{ arSource() }}</p>
-        <p class="ar-meta ar-url">{{ arModel() }}</p>
-        @if (arNotice(); as notice) {
-          <p class="ar-notice">{{ notice }}</p>
-        }
-      </div>
+      }
     </aside>
   </div>
 } @else {
