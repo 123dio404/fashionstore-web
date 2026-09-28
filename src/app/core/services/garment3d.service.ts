@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FittingPose } from './pose-landmarker.service';
 
 export type GarmentType = 'top' | 'dress' | 'bottom';
-export type ModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch';
+export type ModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch' | 'headwear' | 'necklace';
 
 export interface FittingAppearance {
   type: GarmentType;
@@ -273,7 +273,35 @@ export class Garment3DService {
       return;
     }
 
-    // Modelo 3D de prenda real (ej. Corset.glb)
+    if (kind === 'headwear') {
+      // Gorra o sombrero anclado sobre la cabeza (por encima de los ojos)
+      const anchor = { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.72 };
+      const targetPx = pose.shoulderHalf * 0.95;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 25);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx, wy + 60, 100);
+      return;
+    }
+
+    if (kind === 'necklace') {
+      // Collar anclado a la base del cuello / clavícula
+      const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.05 };
+      const targetPx = pose.shoulderHalf * 0.85;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 20);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx, wy + 40, 90);
+      return;
+    }
+
+    // Modelo 3D de prenda real (torso / cuerpo)
     const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.32 };
     const targetPx = pose.shoulderHalf * 2.2;
     const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);

@@ -89,15 +89,23 @@ export const AR_SUNGLASSES_MODEL = `${AR_ASSETS}/SunglassesKhronos/glTF-Binary/S
 /** Accesorios / Joyería — `ChronographWatch` (`.glb` de alta definición PBR). */
 export const AR_WATCH_MODEL = `${AR_ASSETS}/ChronographWatch/glTF-Binary/ChronographWatch.glb`;
 
-/** Alta costura femenina — `Corset` (`.glb` prenda real con costuras). */
-export const AR_CORSET_MODEL = `${AR_ASSETS}/Corset/glTF-Binary/Corset.glb`;
+/** Accesorios / Gorras — `cap.glb` (Gorra urbana deportiva). */
+export const AR_CAP_MODEL = '/models/cap.glb';
+
+/** Accesorios / Joyería — `necklace.glb` (Collar y dije colgante). */
+export const AR_NECKLACE_MODEL = '/models/necklace.glb';
+
+/** Accesorios / Sombreros — `hat.glb` (Sombrero elegante clásico). */
+export const AR_HAT_MODEL = '/models/hat.glb';
 
 /** Vistas oficiales de cada modelo (póster mientras carga el 3D). */
 export const AR_PREVIEWS = {
   shoe: `${AR_ASSETS}/MaterialsVariantsShoe/screenshot/screenshot.jpg`,
   sunglasses: `${AR_ASSETS}/SunglassesKhronos/screenshot/SunglassesKhronos.png`,
   watch: `${AR_ASSETS}/ChronographWatch/screenshot/screenshot.jpg`,
-  corset: `${AR_ASSETS}/Corset/screenshot/screenshot.jpg`,
+  cap: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
+  necklace: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
+  hat: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
 } as const;
 
 export const PRODUCTS: FigmaProduct[] = [
@@ -343,28 +351,78 @@ export const PRODUCTS: FigmaProduct[] = [
   },
   {
     id: 11,
-    name: 'Top Corsé Alta Costura',
-    brand: 'Atelier Privé',
-    category: 'Mujer',
-    price: 79.99,
-    oldPrice: 115.0,
-    discount: 30,
-    image: 'https://images.unsplash.com/photo-1551803091-e20673f15770?w=400&h=520&fit=crop&auto=format',
+    name: 'Gorra Urbana Snapback',
+    brand: 'Nike',
+    category: 'Accesorios',
+    price: 34.99,
+    oldPrice: 45.0,
+    discount: 22,
+    image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
     images: [
-      'https://images.unsplash.com/photo-1551803091-e20673f15770?w=400&h=520&fit=crop&auto=format',
+      'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
     ],
     colors: [
       { name: 'Negro', hex: '#111827' },
-      { name: 'Beige', hex: '#D4C5A9' },
+      { name: 'Rojo', hex: '#DC2626' },
     ],
-    sizes: ['XS', 'S', 'M', 'L'],
+    sizes: ['Ajustable'],
     description:
-      'Corsé estructurado de diseño contemporáneo con varillas flexibles y acabado satinado de alta costura. Modelo 3D disponible para ajuste al cuerpo en probador virtual.',
-    stock: { Centro: 5, Norte: 2, Sur: 6 },
-    rating: 4.7,
-    reviews: 64,
+      'Gorra de visera plana y diseño streetwear con broche ajustable posterior. Modelo 3D interactivo para probador virtual y visualización en tu espacio.',
+    stock: { Centro: 10, Norte: 8, Sur: 15 },
+    rating: 4.8,
+    reviews: 112,
     isNew: true,
-    model3dUrl: AR_CORSET_MODEL,
+    model3dUrl: AR_CAP_MODEL,
+  },
+  {
+    id: 12,
+    name: 'Collar Colgante Black Panther',
+    brand: 'Atelier Privé',
+    category: 'Accesorios',
+    price: 59.99,
+    oldPrice: 85.0,
+    discount: 29,
+    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
+    images: [
+      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
+    ],
+    colors: [
+      { name: 'Plata', hex: '#E5E7EB' },
+      { name: 'Negro', hex: '#111827' },
+    ],
+    sizes: ['50cm'],
+    description:
+      'Collar con cadena de eslabones pulidos y dije emblemático de alta definición. Visualización 3D en 360° y prueba virtual en el cuello.',
+    stock: { Centro: 6, Norte: 4, Sur: 9 },
+    rating: 4.9,
+    reviews: 88,
+    isFeatured: true,
+    model3dUrl: AR_NECKLACE_MODEL,
+  },
+  {
+    id: 13,
+    name: 'Sombrero Elegante Fedora',
+    brand: 'Massimo',
+    category: 'Accesorios',
+    price: 49.99,
+    oldPrice: 69.99,
+    discount: 28,
+    image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
+    images: [
+      'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
+    ],
+    colors: [
+      { name: 'Negro', hex: '#111827' },
+      { name: 'Camel', hex: '#C4A882' },
+    ],
+    sizes: ['M', 'L'],
+    description:
+      'Sombrero clásico estilo fedora en fieltro fino con cinta de contraste. Modelo 3D disponible para probar en la cabeza en tiempo real.',
+    stock: { Centro: 5, Norte: 3, Sur: 4 },
+    rating: 4.7,
+    reviews: 54,
+    isNew: true,
+    model3dUrl: AR_HAT_MODEL,
   },
 ];
 
@@ -578,7 +636,7 @@ export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
 /* --------------------------------------------------------------- CU17 ----- */
 
 // Los modelos 3D (`AR_SHOE_MODEL`, `AR_SUNGLASSES_MODEL`, `AR_WATCH_MODEL`,
-// `AR_CORSET_MODEL`) se declaran arriba junto a `PRODUCTS`.
+// `AR_CAP_MODEL`, `AR_NECKLACE_MODEL`, `AR_HAT_MODEL`) se declaran arriba junto a `PRODUCTS`.
 
 /** Componente estándar que renderiza el 3D/AR (`index.html` lo carga del CDN de Google). */
 export const AR_VIEWER_TAG = 'model-viewer';
@@ -600,7 +658,7 @@ export function arModelFor(
 }
 
 /** Clasificación del objeto 3D para el probador interactivo. */
-export type ArModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch';
+export type ArModelKind = 'garment' | 'shoe' | 'sunglasses' | 'watch' | 'headwear' | 'necklace';
 
 /** Clasifica el modelo del producto para cargarlo con el anclaje y escala correspondientes. */
 export function arKindFor(modelUrl?: string | null): ArModelKind {
@@ -609,6 +667,8 @@ export function arKindFor(modelUrl?: string | null): ArModelKind {
   if (value.includes('sunglass')) return 'sunglasses';
   if (value.includes('shoe')) return 'shoe';
   if (value.includes('watch')) return 'watch';
+  if (value.includes('cap') || value.includes('hat')) return 'headwear';
+  if (value.includes('necklace')) return 'necklace';
   return 'garment';
 }
 
@@ -618,6 +678,8 @@ export function arPreviewFor(modelUrl?: string | null): string {
   const value = modelUrl.toLowerCase();
   if (value.includes('sunglasses')) return AR_PREVIEWS.sunglasses;
   if (value.includes('watch')) return AR_PREVIEWS.watch;
-  if (value.includes('corset')) return AR_PREVIEWS.corset;
+  if (value.includes('cap')) return AR_PREVIEWS.cap;
+  if (value.includes('hat')) return AR_PREVIEWS.hat;
+  if (value.includes('necklace')) return AR_PREVIEWS.necklace;
   return AR_PREVIEWS.shoe;
 }

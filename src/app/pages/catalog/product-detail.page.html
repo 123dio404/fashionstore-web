@@ -169,14 +169,18 @@
         </div>
       }
 
-      <!-- Visualizador 3D y Realidad Aumentada (solo si el producto tiene modelo 3D real) -->
-      @if (hasAr()) {
-        <div class="ar-card">
-          <div class="ar-head">
-            <p class="section-label">Visualizador 3D y Realidad Aumentada</p>
+      <!-- Visualizador 3D y Realidad Aumentada (disponible en todos los productos) -->
+      <div class="ar-card">
+        <div class="ar-head">
+          <p class="section-label">Visualizador 3D y Realidad Aumentada</p>
+          @if (hasAr()) {
             <span class="ar-badge">Escala 1:1</span>
-          </div>
+          } @else {
+            <span class="ar-badge pending">Próximamente</span>
+          }
+        </div>
 
+        @if (hasAr()) {
           @if (arReady()) {
             <model-viewer
               #arViewer
@@ -215,8 +219,25 @@
           @if (arNotice(); as notice) {
             <p class="ar-notice">{{ notice }}</p>
           }
-        </div>
-      }
+        } @else {
+          <div class="ar-unavailable">
+            <div class="ar-unavailable-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+            </div>
+            <p class="ar-unavailable-title">Modelo 3D no disponible</p>
+            <p class="ar-unavailable-desc">
+              Esta prenda aún no cuenta con modelo tridimensional digitalizado. Cuando el modelo esté disponible, se habilitará automáticamente la prueba interactiva y en Realidad Aumentada.
+            </p>
+            <button type="button" class="btn btn-ghost ar-disabled-btn" disabled>
+              <span>🔒 Espejo Virtual no disponible</span>
+            </button>
+          </div>
+        }
+      </div>
     </aside>
   </div>
 } @else {
