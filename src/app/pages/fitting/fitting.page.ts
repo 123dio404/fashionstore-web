@@ -75,8 +75,8 @@ export class FittingPage {
   readonly fit = signal(1);
   readonly colorIdx = signal(0);
   readonly notice = signal<string | null>(null);
-  /** Muestra los 33 landmarks + esqueleto (desactivado por defecto para vista comercial limpia). */
-  readonly showSkeleton = signal(false);
+  /** Muestra los 33 landmarks + esqueleto de pose para el probador interactivo. */
+  readonly showSkeleton = signal(true);
   /** Diagnóstico en pantalla para saber en qué etapa se corta el vestidor. */
   readonly dbg = signal('Iniciando…');
   readonly dbgPose = signal<'cargando' | 'ok' | 'fallo'>('cargando');

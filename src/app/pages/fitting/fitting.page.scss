@@ -163,14 +163,17 @@
   height: 100%;
   transform: scaleX(-1);
   pointer-events: none;
+  z-index: 5;
 }
 
 .mirror-video {
   transform: scaleX(-1);
+  z-index: 1;
 }
 
 .mirror-canvas {
   pointer-events: none;
+  z-index: 2;
 }
 
 .overlay-pill {
@@ -178,6 +181,7 @@
   left: 50%;
   transform: translateX(-50%);
   bottom: 1rem;
+  z-index: 10;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-pill);
   background: rgba(11, 15, 23, 0.72);

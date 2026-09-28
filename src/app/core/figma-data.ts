@@ -86,26 +86,26 @@ export const AR_SHOE_MODEL =
 /** Accesorios — `SunglassesKhronos` (`.glb` autocontenido de 371 KB). */
 export const AR_SUNGLASSES_MODEL = `${AR_ASSETS}/SunglassesKhronos/glTF-Binary/SunglassesKhronos.glb`;
 
-/** Accesorios / Joyería — `ChronographWatch` (`.glb` de alta definición PBR). */
-export const AR_WATCH_MODEL = `${AR_ASSETS}/ChronographWatch/glTF-Binary/ChronographWatch.glb`;
+/** Accesorios / Smartwatch — `apple_watch.glb` (Modelo 3D de alta definición). */
+export const AR_WATCH_MODEL = '/models/apple_watch.glb';
 
-/** Accesorios / Gorras — `cap.glb` (Gorra urbana deportiva). */
-export const AR_CAP_MODEL = '/models/cap.glb';
-
-/** Accesorios / Joyería — `necklace.glb` (Collar y dije colgante). */
-export const AR_NECKLACE_MODEL = '/models/necklace.glb';
+/** Accesorios / Gorras — `baseball_cap.glb` (Gorra urbana deportiva realista). */
+export const AR_CAP_MODEL = '/models/baseball_cap.glb';
 
 /** Accesorios / Sombreros — `hat.glb` (Sombrero elegante clásico). */
 export const AR_HAT_MODEL = '/models/hat.glb';
+
+/** Moda / Chaqueta — `denim_jacket.glb` (Chaqueta denim vaquera de alta fidelidad). */
+export const AR_JACKET_MODEL = '/models/denim_jacket.glb';
 
 /** Vistas oficiales de cada modelo (póster mientras carga el 3D). */
 export const AR_PREVIEWS = {
   shoe: `${AR_ASSETS}/MaterialsVariantsShoe/screenshot/screenshot.jpg`,
   sunglasses: `${AR_ASSETS}/SunglassesKhronos/screenshot/SunglassesKhronos.png`,
-  watch: `${AR_ASSETS}/ChronographWatch/screenshot/screenshot.jpg`,
+  watch: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=400&h=520&fit=crop&auto=format',
   cap: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
-  necklace: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=520&fit=crop&auto=format',
   hat: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
+  jacket: 'https://images.unsplash.com/photo-1603189343302-e603f7add05a?w=400&h=520&fit=crop&auto=format',
 } as const;
 
 export const PRODUCTS: FigmaProduct[] = [
@@ -254,6 +254,7 @@ export const PRODUCTS: FigmaProduct[] = [
     rating: 4.4,
     reviews: 156,
     isNew: true,
+    model3dUrl: AR_JACKET_MODEL,
   },
   {
     id: 7,
@@ -326,23 +327,23 @@ export const PRODUCTS: FigmaProduct[] = [
   },
   {
     id: 10,
-    name: 'Reloj Cronógrafo Imperial',
-    brand: 'Kronos Luxe',
+    name: 'Apple Watch Sport 44mm',
+    brand: 'Apple',
     category: 'Accesorios',
     price: 139.99,
     oldPrice: 199.99,
     discount: 30,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=520&fit=crop&auto=format',
+    image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=400&h=520&fit=crop&auto=format',
     images: [
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=520&fit=crop&auto=format',
+      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=400&h=520&fit=crop&auto=format',
     ],
     colors: [
-      { name: 'Plata', hex: '#E5E7EB' },
+      { name: 'Space Grey', hex: '#374151' },
       { name: 'Negro', hex: '#111827' },
     ],
-    sizes: ['42mm'],
+    sizes: ['44mm'],
     description:
-      'Reloj analógico cronógrafo de precisión con correa de piel genuina y caja de acero inoxidable cepillado. Inspección 3D en 360° y escala 1:1 en AR.',
+      'Smartwatch deportivo con caja de aluminio Space Grey y correa deportiva negra. Inspección 3D en 360° y escala 1:1 en AR.',
     stock: { Centro: 4, Norte: 3, Sur: 7 },
     rating: 4.8,
     reviews: 89,
@@ -351,7 +352,7 @@ export const PRODUCTS: FigmaProduct[] = [
   },
   {
     id: 11,
-    name: 'Gorra Urbana Snapback',
+    name: 'Gorra Urbana Baseball',
     brand: 'Nike',
     category: 'Accesorios',
     price: 34.99,
@@ -363,11 +364,11 @@ export const PRODUCTS: FigmaProduct[] = [
     ],
     colors: [
       { name: 'Negro', hex: '#111827' },
-      { name: 'Rojo', hex: '#DC2626' },
+      { name: 'Azul', hex: '#1E3A5F' },
     ],
     sizes: ['Ajustable'],
     description:
-      'Gorra de visera plana y diseño streetwear con broche ajustable posterior. Modelo 3D interactivo para probador virtual y visualización en tu espacio.',
+      'Gorra de béisbol con visera curvada y diseño streetwear confeccionada en algodón premium. Modelo 3D disponible para probar en tu espacio.',
     stock: { Centro: 10, Norte: 8, Sur: 15 },
     rating: 4.8,
     reviews: 112,
@@ -376,7 +377,7 @@ export const PRODUCTS: FigmaProduct[] = [
   },
   {
     id: 12,
-    name: 'Collar Colgante Black Panther',
+    name: 'Collar Minimalista Eslabones',
     brand: 'Atelier Privé',
     category: 'Accesorios',
     price: 59.99,
@@ -392,12 +393,11 @@ export const PRODUCTS: FigmaProduct[] = [
     ],
     sizes: ['50cm'],
     description:
-      'Collar con cadena de eslabones pulidos y dije emblemático de alta definición. Visualización 3D en 360° y prueba virtual en el cuello.',
+      'Collar con cadena de eslabones pulidos y acabado brillante en acero inoxidable de grado quirúrgico.',
     stock: { Centro: 6, Norte: 4, Sur: 9 },
     rating: 4.9,
     reviews: 88,
     isFeatured: true,
-    model3dUrl: AR_NECKLACE_MODEL,
   },
   {
     id: 13,
@@ -417,7 +417,7 @@ export const PRODUCTS: FigmaProduct[] = [
     ],
     sizes: ['M', 'L'],
     description:
-      'Sombrero clásico estilo fedora en fieltro fino con cinta de contraste. Modelo 3D disponible para probar en la cabeza en tiempo real.',
+      'Sombrero clásico estilo fedora en fieltro fino con cinta de contraste. Modelo 3D disponible para probar en tiempo real.',
     stock: { Centro: 5, Norte: 3, Sur: 4 },
     rating: 4.7,
     reviews: 54,
@@ -635,8 +635,8 @@ export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
 
 /* --------------------------------------------------------------- CU17 ----- */
 
-// Los modelos 3D (`AR_SHOE_MODEL`, `AR_SUNGLASSES_MODEL`, `AR_WATCH_MODEL`,
-// `AR_CAP_MODEL`, `AR_NECKLACE_MODEL`, `AR_HAT_MODEL`) se declaran arriba junto a `PRODUCTS`.
+// Los modelos 3D (`AR_SHOE_MODEL`, `AR_SUNGLASSES_MODEL`, `AR_WATCH_MODEL`)
+// se declaran arriba junto a `PRODUCTS`.
 
 /** Componente estándar que renderiza el 3D/AR (`index.html` lo carga del CDN de Google). */
 export const AR_VIEWER_TAG = 'model-viewer';
@@ -667,8 +667,9 @@ export function arKindFor(modelUrl?: string | null): ArModelKind {
   if (value.includes('sunglass')) return 'sunglasses';
   if (value.includes('shoe')) return 'shoe';
   if (value.includes('watch')) return 'watch';
-  if (value.includes('cap') || value.includes('hat')) return 'headwear';
+  if (value.includes('cap') || value.includes('hat') || value.includes('baseball')) return 'headwear';
   if (value.includes('necklace')) return 'necklace';
+  if (value.includes('jacket') || value.includes('denim')) return 'garment';
   return 'garment';
 }
 
@@ -676,10 +677,10 @@ export function arKindFor(modelUrl?: string | null): ArModelKind {
 export function arPreviewFor(modelUrl?: string | null): string {
   if (!modelUrl) return AR_PREVIEWS.shoe;
   const value = modelUrl.toLowerCase();
-  if (value.includes('sunglasses')) return AR_PREVIEWS.sunglasses;
+  if (value.includes('sunglass')) return AR_PREVIEWS.sunglasses;
   if (value.includes('watch')) return AR_PREVIEWS.watch;
-  if (value.includes('cap')) return AR_PREVIEWS.cap;
+  if (value.includes('cap') || value.includes('baseball')) return AR_PREVIEWS.cap;
   if (value.includes('hat')) return AR_PREVIEWS.hat;
-  if (value.includes('necklace')) return AR_PREVIEWS.necklace;
+  if (value.includes('jacket') || value.includes('denim')) return AR_PREVIEWS.jacket;
   return AR_PREVIEWS.shoe;
 }
