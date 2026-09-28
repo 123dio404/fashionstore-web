@@ -6,6 +6,7 @@ import { ICONS, NavGroup, NavItem, ROLE_META, navForRole } from './core/navigati
 import { AuthService } from './core/services/auth.service';
 import { CatalogStore } from './core/services/catalog-store.service';
 import { CommerceService } from './core/services/commerce.service';
+import { NotificationsService } from './core/services/notifications.service';
 import { Role } from './models';
 import { UiConfirmComponent } from './shared/ui/confirm-dialog.component';
 import { UiIconComponent } from './shared/ui/icon.component';
@@ -22,6 +23,7 @@ const SIDEBAR_KEY = 'fashionstore_sidebar_collapsed';
 export class App {
   /** Estado del catálogo demo (carrito, favoritos y toast del prototipo). */
   readonly catalogStore = inject(CatalogStore);
+  readonly notifs = inject(NotificationsService);
 
   private readonly auth = inject(AuthService);
   private readonly commerce = inject(CommerceService);
@@ -33,6 +35,7 @@ export class App {
   private readonly url = signal(this.router.url);
   readonly collapsed = signal(localStorage.getItem(SIDEBAR_KEY) === '1');
   readonly userMenuOpen = signal(false);
+  readonly notifsOpen = signal(false);
   readonly cartCount = signal(0);
   readonly offline = signal(typeof navigator === 'undefined' ? false : !navigator.onLine);
 
@@ -94,6 +97,7 @@ export class App {
       .subscribe((event) => {
         this.url.set(event.urlAfterRedirects);
         this.userMenuOpen.set(false);
+        this.notifsOpen.set(false);
         if (event.urlAfterRedirects.startsWith('/cart')) {
           this.refreshCart();
         }
@@ -117,10 +121,20 @@ export class App {
 
   toggleUserMenu(): void {
     this.userMenuOpen.update((open) => !open);
+    if (this.userMenuOpen()) this.notifsOpen.set(false);
   }
 
   closeUserMenu(): void {
     this.userMenuOpen.set(false);
+  }
+
+  toggleNotifs(): void {
+    this.notifsOpen.update((open) => !open);
+    if (this.notifsOpen()) this.userMenuOpen.set(false);
+  }
+
+  closeNotifs(): void {
+    this.notifsOpen.set(false);
   }
 
   search(term: string): void {

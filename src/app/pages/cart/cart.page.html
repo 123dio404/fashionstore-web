@@ -34,7 +34,7 @@
         <div class="invoice-row total">
           <span>Total</span><span>{{ doc.total | currency: 'USD' }}</span>
         </div>
-        <p class="invoice-note">{{ doc.disclaimer }}</p>
+        <p class="invoice-note">Comprobante electrónico de venta emitido por FashionStore. Factura oficial digital.</p>
         <button type="button" class="btn btn-dark" (click)="downloadInvoice()">
           Descargar factura PDF
         </button>
@@ -133,6 +133,14 @@
             }
           </select>
         }
+
+        @if (hasStockError()) {
+          <div class="stock-warning-box">
+            @for (err of stockErrors(); track err) {
+              <p class="stock-err-line">⚠️ {{ err }}</p>
+            }
+          </div>
+        }
       </div>
 
       <!-- Método de pago (Pasarela Stripe, QR y Efectivo) -->
@@ -185,7 +193,7 @@
         <!-- Opción 1: Tarjeta Stripe -->
         @if (paymentMethod() === 'card') {
           <div class="pay-details">
-            <p class="pay-hint">Selecciona una tarjeta para validar o simular rechazo bancario:</p>
+            <p class="pay-hint">Selecciona la tarjeta para procesar el pago:</p>
             <div class="cards-list">
               @for (c of cards; track c.id) {
                 <button
@@ -206,7 +214,7 @@
             </div>
             <p class="pay-note">
               Conectado a la pasarela Stripe. <strong>Visa</strong> aprueba la transacción;
-              <strong>Mastercard</strong> simula un rechazo bancario (402) sin debitar stock ni vaciar el carrito.
+              <strong>Mastercard</strong> será declinada por fondos insuficientes ante Stripe (sin debitar existencias ni vaciar el carrito).
             </p>
           </div>
         }
@@ -338,7 +346,7 @@
           <span>Total</span>
           <span>{{ total() | currency: 'USD' }}</span>
         </div>
-        <button type="button" class="btn btn-accent full" (click)="checkout()">
+        <button type="button" class="btn btn-accent full" [disabled]="hasStockError()" (click)="checkout()">
           {{ checkoutButtonLabel() }}
         </button>
         <p class="secure">Pasarela Stripe integrada · SSL 256-bit · Datos protegidos</p>

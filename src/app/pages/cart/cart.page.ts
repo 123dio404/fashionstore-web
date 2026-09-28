@@ -20,6 +20,7 @@ import {
 import { BranchesService } from '../../core/services/branches.service';
 import { CatalogStore } from '../../core/services/catalog-store.service';
 import { CommerceService } from '../../core/services/commerce.service';
+import { NotificationsService } from '../../core/services/notifications.service';
 import { ProductsService } from '../../core/services/products.service';
 
 type Delivery = 'home' | 'pickup';
@@ -28,12 +29,8 @@ export type PaymentMethod = 'card' | 'qr' | 'cash';
 export type CardId = 'visa' | 'mc';
 
 /**
- * CU10 / CU11 — Carrito y checkout con imágenes, cupón FASHION10, entrega
+ * Carrito y checkout con imágenes, cupón de descuento, selección de entrega
  * y pasarela de pago Stripe (Tarjeta, QR dinámico y Efectivo).
- *
- * El checkout es real: resuelve la sucursal y el stock en la API, arma el carrito
- * del backend, cobra con la pasarela Stripe (aprobación Visa / rechazo Mastercard 402 / QR)
- * o efectivo, emite la factura del documento fiscal simulado y permite descargarla en PDF.
  */
 @Component({
   selector: 'app-cart-page',
@@ -48,6 +45,7 @@ export class CartPage {
   private readonly commerce = inject(CommerceService);
   private readonly products = inject(ProductsService);
   private readonly branches = inject(BranchesService);
+  private readonly notifs = inject(NotificationsService);
 
   readonly couponCode = COUPON_CODE;
   readonly shippingHome = SHIPPING_HOME;
@@ -72,7 +70,7 @@ export class CartPage {
       label: 'Visa •••• 4242',
       token: 'pm_card_visa',
       simulateRejection: false,
-      badge: 'Aprobación',
+      badge: 'Fondos Disponibles',
       badgeClass: 'badge-success',
       color: '#1a1f71',
     },
@@ -81,13 +79,41 @@ export class CartPage {
       label: 'Mastercard •••• 0002',
       token: 'pm_card_declined',
       simulateRejection: true,
-      badge: 'Simular Rechazo (402)',
+      badge: 'Fondos Insuficientes',
       badgeClass: 'badge-danger',
       color: '#eb001b',
     },
   ];
 
-  /** CU11 — resultado real del checkout: venta, referencia del pago y factura. */
+  /** Validación de existencias por sucursal seleccionada. */
+  readonly stockErrors = computed(() => {
+    const errors: string[] = [];
+    const storeKey = this.storeId().charAt(0).toUpperCase() + this.storeId().slice(1);
+    const storeName = this.stores.find((s) => s.id === this.storeId())?.name ?? 'la sucursal';
+
+    for (const item of this.store.cart()) {
+      const p = this.store.byId(item.productId);
+      if (!p) continue;
+      const available = p.stock[storeKey] ?? 0;
+      if (this.delivery() === 'pickup' && item.qty > available) {
+        if (available === 0) {
+          errors.push(`"${item.name}" no tiene existencias en ${storeName}.`);
+        } else {
+          errors.push(`"${item.name}": solo quedan ${available} unidades en ${storeName} (tienes ${item.qty} en el carrito).`);
+        }
+      } else if (this.delivery() === 'home') {
+        const totalAvailable = Object.values(p.stock).reduce((a, b) => a + b, 0);
+        if (item.qty > totalAvailable) {
+          errors.push(`"${item.name}": solo quedan ${totalAvailable} unidades en inventario general.`);
+        }
+      }
+    }
+    return errors;
+  });
+
+  readonly hasStockError = computed(() => this.stockErrors().length > 0);
+
+  /** Resultado real del checkout: venta, referencia del pago y factura. */
   readonly saleId = signal<number | null>(null);
   readonly paymentReference = signal<string | null>(null);
   readonly invoice = signal<InvoiceResponse | null>(null);
@@ -109,13 +135,13 @@ export class CartPage {
   );
 
   readonly checkoutButtonLabel = computed(() => {
+    if (this.hasStockError()) {
+      return 'Stock insuficiente en la sucursal seleccionada';
+    }
     const tot = this.total();
     const formatted = `$${tot.toFixed(2)}`;
     if (this.paymentMethod() === 'card') {
-      const isRejection = this.cardId() === 'mc';
-      return isRejection
-        ? `Probar Rechazo Stripe (${formatted})`
-        : `Pagar con Tarjeta Stripe (${formatted})`;
+      return `Pagar con Tarjeta Stripe (${formatted})`;
     }
     if (this.paymentMethod() === 'qr') {
       return `Confirmar Pago QR Stripe (${formatted})`;
@@ -206,6 +232,12 @@ export class CartPage {
    */
   async checkout(): Promise<void> {
     if (this.cartCount() === 0 || this.stage() === 'processing') return;
+
+    if (this.hasStockError()) {
+      this.store.showToast(this.stockErrors()[0]);
+      return;
+    }
+
     this.stage.set('processing');
     this.warnings.set([]);
     this.paymentReference.set(null);
@@ -241,8 +273,6 @@ export class CartPage {
           ? 'Registrando pedido en efectivo…'
           : isQr
           ? 'Validando cobro con Stripe QR…'
-          : simulateRejection
-          ? 'Validando con pasarela Stripe (rechazo 402 simulado)…'
           : 'Validando cobro con tarjeta Stripe…'
       );
 
@@ -256,12 +286,12 @@ export class CartPage {
         })
       );
       this.saleId.set(sale.id);
-      this.paymentReference.set(
-        sale.payments.length > 0 ? sale.payments[sale.payments.length - 1].reference : null
-      );
+      const ref = sale.payments.length > 0 ? sale.payments[sale.payments.length - 1].reference : null;
+      this.paymentReference.set(ref);
 
-      this.progress.set('Emitiendo factura fiscal simulada…');
-      this.invoice.set(await firstValueFrom(this.commerce.getInvoice(sale.id)));
+      this.progress.set('Generando factura electrónica…');
+      const invoiceDoc = await firstValueFrom(this.commerce.getInvoice(sale.id));
+      this.invoice.set(invoiceDoc);
 
       this.orderId.set(`ORD-${sale.id}`);
       this.warnings.set(missing);
@@ -269,10 +299,37 @@ export class CartPage {
       this.couponApplied.set(false);
       this.coupon = '';
       this.stage.set('done');
+
+      // Actualizar el stock en tiempo real en la tienda del cliente
+      this.store.refreshStock();
+
+      // Despachar notificación de compra confirmada
+      this.notifs.addNotification({
+        title: `¡Compra confirmada! Factura ${invoiceDoc.invoice_number}`,
+        message: `Tu pago de $${Number(sale.total).toFixed(2)} mediante ${methodDesc} fue aprobado exitosamente. Ref: ${ref ?? `ORD-${sale.id}`}.`,
+        type: 'purchase_success',
+        saleId: sale.id,
+        amount: Number(sale.total),
+        transactionRef: ref ?? `ORD-${sale.id}`,
+        invoiceNumber: invoiceDoc.invoice_number,
+        link: '/purchase-history',
+      });
+
       this.store.showToast(`Venta #${sale.id} registrada exitosamente.`);
     } catch (error) {
       const msg = this.describe(error);
       this.paymentError.set(msg);
+
+      // Despachar notificación de pago declinado
+      this.notifs.addNotification({
+        title: 'Pago declinado por Stripe',
+        message: `${msg}. Tu carrito y existencias se mantienen intactos.`,
+        type: 'payment_rejected',
+        amount: this.total(),
+        transactionRef: 'STRIPE-DECLINED',
+        link: '/cart',
+      });
+
       this.fail(msg);
     }
   }

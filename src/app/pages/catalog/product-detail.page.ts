@@ -56,7 +56,8 @@ export class ProductDetailPage {
   readonly starPath =
     'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z';
 
-  readonly product = signal<FigmaProduct | undefined>(undefined);
+  readonly productId = signal<number>(1);
+  readonly product = computed(() => this.store.byId(this.productId()));
   readonly imgIdx = signal(0);
   readonly colorIdx = signal(0);
   readonly qty = signal(1);
@@ -64,7 +65,15 @@ export class ProductDetailPage {
   readonly added = signal(false);
   readonly openAcc = signal<string | null>('desc');
 
-  /** CU17 — Vestidor Virtual AR (visor 3D real + sesión ARCore). */
+  readonly totalStock = computed(() => {
+    const p = this.product();
+    if (!p) return 0;
+    return Object.values(p.stock).reduce((a, b) => a + b, 0);
+  });
+
+  readonly isOutOfStock = computed(() => this.totalStock() === 0);
+
+  /** Probador Virtual AR (visor 3D real + sesión ARCore). */
   readonly arViewer = viewChild<ElementRef<ArCapableElement>>('arViewer');
   readonly arReady = signal(false);
   readonly arAvailable = signal(false);
@@ -82,7 +91,7 @@ export class ProductDetailPage {
   constructor() {
     this.route.paramMap.subscribe((params) => {
       const id = Number(params.get('id'));
-      this.product.set(this.store.byId(id));
+      this.productId.set(id);
       this.imgIdx.set(0);
       this.colorIdx.set(0);
       this.size.set('');
@@ -189,6 +198,11 @@ export class ProductDetailPage {
     const p = this.product();
     const pickedSize = this.size();
     if (!p || !pickedSize) return;
+
+    if (this.isOutOfStock()) {
+      this.store.showToast('Esta prenda no tiene existencias disponibles en las sucursales.');
+      return;
+    }
 
     const color = this.colorName();
     for (let i = 0; i < this.qty(); i += 1) {

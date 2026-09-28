@@ -204,6 +204,23 @@
   margin-top: 0.7rem;
 }
 
+.stock-warning-box {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-md);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.stock-err-line {
+  margin: 0.2rem 0;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #b45309;
+  line-height: 1.35;
+}
+
 .coupon-row {
   display: flex;
   align-items: center;

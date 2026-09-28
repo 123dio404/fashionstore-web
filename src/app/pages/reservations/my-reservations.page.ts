@@ -11,6 +11,7 @@ import {
   TIME_SLOTS,
 } from '../../core/figma-data';
 import { CatalogStore } from '../../core/services/catalog-store.service';
+import { NotificationsService } from '../../core/services/notifications.service';
 import { inject } from '@angular/core';
 
 interface DemoReservation {
@@ -79,6 +80,7 @@ const STATUS_MAP: Record<string, { label: string; tone: string }> = {
 })
 export class MyReservationsPage {
   private readonly store = inject(CatalogStore);
+  private readonly notifs = inject(NotificationsService);
 
   readonly products = PRODUCTS;
   readonly stores = STORES;
@@ -137,11 +139,15 @@ export class MyReservationsPage {
     if (!product) return;
 
     const stamp = Date.now();
+    const resId = `RES-${stamp % 100000}`;
+    const pickedSize = this.size || product.sizes[0];
+    const branchName = this.storeName(this.storeId);
+
     this.reservations.update((list) => [
       {
-        id: `RES-${stamp % 100000}`,
+        id: resId,
         productId: product.id,
-        size: this.size || product.sizes[0],
+        size: pickedSize,
         color: product.colors[0]?.name ?? '',
         date: this.date,
         time: this.time,
@@ -152,6 +158,15 @@ export class MyReservationsPage {
       ...list,
     ]);
     this.created.set(true);
+
+    // Despachar notificación al usuario
+    this.notifs.addNotification({
+      title: 'Reserva de probador confirmada',
+      message: `Cita reservada para "${product.name}" (Talla ${pickedSize}) en ${branchName} el ${this.date} a las ${this.time}.`,
+      type: 'reservation',
+      link: '/my-reservations',
+    });
+
     this.store.showToast(`Reserva confirmada · ${product.name}`);
   }
 

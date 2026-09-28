@@ -92,10 +92,85 @@
         </div>
 
         <div class="topbar-right">
-          <button type="button" class="icon-btn" title="Notificaciones" aria-label="Notificaciones">
-            <app-ui-icon [d]="icons.bell" [size]="16" color="var(--muted)" />
-            <span class="icon-dot"></span>
-          </button>
+          <div class="notifs-wrapper">
+            <button
+              type="button"
+              class="icon-btn notif-btn"
+              title="Notificaciones"
+              aria-label="Notificaciones"
+              [class.has-unread]="notifs.unreadCount() > 0"
+              (click)="toggleNotifs()"
+            >
+              <app-ui-icon [d]="icons.bell" [size]="16" color="var(--text)" />
+              @if (notifs.unreadCount() > 0) {
+                <span class="notif-badge">{{ notifs.unreadCount() }}</span>
+              }
+            </button>
+
+            @if (notifsOpen()) {
+              <div class="notifs-dropdown">
+                <div class="notifs-head">
+                  <div class="notifs-head-title">
+                    <strong>Notificaciones</strong>
+                    @if (notifs.unreadCount() > 0) {
+                      <span class="unread-pill">{{ notifs.unreadCount() }} nuevas</span>
+                    }
+                  </div>
+                  @if (notifs.notifications().length > 0) {
+                    <button type="button" class="btn-text-xs" (click)="notifs.markAllAsRead()">
+                      Marcar leídas
+                    </button>
+                  }
+                </div>
+
+                <div class="notifs-list">
+                  @for (n of notifs.notifications(); track n.id) {
+                    <div
+                      class="notif-item"
+                      [class.unread]="!n.isRead"
+                      (click)="notifs.markAsRead(n.id)"
+                    >
+                      <div class="notif-icon-col" [class]="n.type">
+                        @if (n.type === 'purchase_success') {
+                          <span>✓</span>
+                        } @else if (n.type === 'payment_rejected') {
+                          <span>✕</span>
+                        } @else if (n.type === 'reservation') {
+                          <span>📅</span>
+                        } @else {
+                          <span>ℹ</span>
+                        }
+                      </div>
+                      <div class="notif-body">
+                        <div class="notif-row">
+                          <p class="notif-title">{{ n.title }}</p>
+                          <span class="notif-date">{{ n.date }}</span>
+                        </div>
+                        <p class="notif-msg">{{ n.message }}</p>
+                        @if (n.link) {
+                          <a [routerLink]="n.link" class="notif-link" (click)="closeNotifs()">
+                            Ver detalle ↗
+                          </a>
+                        }
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="notifs-empty">
+                      <p>No tienes notificaciones por el momento.</p>
+                    </div>
+                  }
+                </div>
+
+                @if (notifs.notifications().length > 0) {
+                  <div class="notifs-foot">
+                    <button type="button" class="btn-clear-notifs" (click)="notifs.clearAll()">
+                      Limpiar historial
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
 
           <div class="user-menu">
             <button

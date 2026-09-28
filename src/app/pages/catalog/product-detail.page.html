@@ -114,10 +114,16 @@
           type="button"
           class="btn buy-btn"
           [class.is-added]="added()"
-          [disabled]="!size()"
+          [disabled]="!size() || isOutOfStock()"
           (click)="add()"
         >
-          {{ added() ? '✓ Añadido al carrito' : 'Agregar al carrito' }}
+          @if (isOutOfStock()) {
+            Agotado
+          } @else if (added()) {
+            ✓ Añadido al carrito
+          } @else {
+            Agregar al carrito
+          }
         </button>
       </div>
 
@@ -163,10 +169,10 @@
         </div>
       }
 
-      <!-- CU17 — Vestidor Virtual AR: visor 3D real + sesión ARCore (Scene Viewer). -->
+      <!-- Probador Virtual AR: visor 3D real + sesión ARCore (Scene Viewer) -->
       <div class="ar-card">
         <div class="ar-head">
-          <p class="section-label">Vestidor virtual AR</p>
+          <p class="section-label">Probador virtual AR</p>
           <span class="ar-badge">Escala 1:1</span>
         </div>
 
