@@ -37,7 +37,13 @@
         <button type="button" class="btn btn-outline" (click)="start()">Reintentar</button>
       </div>
     } @else {
-      <div #mirror class="mirror">
+      <div
+        #mirror
+        class="mirror"
+        (touchstart)="onTouchStart($event)"
+        (touchmove)="onTouchMove($event)"
+        (touchend)="onTouchEnd($event)"
+      >
         <video #video class="mirror-video" playsinline muted></video>
         <canvas #overlay class="mirror-overlay"></canvas>
 
@@ -49,6 +55,12 @@
 
         @if (active() && !bodyDetected()) {
           <div class="overlay-pill soft">Ponte frente a la cámara y muestra tus hombros</div>
+        }
+
+        @if (active() && bodyDetected()) {
+          <div class="overlay-pill touch-tip">
+            Arrastra para mover prenda · Pellizca para escalar · Doble toque para centrar
+          </div>
         }
       </div>
 

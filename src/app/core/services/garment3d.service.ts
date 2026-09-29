@@ -13,6 +13,10 @@ export interface FittingAppearance {
   fit: number;
   /** Umbral de confianza de pose para no dibujar la prenda. */
   minConfidence: number;
+  /** Desplazamiento manual en X ajustado con los dedos en pantalla. */
+  offsetX?: number;
+  /** Desplazamiento manual en Y ajustado con los dedos en pantalla. */
+  offsetY?: number;
 }
 
 interface GarmentPart {
@@ -109,15 +113,16 @@ export class Garment3DService {
         mesh.castShadow = false;
         mesh.receiveShadow = false;
         if (mesh.material) {
-          if (Array.isArray(mesh.material)) {
-            mesh.material.forEach((m) => {
-              m.side = THREE.DoubleSide;
-              m.depthWrite = true;
-            });
-          } else {
-            mesh.material.side = THREE.DoubleSide;
-            mesh.material.depthWrite = true;
-          }
+          const isBlazer = url.includes('blazer');
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          materials.forEach((m: any) => {
+            m.side = THREE.DoubleSide;
+            m.depthWrite = true;
+            if (isBlazer && m.isMeshStandardMaterial) {
+              m.roughness = 0.88;
+              m.metalness = 0.05;
+            }
+          });
         }
       }
     });
@@ -201,9 +206,11 @@ export class Garment3DService {
       return;
     }
 
+    const offX = appearance.offsetX ?? 0;
+    const offY = appearance.offsetY ?? 0;
     const anchor = appearance.type === 'bottom' ? pose.hip : pose.neck;
-    const wx = anchor.x - this.w / 2;
-    const wy = this.h / 2 - anchor.y;
+    const wx = anchor.x - this.w / 2 + offX;
+    const wy = this.h / 2 - anchor.y + offY;
     this.group.position.set(wx, wy, 0);
     this.group.rotation.z = -pose.angle;
     this.light.position.set(wx - this.w * 0.12, wy + this.h * 0.1, 60);
@@ -259,6 +266,8 @@ export class Garment3DService {
   private placeModel(pose: FittingPose, appearance: FittingAppearance): void {
     if (!this.model) return;
     const kind = this.modelKind;
+    const offX = appearance.offsetX ?? 0;
+    const offY = appearance.offsetY ?? 0;
 
     if (kind === 'shoe') {
       const anchor = { x: pose.hip.x, y: pose.hip.y + pose.torso * 0.95 };
@@ -271,7 +280,7 @@ export class Garment3DService {
       this.shoeRight?.scale.set(scale, scale, scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 10);
+      this.group.position.set(wx + offX, wy + offY, 10);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx - this.w * 0.12, wy + this.h * 0.1, 60);
       return;
@@ -286,7 +295,7 @@ export class Garment3DService {
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 25);
+      this.group.position.set(wx + offX, wy + offY, 25);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx, wy + 50, 100);
       return;
@@ -300,7 +309,7 @@ export class Garment3DService {
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 15);
+      this.group.position.set(wx + offX, wy + offY, 15);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx, wy + 40, 80);
       return;
@@ -318,7 +327,7 @@ export class Garment3DService {
         const anchor = { x: base.x, y: base.y - rimOffset - 0.138 * scale };
         const wx = anchor.x - this.w / 2;
         const wy = this.h / 2 - anchor.y;
-        this.group.position.set(wx, wy, 30);
+        this.group.position.set(wx + offX, wy + offY, 30);
         this.group.rotation.z = -pose.angle;
         this.light.position.set(wx, wy + 60, 100);
       } else {
@@ -329,7 +338,7 @@ export class Garment3DService {
         const anchor = { x: base.x, y: base.y - rimOffset - 0.55 * scale };
         const wx = anchor.x - this.w / 2;
         const wy = this.h / 2 - anchor.y;
-        this.group.position.set(wx, wy, 30);
+        this.group.position.set(wx + offX, wy + offY, 30);
         this.group.rotation.z = -pose.angle;
         this.light.position.set(wx, wy + 60, 100);
       }
@@ -344,7 +353,7 @@ export class Garment3DService {
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 15);
+      this.group.position.set(wx + offX, wy + offY, 15);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx, wy + 40, 90);
       return;
@@ -363,7 +372,7 @@ export class Garment3DService {
     const anchor = { x: pose.neck.x, y: pose.neck.y + modelShoulderSeamY * scale };
     const wx = anchor.x - this.w / 2;
     const wy = this.h / 2 - anchor.y;
-    this.group.position.set(wx, wy, 10);
+    this.group.position.set(wx + offX, wy + offY, 10);
     this.group.rotation.z = -pose.angle;
     this.light.position.set(wx - this.w * 0.1, wy + this.h * 0.15, 90);
 

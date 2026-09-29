@@ -78,6 +78,8 @@ export class FittingPage {
   readonly type = signal<GarmentChoice>('auto');
   readonly size = signal('M');
   readonly fit = signal(1);
+  readonly manualOffsetX = signal(0);
+  readonly manualOffsetY = signal(0);
   readonly colorIdx = signal(0);
   readonly notice = signal<string | null>(null);
   /** Muestra los 33 landmarks + esqueleto de pose para el probador interactivo. */
@@ -264,11 +266,70 @@ export class FittingPage {
     return custom?.hex ?? '#111827';
   }
 
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchStartFit = 1;
+  private touchInitialDist = 0;
+  private lastTapTime = 0;
+
+  onTouchStart(e: TouchEvent): void {
+    if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - this.lastTapTime < 350) {
+        // Doble toque: restablece la posición y la escala
+        this.manualOffsetX.set(0);
+        this.manualOffsetY.set(0);
+        this.fit.set(1);
+        this.lastTapTime = 0;
+        return;
+      }
+      this.lastTapTime = now;
+      this.touchStartX = e.touches[0].clientX - this.manualOffsetX();
+      this.touchStartY = e.touches[0].clientY - this.manualOffsetY();
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      this.touchInitialDist = Math.hypot(dx, dy);
+      this.touchStartFit = this.fit();
+    }
+  }
+
+  onTouchMove(e: TouchEvent): void {
+    if (e.touches.length === 1 && this.touchInitialDist === 0) {
+      // Arrastrar con 1 dedo desplaza la prenda sobre el cuerpo
+      const x = e.touches[0].clientX - this.touchStartX;
+      const y = e.touches[0].clientY - this.touchStartY;
+      this.manualOffsetX.set(Math.max(-250, Math.min(250, x)));
+      this.manualOffsetY.set(Math.max(-250, Math.min(250, y)));
+    } else if (e.touches.length === 2 && this.touchInitialDist > 0) {
+      // Pellizcar con 2 dedos escala la prenda directamente
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const ratio = dist / this.touchInitialDist;
+      const newFit = Math.min(this.MAX_FIT, Math.max(this.MIN_FIT, this.touchStartFit * ratio));
+      this.fit.set(Number(newFit.toFixed(2)));
+    }
+  }
+
+  onTouchEnd(e: TouchEvent): void {
+    if (e.touches.length === 0) {
+      this.touchInitialDist = 0;
+    }
+  }
+
   private currentAppearance(): FittingAppearance {
     const inferred = this.autoType() ?? 'top';
     const type = this.type() === 'auto' ? inferred : (this.type() as GarmentType);
     const fit = this.size() !== 'M' ? (SIZE_FIT[this.size()] ?? 1) : this.fit();
-    return { type, color: this.colorHex(), fit, minConfidence: 0.3 };
+    return {
+      type,
+      color: this.colorHex(),
+      fit,
+      minConfidence: 0.3,
+      offsetX: this.manualOffsetX(),
+      offsetY: this.manualOffsetY(),
+    };
   }
 
   /* --------------------------------------------------------- Detección ----- */
