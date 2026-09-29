@@ -195,7 +195,7 @@ export class Garment3DService {
     this.group.visible = true;
 
     if (this.model) {
-      this.placeModel(pose);
+      this.placeModel(pose, appearance);
       return;
     }
 
@@ -254,14 +254,14 @@ export class Garment3DService {
    * apoya en los pies y las gafas se colocan a la altura de la cara, siempre
    * siguiendo la posición y rotación del torso.
    */
-  private placeModel(pose: FittingPose): void {
+  private placeModel(pose: FittingPose, appearance: FittingAppearance): void {
     if (!this.model) return;
     const kind = this.modelKind;
 
     if (kind === 'shoe') {
       const anchor = { x: pose.hip.x, y: pose.hip.y + pose.torso * 0.95 };
-      const targetPx = pose.torso * 0.45;
-      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      const targetPx = pose.torso * 0.48 * appearance.fit;
+      const scale = Math.max(targetPx / 0.298, 0.001);
       const span = pose.hipHalf * 1.1;
       this.shoeLeft?.position.set(-span, 0, 0);
       this.shoeLeft?.scale.set(-scale, scale, scale);
@@ -279,8 +279,8 @@ export class Garment3DService {
       // Anclaje exacto sobre ojos o nariz detectados por BlazePose
       const anchor = pose.eyes ?? pose.nose ?? { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.45 };
       // Escala proporcional a la distancia interocular o al span de hombros
-      const targetPx = pose.eyeSpan ? pose.eyeSpan * 1.85 : pose.shoulderHalf * 0.85;
-      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      const targetPx = (pose.eyeSpan ? pose.eyeSpan * 2.25 : pose.shoulderHalf * 0.85) * appearance.fit;
+      const scale = Math.max(targetPx / 0.151, 0.001);
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
@@ -293,8 +293,8 @@ export class Garment3DService {
     if (kind === 'watch') {
       // Reloj anclado a la muñeca si está visible, o al costado de la cadera
       const anchor = pose.wrist ?? { x: pose.hip.x - pose.shoulderHalf * 0.85, y: pose.hip.y + pose.torso * 0.05 };
-      const targetPx = pose.shoulderHalf * 0.55;
-      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      const targetPx = (pose.eyeSpan ? pose.eyeSpan * 0.95 : pose.shoulderHalf * 0.45) * appearance.fit;
+      const scale = Math.max(targetPx / 44, 0.001);
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
@@ -306,24 +306,38 @@ export class Garment3DService {
 
     if (kind === 'headwear') {
       // Gorra o sombrero anclado sobre la cabeza (por encima de los ojos)
+      const isCap = this.modelNaturalSize < 1.0;
       const base = pose.eyes ?? { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.45 };
-      const offsetUp = pose.eyeSpan ? pose.eyeSpan * 1.1 : pose.shoulderHalf * 0.6;
-      const anchor = { x: base.x, y: base.y - offsetUp };
-      const targetPx = pose.eyeSpan ? pose.eyeSpan * 2.85 : pose.shoulderHalf * 1.1;
-      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
-      this.model.scale.setScalar(scale);
-      const wx = anchor.x - this.w / 2;
-      const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 30);
-      this.group.rotation.z = -pose.angle;
-      this.light.position.set(wx, wy + 60, 100);
+      if (isCap) {
+        const targetPx = (pose.eyeSpan ? pose.eyeSpan * 2.7 : pose.shoulderHalf * 1.15) * appearance.fit;
+        const scale = Math.max(targetPx / 0.400, 0.001);
+        this.model.scale.setScalar(scale);
+        const rimOffset = pose.eyeSpan ? pose.eyeSpan * 0.5 : pose.shoulderHalf * 0.28;
+        const anchor = { x: base.x, y: base.y - rimOffset - 0.138 * scale };
+        const wx = anchor.x - this.w / 2;
+        const wy = this.h / 2 - anchor.y;
+        this.group.position.set(wx, wy, 30);
+        this.group.rotation.z = -pose.angle;
+        this.light.position.set(wx, wy + 60, 100);
+      } else {
+        const targetPx = (pose.eyeSpan ? pose.eyeSpan * 4.8 : pose.shoulderHalf * 1.7) * appearance.fit;
+        const scale = Math.max(targetPx / 3.602, 0.001);
+        this.model.scale.setScalar(scale);
+        const rimOffset = pose.eyeSpan ? pose.eyeSpan * 0.55 : pose.shoulderHalf * 0.3;
+        const anchor = { x: base.x, y: base.y - rimOffset - 0.55 * scale };
+        const wx = anchor.x - this.w / 2;
+        const wy = this.h / 2 - anchor.y;
+        this.group.position.set(wx, wy, 30);
+        this.group.rotation.z = -pose.angle;
+        this.light.position.set(wx, wy + 60, 100);
+      }
       return;
     }
 
     if (kind === 'necklace') {
       // Collar anclado a la base del cuello / clavícula
       const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.08 };
-      const targetPx = pose.shoulderHalf * 0.85;
+      const targetPx = pose.shoulderHalf * 0.85 * appearance.fit;
       const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
@@ -335,15 +349,30 @@ export class Garment3DService {
     }
 
     // Modelo 3D de prenda real (chaqueta / torso)
-    const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.35 };
-    const targetPx = pose.shoulderHalf * 2.3;
-    const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+    // En denim_jacket.glb el ancho entre costuras de hombro es 2.40 unidades (el resto es extensión de mangas).
+    // La costura de hombro está a +0.865 unidades sobre el centro geométrico.
+    const userShoulderSpan = pose.shoulderHalf * 2;
+    const targetShoulderPx = userShoulderSpan * 1.15 * appearance.fit;
+    const scale = Math.max(targetShoulderPx / 2.40, 0.001);
     this.model.scale.set(scale, scale, scale);
+
+    // Al situar el centro en pose.neck.y + 0.85 * scale, la línea de hombros
+    // de la chaqueta coincide exactamente con los hombros del usuario, y el cuello rodea su cuello.
+    const anchor = { x: pose.neck.x, y: pose.neck.y + 0.85 * scale };
     const wx = anchor.x - this.w / 2;
     const wy = this.h / 2 - anchor.y;
     this.group.position.set(wx, wy, 10);
     this.group.rotation.z = -pose.angle;
     this.light.position.set(wx - this.w * 0.1, wy + this.h * 0.15, 90);
+
+    // Ajustar color de la chaqueta al color seleccionado por el usuario
+    if (appearance.color) {
+      this.model.traverse((child: any) => {
+        if (child.isMesh && child.material && child.material.color) {
+          child.material.color.set(appearance.color);
+        }
+      });
+    }
   }
 
   /* ------------------------------------------------------- geometries ----- */
