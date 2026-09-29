@@ -6,10 +6,24 @@
         <button type="button" class="link-accent" (click)="clearFilters()">Limpiar</button>
       </div>
 
-      <label class="search-box">
+      <div class="search-box">
         <app-ui-icon [d]="icons.search" [size]="13" color="var(--muted)" />
         <input type="search" placeholder="Buscar..." [(ngModel)]="query" />
-      </label>
+        <button
+          type="button"
+          class="voice-mic-inline"
+          [class.listening]="isListening()"
+          (click)="startVoiceSearch()"
+          [title]="isListening() ? 'Escuchando tu voz...' : 'Búsqueda por voz'"
+          aria-label="Búsqueda por voz"
+        >
+          <app-ui-icon
+            [d]="icons.mic"
+            [size]="13"
+            [color]="isListening() ? 'var(--brand)' : 'var(--muted)'"
+          />
+        </button>
+      </div>
 
       <p class="filter-label">Categoría</p>
       <div class="chip-wrap">

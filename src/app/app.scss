@@ -267,6 +267,54 @@
   box-shadow: none;
 }
 
+.topbar-search .voice-btn {
+  background: transparent;
+  border: none;
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.topbar-search .voice-btn:hover {
+  background: var(--surface);
+}
+
+.topbar-search .voice-btn.listening {
+  animation: mic-pulse 1.2s infinite;
+  background: rgba(184, 91, 53, 0.15);
+}
+
+@keyframes mic-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 91, 53, 0.4); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(184, 91, 53, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 91, 53, 0); }
+}
+
+.ai-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: rgba(184, 91, 53, 0.08);
+  border: 1px solid rgba(184, 91, 53, 0.25);
+  border-radius: 8px;
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.ai-quick-link:hover {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
 .topbar-right {
   display: flex;
   align-items: center;

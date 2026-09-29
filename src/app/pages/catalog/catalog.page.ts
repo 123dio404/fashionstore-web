@@ -44,6 +44,8 @@ export class CatalogPage {
   readonly addedId = signal<number | null>(null);
   readonly view = signal<'grid' | 'list'>('grid');
 
+  readonly isListening = signal(false);
+
   query = '';
   category = 'Todas';
   brand = 'Todas las marcas';
@@ -57,6 +59,46 @@ export class CatalogPage {
       const term = params.get('q');
       if (term !== null) this.query = term;
     });
+  }
+
+  startVoiceSearch(): void {
+    const SpeechRecognition =
+      (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(
+        'Tu navegador no cuenta con Web Speech API para reconocimiento de voz. Te recomendamos usar Google Chrome.'
+      );
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      this.isListening.set(true);
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript ?? '';
+        this.isListening.set(false);
+        if (transcript.trim()) {
+          this.query = transcript.trim();
+        }
+      };
+
+      recognition.onerror = () => {
+        this.isListening.set(false);
+      };
+
+      recognition.onend = () => {
+        this.isListening.set(false);
+      };
+
+      recognition.start();
+    } catch {
+      this.isListening.set(false);
+    }
   }
 
   /** Filtros + orden sobre el catálogo demo (también responde al buscador global `?q=`). */

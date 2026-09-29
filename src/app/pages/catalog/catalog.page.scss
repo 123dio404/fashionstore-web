@@ -58,6 +58,27 @@
   font-size: 0.8rem;
 }
 
+.voice-mic-inline {
+  background: transparent;
+  border: none;
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.voice-mic-inline:hover {
+  background: var(--surface);
+}
+
+.voice-mic-inline.listening {
+  animation: mic-pulse 1.2s infinite;
+  background: rgba(184, 91, 53, 0.15);
+}
+
 .search-box input:focus {
   outline: none;
 }

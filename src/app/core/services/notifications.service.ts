@@ -102,4 +102,41 @@ export class NotificationsService {
     this.notifications.set([]);
     this.persist([]);
   }
+
+  /**
+   * Sincroniza las ventas reales (`/commerce/sales`) con las notificaciones locales,
+   * de modo que compras realizadas desde el móvil aparezcan automáticamente en la web.
+   */
+  syncFromSales(sales: Array<{ id: number; total: number | string; sale_date?: string }>): void {
+    let changed = false;
+    this.notifications.update((current) => {
+      let updated = [...current];
+      for (const sale of sales) {
+        const notifId = `sale-${sale.id}`;
+        const exists = updated.some(
+          (n) => n.id === notifId || n.saleId === sale.id || n.message.includes(`#${sale.id}`)
+        );
+        if (!exists) {
+          const totalNum = Number(sale.total) || 0;
+          const newItem: NotificationItem = {
+            id: notifId,
+            saleId: sale.id,
+            title: '¡Compra confirmada!',
+            message: `Tu pedido #${sale.id} por $${totalNum.toFixed(2)} fue procesado con éxito y el stock fue actualizado.`,
+            date: 'Hoy',
+            type: 'purchase_success',
+            isRead: false,
+            link: '/purchases',
+          };
+          updated = [newItem, ...updated];
+          changed = true;
+        }
+      }
+      if (changed) {
+        updated = updated.slice(0, 30);
+        this.persist(updated);
+      }
+      return updated;
+    });
+  }
 }

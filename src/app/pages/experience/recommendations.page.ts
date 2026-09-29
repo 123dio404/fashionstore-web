@@ -9,6 +9,7 @@ import { CatalogStore } from '../../core/services/catalog-store.service';
 interface StyleProfile {
   brand: string;
   category: string;
+  season: string;
   sizes: string[];
   minPrice: number | null;
   maxPrice: number | null;
@@ -38,6 +39,13 @@ export class RecommendationsPage {
 
   readonly categories = CATEGORIES.filter((c) => c !== 'Ofertas');
   readonly brands = ['Todas las marcas', ...BRANDS_LIST];
+  readonly seasons = [
+    'Todas las temporadas',
+    'Otoño-Invierno',
+    'Primavera-Verano',
+    'Verano',
+    'Invierno',
+  ];
   readonly sizes = AI_SIZES;
 
   readonly results = signal<ScoredProduct[] | null>(null);
@@ -51,6 +59,7 @@ export class RecommendationsPage {
   profile: StyleProfile = {
     brand: 'Todas las marcas',
     category: 'Todas',
+    season: 'Otoño-Invierno',
     sizes: [],
     minPrice: null,
     maxPrice: null,
@@ -87,6 +96,14 @@ export class RecommendationsPage {
     this.profile = { ...this.profile, brand };
   }
 
+  setSeason(season: string): void {
+    this.profile = { ...this.profile, season };
+  }
+
+  constructor() {
+    this.generate();
+  }
+
   generate(): void {
     const min = this.minInput ? Number(this.minInput) : null;
     const max = this.maxInput ? Number(this.maxInput) : null;
@@ -108,7 +125,7 @@ export class RecommendationsPage {
         .sort((a, b) => b.score - a.score);
       this.results.set(scored);
       this.loading.set(false);
-    }, 1200);
+    }, 600);
   }
 
   adjust(): void {
@@ -138,12 +155,44 @@ export class RecommendationsPage {
     let score = 10;
     const reasons: string[] = [];
 
+    if (profile.season && profile.season !== 'Todas las temporadas') {
+      const pName = product.name.toLowerCase();
+      if (profile.season.includes('Invierno')) {
+        if (
+          pName.includes('blazer') ||
+          pName.includes('abrigo') ||
+          pName.includes('chompa') ||
+          pName.includes('pantalon') ||
+          pName.includes('pantaldn') ||
+          pName.includes('bota') ||
+          pName.includes('lana') ||
+          pName.includes('cuero')
+        ) {
+          score += 30;
+          reasons.push(`Ideal para ${profile.season}`);
+        }
+      } else if (profile.season.includes('Verano')) {
+        if (
+          pName.includes('vestido') ||
+          pName.includes('camisa') ||
+          pName.includes('lino') ||
+          pName.includes('top') ||
+          pName.includes('short') ||
+          pName.includes('sandalia') ||
+          pName.includes('playa')
+        ) {
+          score += 30;
+          reasons.push(`Ideal para ${profile.season}`);
+        }
+      }
+    }
+
     if (profile.category !== 'Todas' && product.category === profile.category) {
-      score += 40;
+      score += 35;
       reasons.push(`Categoría ${product.category}`);
     }
     if (profile.brand !== 'Todas las marcas' && product.brand === profile.brand) {
-      score += 25;
+      score += 20;
       reasons.push(`Marca ${product.brand}`);
     }
     if (profile.sizes.some((size) => product.sizes.includes(size))) {

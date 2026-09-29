@@ -89,9 +89,32 @@
             placeholder="Buscar prendas o marcas..."
             (keyup.enter)="search(globalSearch.value)"
           />
+          <button
+            type="button"
+            class="voice-btn"
+            [class.listening]="isListening()"
+            (click)="startVoiceSearch(globalSearch)"
+            [title]="isListening() ? 'Escuchando tu voz...' : 'Búsqueda por voz nativa'"
+            aria-label="Búsqueda por voz"
+          >
+            <app-ui-icon
+              [d]="icons.mic"
+              [size]="15"
+              [color]="isListening() ? 'var(--brand)' : 'var(--muted)'"
+            />
+          </button>
         </div>
 
         <div class="topbar-right">
+          <a
+            routerLink="/recommendations"
+            class="ai-quick-link"
+            title="Recomendaciones con Inteligencia Artificial"
+          >
+            <app-ui-icon [d]="icons.sparkles" [size]="13" color="inherit" />
+            <span>Para ti · IA</span>
+          </a>
+
           <div class="notifs-wrapper">
             <button
               type="button"

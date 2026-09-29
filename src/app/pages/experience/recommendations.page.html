@@ -47,6 +47,20 @@
       }
     </div>
 
+    <p class="field-label">Temporada</p>
+    <div class="chip-wrap">
+      @for (seas of seasons; track seas) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="profile.season === seas"
+          (click)="setSeason(seas)"
+        >
+          {{ seas }}
+        </button>
+      }
+    </div>
+
     <p class="field-label">Presupuesto</p>
     <div class="budget-row">
       <input type="number" min="0" placeholder="Mín." [(ngModel)]="minInput" />

@@ -128,13 +128,68 @@ export class App {
     this.userMenuOpen.set(false);
   }
 
+  readonly isListening = signal(false);
+
   toggleNotifs(): void {
     this.notifsOpen.update((open) => !open);
-    if (this.notifsOpen()) this.userMenuOpen.set(false);
+    if (this.notifsOpen()) {
+      this.userMenuOpen.set(false);
+      this.syncSalesNotifs();
+    }
   }
 
   closeNotifs(): void {
     this.notifsOpen.set(false);
+  }
+
+  syncSalesNotifs(): void {
+    if (this.auth.hasToken()) {
+      this.commerce.listSales().subscribe({
+        next: (sales) => this.notifs.syncFromSales(sales),
+        error: () => {},
+      });
+    }
+  }
+
+  startVoiceSearch(inputElem?: HTMLInputElement): void {
+    const SpeechRecognition =
+      (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(
+        'Tu navegador no cuenta con Web Speech API para reconocimiento de voz. Te recomendamos usar Google Chrome.'
+      );
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      this.isListening.set(true);
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript ?? '';
+        this.isListening.set(false);
+        if (transcript.trim()) {
+          if (inputElem) inputElem.value = transcript.trim();
+          this.search(transcript.trim());
+        }
+      };
+
+      recognition.onerror = () => {
+        this.isListening.set(false);
+      };
+
+      recognition.onend = () => {
+        this.isListening.set(false);
+      };
+
+      recognition.start();
+    } catch {
+      this.isListening.set(false);
+    }
   }
 
   search(term: string): void {
