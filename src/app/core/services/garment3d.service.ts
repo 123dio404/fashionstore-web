@@ -49,6 +49,7 @@ export class Garment3DService {
   /** Producto 3D real cargado (zapato/gafas) que reemplaza a la malla de cuerpo. */
   private model: THREE.Object3D | null = null;
   private modelKind: ModelKind = 'garment';
+  private currentModelUrl = '';
   /** Dimensión máxima del modelo en unidades del glTF (para escalarlo a píxeles). */
   private modelNaturalSize = 1;
   /** Par de zapatos: el modelo cargado se clona y se espeja para ambos pies. */
@@ -95,6 +96,7 @@ export class Garment3DService {
   /** Carga un producto 3D real (glb/gltf) y lo ancla a la pose del cuerpo. */
   async loadModel(url: string, kind: ModelKind): Promise<void> {
     this.unloadModel();
+    this.currentModelUrl = url;
     const gltf = await this.loader.loadAsync(url);
     this.disposeParts();
     const scene = gltf.scene;
@@ -348,25 +350,25 @@ export class Garment3DService {
       return;
     }
 
-    // Modelo 3D de prenda real (chaqueta / torso)
-    // En denim_jacket.glb el ancho entre costuras de hombro es 2.40 unidades (el resto es extensión de mangas).
-    // La costura de hombro está a +0.865 unidades sobre el centro geométrico.
+    // Modelo 3D de prenda real (chaqueta / blazer / torso)
+    const isBlazer = this.currentModelUrl.includes('blazer');
+    const modelShoulderWidth = isBlazer ? 49.1 : 2.40;
+    const modelShoulderSeamY = isBlazer ? 24.5 : 0.85;
+
     const userShoulderSpan = pose.shoulderHalf * 2;
     const targetShoulderPx = userShoulderSpan * 1.15 * appearance.fit;
-    const scale = Math.max(targetShoulderPx / 2.40, 0.001);
+    const scale = Math.max(targetShoulderPx / modelShoulderWidth, 0.0001);
     this.model.scale.set(scale, scale, scale);
 
-    // Al situar el centro en pose.neck.y + 0.85 * scale, la línea de hombros
-    // de la chaqueta coincide exactamente con los hombros del usuario, y el cuello rodea su cuello.
-    const anchor = { x: pose.neck.x, y: pose.neck.y + 0.85 * scale };
+    const anchor = { x: pose.neck.x, y: pose.neck.y + modelShoulderSeamY * scale };
     const wx = anchor.x - this.w / 2;
     const wy = this.h / 2 - anchor.y;
     this.group.position.set(wx, wy, 10);
     this.group.rotation.z = -pose.angle;
     this.light.position.set(wx - this.w * 0.1, wy + this.h * 0.15, 90);
 
-    // Ajustar color de la chaqueta al color seleccionado por el usuario
-    if (appearance.color) {
+    // Ajustar color de la prenda al color seleccionado por el usuario (para chaqueta denim)
+    if (appearance.color && !isBlazer) {
       this.model.traverse((child: any) => {
         if (child.isMesh && child.material && child.material.color) {
           child.material.color.set(appearance.color);

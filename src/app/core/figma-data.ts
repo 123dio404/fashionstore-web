@@ -98,6 +98,9 @@ export const AR_HAT_MODEL = '/models/hat.glb';
 /** Moda / Chaqueta — `denim_jacket.glb` (Chaqueta denim vaquera de alta fidelidad). */
 export const AR_JACKET_MODEL = '/models/denim_jacket.glb';
 
+/** Moda / Blazer — `blazer.glb` (Blazer estructurado clásico). */
+export const AR_BLAZER_MODEL = '/models/blazer.glb';
+
 /** Vistas oficiales de cada modelo (póster mientras carga el 3D). */
 export const AR_PREVIEWS = {
   shoe: `${AR_ASSETS}/MaterialsVariantsShoe/screenshot/screenshot.jpg`,
@@ -106,6 +109,7 @@ export const AR_PREVIEWS = {
   cap: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=520&fit=crop&auto=format',
   hat: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=520&fit=crop&auto=format',
   jacket: 'https://images.unsplash.com/photo-1603189343302-e603f7add05a?w=400&h=520&fit=crop&auto=format',
+  blazer: `${U}1613915617430-8ab0fd7c6baf${CARD}`,
 } as const;
 
 export const PRODUCTS: FigmaProduct[] = [
@@ -134,6 +138,7 @@ export const PRODUCTS: FigmaProduct[] = [
     rating: 4.7,
     reviews: 128,
     isFeatured: true,
+    model3dUrl: AR_BLAZER_MODEL,
   },
   {
     id: 2,
@@ -204,6 +209,7 @@ export const PRODUCTS: FigmaProduct[] = [
     rating: 4.8,
     reviews: 211,
     isFeatured: true,
+    model3dUrl: AR_BLAZER_MODEL,
   },
   {
     id: 5,
@@ -669,7 +675,7 @@ export function arKindFor(modelUrl?: string | null): ArModelKind {
   if (value.includes('watch')) return 'watch';
   if (value.includes('cap') || value.includes('hat') || value.includes('baseball')) return 'headwear';
   if (value.includes('necklace')) return 'necklace';
-  if (value.includes('jacket') || value.includes('denim')) return 'garment';
+  if (value.includes('jacket') || value.includes('denim') || value.includes('blazer')) return 'garment';
   return 'garment';
 }
 
@@ -681,6 +687,7 @@ export function arPreviewFor(modelUrl?: string | null): string {
   if (value.includes('watch')) return AR_PREVIEWS.watch;
   if (value.includes('cap') || value.includes('baseball')) return AR_PREVIEWS.cap;
   if (value.includes('hat')) return AR_PREVIEWS.hat;
+  if (value.includes('blazer')) return AR_PREVIEWS.blazer;
   if (value.includes('jacket') || value.includes('denim')) return AR_PREVIEWS.jacket;
   return AR_PREVIEWS.shoe;
 }
