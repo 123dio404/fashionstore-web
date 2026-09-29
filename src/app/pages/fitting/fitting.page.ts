@@ -18,8 +18,13 @@ import { FittingPose, PoseLandmarkerService } from '../../core/services/pose-lan
 type GarmentChoice = 'auto' | GarmentType;
 
 const LANDMARK = {
+  nose: 0,
+  leftEye: 2,
+  rightEye: 5,
   leftShoulder: 11,
   rightShoulder: 12,
+  leftWrist: 15,
+  rightWrist: 16,
   leftHip: 23,
   rightHip: 24,
 } as const;
@@ -199,9 +204,14 @@ export class FittingPage {
     const url = this.modelUrl();
     const kind = this.modelKind();
     if (url) {
+      console.log(`[Probador] Solicitando carga de modelo 3D: ${url} (tipo: ${kind})`);
       void this.garment
         .loadModel(url, kind)
-        .catch(() => {
+        .then(() => {
+          console.log(`[Probador] Modelo 3D cargado correctamente: ${url}`);
+        })
+        .catch((err) => {
+          console.error(`[Probador] Error al cargar modelo 3D (${url}):`, err);
           this.garment.useGarment(this.currentAppearance().type);
         });
       return;
@@ -417,6 +427,34 @@ function toPose(result: PoseLandmarkerResult | null, w: number, h: number): Fitt
   const shoulderVis = ((ls.visibility ?? 0) + (rs.visibility ?? 0)) / 2;
   if (shoulderVis < 0.3) return null;
 
+  // Detección facial precisa para gafas, gorras y sombreros
+  let eyes: { x: number; y: number } | undefined;
+  let eyeSpan: number | undefined;
+  let nose: { x: number; y: number } | undefined;
+  let wrist: { x: number; y: number } | undefined;
+
+  const le = lm[LANDMARK.leftEye];
+  const re = lm[LANDMARK.rightEye];
+  if (le && re && ((le.visibility ?? 1) > 0.35 || (re.visibility ?? 1) > 0.35)) {
+    const pLe = flip(le);
+    const pRe = flip(re);
+    eyes = mid(pLe, pRe);
+    eyeSpan = dist(pLe, pRe);
+  }
+
+  const n = lm[LANDMARK.nose];
+  if (n && (n.visibility ?? 1) > 0.35) {
+    nose = flip(n);
+  }
+
+  const lw = lm[LANDMARK.leftWrist];
+  const rw = lm[LANDMARK.rightWrist];
+  if (lw && (lw.visibility ?? 0) > 0.4) {
+    wrist = flip(lw);
+  } else if (rw && (rw.visibility ?? 0) > 0.4) {
+    wrist = flip(rw);
+  }
+
   // Eje del torso: perpendicular a la línea de hombros, siempre hacia abajo en el video.
   const across = unit(sub(sL, sR));
   let down: { x: number; y: number } = { x: -across.y, y: across.x };
@@ -446,6 +484,10 @@ function toPose(result: PoseLandmarkerResult | null, w: number, h: number): Fitt
   return {
     neck,
     hip,
+    eyes,
+    eyeSpan,
+    nose,
+    wrist,
     shoulderHalf: sw / 2,
     hipHalf: dist(hL, hR) / 2,
     torso: dist(neck, hip),
@@ -463,6 +505,22 @@ function smooth(prev: FittingPose | null, next: FittingPose, k: number): Fitting
   return {
     neck: { x: lerp(prev.neck.x, next.neck.x), y: lerp(prev.neck.y, next.neck.y) },
     hip: { x: lerp(prev.hip.x, next.hip.x), y: lerp(prev.hip.y, next.hip.y) },
+    eyes:
+      next.eyes && prev.eyes
+        ? { x: lerp(prev.eyes.x, next.eyes.x), y: lerp(prev.eyes.y, next.eyes.y) }
+        : (next.eyes ?? prev.eyes),
+    eyeSpan:
+      next.eyeSpan && prev.eyeSpan
+        ? lerp(prev.eyeSpan, next.eyeSpan)
+        : (next.eyeSpan ?? prev.eyeSpan),
+    nose:
+      next.nose && prev.nose
+        ? { x: lerp(prev.nose.x, next.nose.x), y: lerp(prev.nose.y, next.nose.y) }
+        : (next.nose ?? prev.nose),
+    wrist:
+      next.wrist && prev.wrist
+        ? { x: lerp(prev.wrist.x, next.wrist.x), y: lerp(prev.wrist.y, next.wrist.y) }
+        : (next.wrist ?? prev.wrist),
     shoulderHalf: lerp(prev.shoulderHalf, next.shoulderHalf),
     hipHalf: lerp(prev.hipHalf, next.hipHalf),
     torso: lerp(prev.torso, next.torso),

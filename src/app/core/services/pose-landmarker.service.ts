@@ -20,6 +20,14 @@ export interface FittingPose {
   neck: { x: number; y: number };
   /** Punto medio entre caderas. */
   hip: { x: number; y: number };
+  /** Ojos = punto medio entre ojos (para gafas y accesorios faciales). */
+  eyes?: { x: number; y: number };
+  /** Distancia horizontal/euclidiana entre ojos (en px). */
+  eyeSpan?: number;
+  /** Nariz (para centrar gafas / accesorios faciales). */
+  nose?: { x: number; y: number };
+  /** Muñeca detectada (para reloj / pulseras). */
+  wrist?: { x: number; y: number };
   /** Medias medias del cuerpo: medio ancho de hombros y caderas, torso. */
   shoulderHalf: number;
   hipHalf: number;

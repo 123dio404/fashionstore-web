@@ -148,7 +148,9 @@
 }
 
 .mirror-video,
-.mirror-canvas {
+.mirror-canvas,
+:host ::ng-deep .mirror-canvas,
+.mirror canvas:not(.mirror-overlay) {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -171,9 +173,11 @@
   z-index: 1;
 }
 
-.mirror-canvas {
+.mirror-canvas,
+:host ::ng-deep .mirror-canvas,
+.mirror canvas:not(.mirror-overlay) {
   pointer-events: none;
-  z-index: 2;
+  z-index: 3 !important;
 }
 
 .overlay-pill {

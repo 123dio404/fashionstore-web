@@ -58,28 +58,28 @@ export class Garment3DService {
 
   /** Crea el contexto WebGL y anexa su lienzo transparente a la escena. */
   create(parent: HTMLElement, w: number, h: number): void {
-    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setClearColor(0x000000, 0);
     const canvas = this.renderer.domElement;
     canvas.className = 'mirror-canvas';
-    // El canvas se crea en runtime (appendChild), así que Angular no le aplica
-    // los estilos scoped del componente (_ngcontent). Se ponen inline para que
-    // quede encima del video, como el esqueleto.
+    // Estilos inline garantizados para que quede exactamente entre el video (z-1)
+    // y el overlay del esqueleto (z-5), sin depender de encapsulación de Angular.
     canvas.style.position = 'absolute';
     canvas.style.inset = '0';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.objectFit = 'cover';
     canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '3';
     parent.appendChild(canvas);
 
     this.scene.add(this.group);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const fill = new THREE.DirectionalLight(0xffffff, 0.35);
-    fill.position.set(-180, -120, 120);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const fill = new THREE.DirectionalLight(0xffffff, 0.8);
+    fill.position.set(-180, -120, 180);
     this.scene.add(fill);
     this.scene.add(this.light);
-    this.light.position.set(180, 240, 160);
+    this.light.position.set(180, 240, 200);
     this.buildGarment(this.current);
     this.resize(w, h);
   }
@@ -98,20 +98,49 @@ export class Garment3DService {
     const gltf = await this.loader.loadAsync(url);
     this.disposeParts();
     const scene = gltf.scene;
-    scene.position.set(0, 0, 0);
-    scene.rotation.set(0, 0, 0);
-    const size = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
+
+    // Asegurar que todas las mallas tengan doble cara y no sean culled por el frustum
+    scene.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh) {
+        mesh.frustumCulled = false;
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        if (mesh.material) {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => {
+              m.side = THREE.DoubleSide;
+              m.depthWrite = true;
+            });
+          } else {
+            mesh.material.side = THREE.DoubleSide;
+            mesh.material.depthWrite = true;
+          }
+        }
+      }
+    });
+
+    // Centrar la geometría en su propio centro de masas (0, 0, 0)
+    const box = new THREE.Box3().setFromObject(scene);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
     this.modelNaturalSize = Math.max(size.x, size.y, size.z, 0.001);
-    this.group.add(scene);
-    this.model = scene;
+
+    scene.position.set(-center.x, -center.y, -center.z);
+
+    const wrapper = new THREE.Group();
+    wrapper.add(scene);
+
+    this.group.add(wrapper);
+    this.model = wrapper;
     this.modelKind = kind;
 
     // Los zapatos se muestran como par: el objeto cargado (que sirve de patrón)
     // se oculta y se clonan dos copias espejadas para cada pie.
     if (kind === 'shoe') {
-      scene.visible = false;
-      this.shoeLeft = scene.clone(true);
-      this.shoeRight = scene.clone(true);
+      wrapper.visible = false;
+      this.shoeLeft = wrapper.clone(true);
+      this.shoeRight = wrapper.clone(true);
       this.shoeLeft.visible = true;
       this.shoeRight.visible = true;
       this.group.add(this.shoeLeft, this.shoeRight);
@@ -152,8 +181,9 @@ export class Garment3DService {
     this.renderer.setSize(w, h, false);
     const halfW = w / 2;
     const halfH = h / 2;
-    this.camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, -200, 200);
-    this.camera.position.z = 10;
+    this.camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 2000);
+    this.camera.position.set(0, 0, 500);
+    this.camera.lookAt(0, 0, 0);
   }
 
   /** Regenera los vértices según la pose y deja el grupo listo para renderizar. */
@@ -229,8 +259,8 @@ export class Garment3DService {
     const kind = this.modelKind;
 
     if (kind === 'shoe') {
-      const anchor = { x: pose.hip.x, y: pose.hip.y + pose.torso };
-      const targetPx = pose.torso * 0.48;
+      const anchor = { x: pose.hip.x, y: pose.hip.y + pose.torso * 0.95 };
+      const targetPx = pose.torso * 0.45;
       const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
       const span = pose.hipHalf * 1.1;
       this.shoeLeft?.position.set(-span, 0, 0);
@@ -239,35 +269,36 @@ export class Garment3DService {
       this.shoeRight?.scale.set(scale, scale, scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 0);
+      this.group.position.set(wx, wy, 10);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx - this.w * 0.12, wy + this.h * 0.1, 60);
       return;
     }
 
     if (kind === 'sunglasses') {
-      // Anclaje sobre la cara (entre ojos y nariz)
-      const anchor = { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.42 };
-      const targetPx = pose.shoulderHalf * 0.82;
+      // Anclaje exacto sobre ojos o nariz detectados por BlazePose
+      const anchor = pose.eyes ?? pose.nose ?? { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.45 };
+      // Escala proporcional a la distancia interocular o al span de hombros
+      const targetPx = pose.eyeSpan ? pose.eyeSpan * 1.85 : pose.shoulderHalf * 0.85;
+      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
+      this.model.scale.setScalar(scale);
+      const wx = anchor.x - this.w / 2;
+      const wy = this.h / 2 - anchor.y;
+      this.group.position.set(wx, wy, 25);
+      this.group.rotation.z = -pose.angle;
+      this.light.position.set(wx, wy + 50, 100);
+      return;
+    }
+
+    if (kind === 'watch') {
+      // Reloj anclado a la muñeca si está visible, o al costado de la cadera
+      const anchor = pose.wrist ?? { x: pose.hip.x - pose.shoulderHalf * 0.85, y: pose.hip.y + pose.torso * 0.05 };
+      const targetPx = pose.shoulderHalf * 0.55;
       const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
       this.group.position.set(wx, wy, 15);
-      this.group.rotation.z = -pose.angle;
-      this.light.position.set(wx, wy + 50, 90);
-      return;
-    }
-
-    if (kind === 'watch') {
-      // Reloj colocado al costado izquierdo del torso a la altura de la cadera
-      const anchor = { x: pose.hip.x - pose.shoulderHalf * 0.85, y: pose.hip.y + pose.torso * 0.05 };
-      const targetPx = pose.shoulderHalf * 0.65;
-      const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
-      this.model.scale.setScalar(scale);
-      const wx = anchor.x - this.w / 2;
-      const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 10);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx, wy + 40, 80);
       return;
@@ -275,13 +306,15 @@ export class Garment3DService {
 
     if (kind === 'headwear') {
       // Gorra o sombrero anclado sobre la cabeza (por encima de los ojos)
-      const anchor = { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.72 };
-      const targetPx = pose.shoulderHalf * 0.95;
+      const base = pose.eyes ?? { x: pose.neck.x, y: pose.neck.y - pose.torso * 0.45 };
+      const offsetUp = pose.eyeSpan ? pose.eyeSpan * 1.1 : pose.shoulderHalf * 0.6;
+      const anchor = { x: base.x, y: base.y - offsetUp };
+      const targetPx = pose.eyeSpan ? pose.eyeSpan * 2.85 : pose.shoulderHalf * 1.1;
       const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 25);
+      this.group.position.set(wx, wy, 30);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx, wy + 60, 100);
       return;
@@ -289,26 +322,26 @@ export class Garment3DService {
 
     if (kind === 'necklace') {
       // Collar anclado a la base del cuello / clavícula
-      const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.05 };
+      const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.08 };
       const targetPx = pose.shoulderHalf * 0.85;
       const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
       this.model.scale.setScalar(scale);
       const wx = anchor.x - this.w / 2;
       const wy = this.h / 2 - anchor.y;
-      this.group.position.set(wx, wy, 20);
+      this.group.position.set(wx, wy, 15);
       this.group.rotation.z = -pose.angle;
       this.light.position.set(wx, wy + 40, 90);
       return;
     }
 
-    // Modelo 3D de prenda real (torso / cuerpo)
-    const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.32 };
-    const targetPx = pose.shoulderHalf * 2.2;
+    // Modelo 3D de prenda real (chaqueta / torso)
+    const anchor = { x: pose.neck.x, y: pose.neck.y + pose.torso * 0.35 };
+    const targetPx = pose.shoulderHalf * 2.3;
     const scale = Math.max(targetPx / this.modelNaturalSize, 0.001);
     this.model.scale.set(scale, scale, scale);
     const wx = anchor.x - this.w / 2;
     const wy = this.h / 2 - anchor.y;
-    this.group.position.set(wx, wy, 0);
+    this.group.position.set(wx, wy, 10);
     this.group.rotation.z = -pose.angle;
     this.light.position.set(wx - this.w * 0.1, wy + this.h * 0.15, 90);
   }
