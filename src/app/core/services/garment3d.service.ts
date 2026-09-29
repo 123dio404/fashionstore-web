@@ -62,7 +62,7 @@ export class Garment3DService {
   private readonly loader = new GLTFLoader();
 
   /** Crea el contexto WebGL y anexa su lienzo transparente a la escena. */
-  create(parent: HTMLElement, w: number, h: number): void {
+  create(parent: HTMLElement, w: number, h: number, hasCustomModel = false): void {
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setClearColor(0x000000, 0);
     const canvas = this.renderer.domElement;
@@ -85,7 +85,14 @@ export class Garment3DService {
     this.scene.add(fill);
     this.scene.add(this.light);
     this.light.position.set(180, 240, 200);
-    this.buildGarment(this.current);
+
+    if (!hasCustomModel) {
+      this.buildGarment(this.current);
+      this.group.visible = true;
+    } else {
+      this.disposeParts();
+      this.group.visible = false;
+    }
     this.resize(w, h);
   }
 
@@ -95,62 +102,77 @@ export class Garment3DService {
     this.current = type;
     this.disposeParts();
     this.buildGarment(type);
+    this.group.visible = true;
+  }
+
+  /** Prepara el vestidor limpiando cualquier modelo o malla previa antes de descargar el nuevo GLB. */
+  prepareForModelLoad(): void {
+    this.unloadModel();
+    this.disposeParts();
+    this.group.visible = false;
   }
 
   /** Carga un producto 3D real (glb/gltf) y lo ancla a la pose del cuerpo. */
   async loadModel(url: string, kind: ModelKind): Promise<void> {
-    this.unloadModel();
+    this.prepareForModelLoad();
     this.currentModelUrl = url;
-    const gltf = await this.loader.loadAsync(url);
-    this.disposeParts();
-    const scene = gltf.scene;
+    try {
+      const gltf = await this.loader.loadAsync(url);
+      this.disposeParts();
+      const scene = gltf.scene;
 
-    // Asegurar que todas las mallas tengan doble cara y no sean culled por el frustum
-    scene.traverse((child) => {
-      const mesh = child as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.frustumCulled = false;
-        mesh.castShadow = false;
-        mesh.receiveShadow = false;
-        if (mesh.material) {
-          const isBlazer = url.includes('blazer');
-          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          materials.forEach((m: any) => {
-            m.side = THREE.DoubleSide;
-            m.depthWrite = true;
-            if (isBlazer && m.isMeshStandardMaterial) {
-              m.roughness = 0.88;
-              m.metalness = 0.05;
-            }
-          });
+      // Asegurar que todas las mallas tengan doble cara y no sean culled por el frustum
+      scene.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.frustumCulled = false;
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          if (mesh.material) {
+            const isBlazer = url.includes('blazer');
+            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            materials.forEach((m: any) => {
+              m.side = THREE.DoubleSide;
+              m.depthWrite = true;
+              if (isBlazer && m.isMeshStandardMaterial) {
+                m.roughness = 0.88;
+                m.metalness = 0.05;
+              }
+            });
+          }
         }
+      });
+
+      // Centrar la geometría en su propio centro de masas (0, 0, 0)
+      const box = new THREE.Box3().setFromObject(scene);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      this.modelNaturalSize = Math.max(size.x, size.y, size.z, 0.001);
+
+      scene.position.set(-center.x, -center.y, -center.z);
+
+      const wrapper = new THREE.Group();
+      wrapper.add(scene);
+
+      this.group.add(wrapper);
+      this.model = wrapper;
+      this.modelKind = kind;
+
+      // Los zapatos se muestran como par: el objeto cargado (que sirve de patrón)
+      // se oculta y se clonan dos copias espejadas para cada pie.
+      if (kind === 'shoe') {
+        wrapper.visible = false;
+        this.shoeLeft = wrapper.clone(true);
+        this.shoeRight = wrapper.clone(true);
+        this.shoeLeft.visible = true;
+        this.shoeRight.visible = true;
+        this.group.add(this.shoeLeft, this.shoeRight);
       }
-    });
 
-    // Centrar la geometría en su propio centro de masas (0, 0, 0)
-    const box = new THREE.Box3().setFromObject(scene);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    this.modelNaturalSize = Math.max(size.x, size.y, size.z, 0.001);
-
-    scene.position.set(-center.x, -center.y, -center.z);
-
-    const wrapper = new THREE.Group();
-    wrapper.add(scene);
-
-    this.group.add(wrapper);
-    this.model = wrapper;
-    this.modelKind = kind;
-
-    // Los zapatos se muestran como par: el objeto cargado (que sirve de patrón)
-    // se oculta y se clonan dos copias espejadas para cada pie.
-    if (kind === 'shoe') {
-      wrapper.visible = false;
-      this.shoeLeft = wrapper.clone(true);
-      this.shoeRight = wrapper.clone(true);
-      this.shoeLeft.visible = true;
-      this.shoeRight.visible = true;
-      this.group.add(this.shoeLeft, this.shoeRight);
+      this.group.visible = true;
+    } catch (err) {
+      this.group.visible = true;
+      throw err;
     }
   }
 
@@ -160,6 +182,7 @@ export class Garment3DService {
     this.current = type;
     this.disposeParts();
     this.buildGarment(type);
+    this.group.visible = true;
   }
 
   unloadModel(): void {

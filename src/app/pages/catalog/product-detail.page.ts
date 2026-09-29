@@ -81,7 +81,7 @@ export class ProductDetailPage {
   readonly arModes = AR_MODES;
   readonly hasAr = computed(() => hasAr(this.product()));
   readonly arModel = computed(() => arModelFor(this.product()));
-  readonly arPoster = computed(() => arPreviewFor(this.arModel()));
+  readonly arPoster = computed(() => this.product()?.image ?? arPreviewFor(this.arModel()));
 
   readonly isFav = computed(() => {
     const p = this.product();

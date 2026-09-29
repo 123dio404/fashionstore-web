@@ -681,13 +681,14 @@ export function arKindFor(modelUrl?: string | null): ArModelKind {
 
 /** Póster oficial que corresponde al modelo mostrado mientras descarga el binario GLB. */
 export function arPreviewFor(modelUrl?: string | null): string {
-  if (!modelUrl) return AR_PREVIEWS.shoe;
+  if (!modelUrl) return '';
   const value = modelUrl.toLowerCase();
+  if (value.includes('blazer')) return AR_PREVIEWS.blazer;
   if (value.includes('sunglass')) return AR_PREVIEWS.sunglasses;
   if (value.includes('watch')) return AR_PREVIEWS.watch;
   if (value.includes('cap') || value.includes('baseball')) return AR_PREVIEWS.cap;
   if (value.includes('hat')) return AR_PREVIEWS.hat;
-  if (value.includes('blazer')) return AR_PREVIEWS.blazer;
   if (value.includes('jacket') || value.includes('denim')) return AR_PREVIEWS.jacket;
-  return AR_PREVIEWS.shoe;
+  if (value.includes('shoe')) return AR_PREVIEWS.shoe;
+  return '';
 }

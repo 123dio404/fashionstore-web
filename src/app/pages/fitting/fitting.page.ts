@@ -191,14 +191,15 @@ export class FittingPage {
     if (this.glReady) return;
     const host = this.mirror()?.nativeElement;
     if (!host) return;
-    this.garment.create(host, 640, 720);
+    const hasCustomModel = !!this.modelUrl();
+    this.garment.create(host, 640, 720, hasCustomModel);
     this.glReady = true;
     this.syncModel();
   }
 
   /**
    * Sincroniza el probador con el producto del catálogo: si el producto tiene un
-   * modelo 3D real (zapato/gafas) se carga ese objeto; si es ropa, se muestra la
+   * modelo 3D real (zapato/gafas/blazer) se carga ese objeto; si es ropa genérica, se muestra la
    * malla que se ajusta al cuerpo. Fallback: si no llega el modelo, queda la malla.
    */
   private syncModel(): void {
@@ -207,6 +208,7 @@ export class FittingPage {
     const kind = this.modelKind();
     if (url) {
       console.log(`[Probador] Solicitando carga de modelo 3D: ${url} (tipo: ${kind})`);
+      this.garment.prepareForModelLoad();
       void this.garment
         .loadModel(url, kind)
         .then(() => {
