@@ -157,13 +157,13 @@ export class FittingPage {
   start(): void {
     this.error.set(null);
     this.started.set(true);
-    this.phase.set('model');
-    void this.pose
-      .load()
-      .then(() => {
-        this.phase.set('camera');
-        return this.openCamera();
-      })
+    this.phase.set('camera');
+
+    // Iniciar cámara de inmediato para aprovechar el gesto del usuario y pedir permisos ya
+    const camPromise = this.openCamera();
+    const posePromise = this.pose.load();
+
+    Promise.all([camPromise, posePromise])
       .then(() => {
         this.initGl();
         this.phase.set('ready');
@@ -171,8 +171,8 @@ export class FittingPage {
         this.beginLoop();
       })
       .catch((err: unknown) => {
+        console.error('[Probador] Error al iniciar vestidor:', err);
         this.error.set(msg(err));
-        this.phase.set('camera');
         this.stopCamera();
       });
   }
@@ -223,14 +223,60 @@ export class FittingPage {
 
   private async openCamera(): Promise<void> {
     this.stopCamera();
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 720 } },
-      audio: false,
+    let stream: MediaStream | null = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+    } catch {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+    }
+    this.stream = stream;
+
+    // Permitir a Angular renderizar el nodo <video> si estaba en @if (!started())
+    let video = this.video()?.nativeElement;
+    if (!video) {
+      await new Promise((r) => setTimeout(r, 120));
+      video = this.video()?.nativeElement;
+    }
+    if (!video) throw new Error('Elemento de video no disponible');
+
+    video.srcObject = stream;
+    video.muted = true;
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
+
+    await new Promise<void>((resolve) => {
+      if (video!.readyState >= 2) {
+        resolve();
+        return;
+      }
+      const onReady = () => {
+        video!.removeEventListener('loadeddata', onReady);
+        video!.removeEventListener('canplay', onReady);
+        resolve();
+      };
+      video!.addEventListener('loadeddata', onReady);
+      video!.addEventListener('canplay', onReady);
+      setTimeout(resolve, 1500);
     });
-    const video = this.video()?.nativeElement;
-    if (!video) throw new Error('elemento de video no disponible');
-    video.srcObject = this.stream;
-    await video.play().catch(() => undefined);
+
+    await Promise.race([
+      video.play(),
+      new Promise((r) => setTimeout(r, 1500)),
+    ]).catch(() => undefined);
+
     this.cameraOn.set(true);
     this.lastVideoTime = -1;
   }

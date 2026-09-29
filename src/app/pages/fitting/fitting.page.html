@@ -44,7 +44,7 @@
         (touchmove)="onTouchMove($event)"
         (touchend)="onTouchEnd($event)"
       >
-        <video #video class="mirror-video" playsinline muted></video>
+        <video #video class="mirror-video" playsinline webkit-playsinline muted autoplay></video>
         <canvas #overlay class="mirror-overlay"></canvas>
 
         @if (phase() === 'model') {
