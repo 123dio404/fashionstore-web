@@ -89,6 +89,14 @@
               {{ step.label }}
             </button>
           }
+          @if (reservation.status !== 'completada' && reservation.status !== 'cancelada') {
+            <button type="button" class="btn-primary btn-sm" style="background: #10b981; border-color: #10b981" (click)="completeReservationAction(reservation)">
+              ✓ Retirar / Facturar
+            </button>
+            <button type="button" class="btn btn-sm" style="color: #ef4444; border-color: #fca5a5" (click)="cancelReservationAction(reservation)">
+              ✕ Cancelar Reserva
+            </button>
+          }
         </div>
       </article>
     }

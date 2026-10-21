@@ -7,6 +7,7 @@ import { AuthService } from './core/services/auth.service';
 import { CatalogStore } from './core/services/catalog-store.service';
 import { CommerceService } from './core/services/commerce.service';
 import { NotificationsService } from './core/services/notifications.service';
+import { SyncManagerService } from './core/services/sync-manager.service';
 import { Role } from './models';
 import { UiConfirmComponent } from './shared/ui/confirm-dialog.component';
 import { UiIconComponent } from './shared/ui/icon.component';
@@ -24,6 +25,7 @@ export class App {
   /** Estado del catálogo demo (carrito, favoritos y toast del prototipo). */
   readonly catalogStore = inject(CatalogStore);
   readonly notifs = inject(NotificationsService);
+  readonly syncManager = inject(SyncManagerService);
 
   private readonly auth = inject(AuthService);
   private readonly commerce = inject(CommerceService);

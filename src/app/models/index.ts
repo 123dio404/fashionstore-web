@@ -8,3 +8,4 @@ export * from './product.model';
 export * from './reporting.model';
 export * from './supplier.model';
 export * from './user.model';
+export * from './saas-parcial2.model';

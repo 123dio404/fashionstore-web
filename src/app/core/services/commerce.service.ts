@@ -90,4 +90,29 @@ export class CommerceService {
   deleteReservation(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/reservations/${id}`);
   }
+
+  // ── CICLO DE VIDA DE RESERVAS (PARCIAL 2) ──
+  cancelReservation(id: number): Observable<ReservationResponse> {
+    return this.http.post<ReservationResponse>(`${this.url}/reservations/${id}/cancel`, {});
+  }
+  completeReservation(id: number): Observable<{ message: string; sale_id: number; total: number; reservation: ReservationResponse }> {
+    return this.http.post<any>(`${this.url}/reservations/${id}/complete`, {});
+  }
+
+  // ── POLÍTICAS POSTVENTA: CAMBIO DE PRENDAS < 30 DÍAS (RN-06) ──
+  listExchanges(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/exchanges`);
+  }
+  getExchange(id: number): Observable<any> {
+    return this.http.get<any>(`${this.url}/exchanges/${id}`);
+  }
+  createExchange(data: {
+    branch_id: number;
+    original_sale_id: number;
+    returned_variant_id: number;
+    new_variant_id: number;
+    reason?: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.url}/exchanges`, data);
+  }
 }

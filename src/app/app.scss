@@ -707,9 +707,82 @@
   box-shadow: var(--shadow-2);
 }
 
+.offline-sync-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+/* ─── Indicador de sincronización y estado offline ───────────────── */
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 0.76rem;
+  color: var(--text-2);
+
+  &.offline {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+  }
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dc2626;
+
+  &.online {
+    background: #10b981;
+  }
+
+  &.pulse {
+    background: #f59e0b;
+    animation: sync-pulse 1s infinite alternate;
+  }
+}
+
+@keyframes sync-pulse {
+  from { opacity: 0.4; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
+.sync-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 @media (max-width: 1080px) {
   .topbar-search,
   .user-name {
     display: none;
   }
 }
+

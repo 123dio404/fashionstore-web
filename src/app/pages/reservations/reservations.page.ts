@@ -227,6 +227,28 @@ export class ReservationsPage {
       });
   }
 
+  cancelReservationAction(reservation: ReservationResponse): void {
+    if (!confirm(`¿Estás seguro de cancelar la Reserva #${reservation.id}? Se liberará y descongelará de inmediato el stock reservado.`)) return;
+    this.commerce.cancelReservation(reservation.id).subscribe({
+      next: () => {
+        this.message.set(`Reserva #${reservation.id} cancelada exitosamente. Stock disponible liberado.`);
+        this.load();
+      },
+      error: (err: any) => this.error.set(err.error?.detail || err.message)
+    });
+  }
+
+  completeReservationAction(reservation: ReservationResponse): void {
+    if (!confirm(`¿Confirmar retiro de prendas de la Reserva #${reservation.id}? Se convertirá en venta oficial y se descontará el inventario físico.`)) return;
+    this.commerce.completeReservation(reservation.id).subscribe({
+      next: (res) => {
+        this.message.set(`¡Reserva #${reservation.id} completada y facturada como Venta #${res.sale_id}! Total: Bs. ${res.total}`);
+        this.load();
+      },
+      error: (err: any) => this.error.set(err.error?.detail || err.message)
+    });
+  }
+
   private countByGroup(groupId: string): number {
     const group = TAB_GROUPS.find((item) => item.id === groupId);
     if (!group || group.statuses === null) return this.reservations().length;

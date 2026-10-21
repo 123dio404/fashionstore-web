@@ -30,6 +30,7 @@ export const ICONS = {
   collapse: ['M19 12H5', 'M12 19l-7-7 7-7'],
   expand: ['M5 12h14', 'M12 5l7 7-7 7'],
   user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  refresh: 'M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
   mic: [
     'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z',
     'M19 10v2a7 7 0 0 1-14 0v-2',
@@ -92,7 +93,8 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: 'Usuarios', path: '/admin/users', icon: ICONS.users, cu: 'CU03' },
       { label: 'Sucursales', path: '/admin/branches', icon: ICONS.store, cu: 'CU04' },
-      { label: 'Proveedores', path: '/admin/suppliers', icon: ICONS.suppliers, cu: 'CU07' }
+      { label: 'Proveedores', path: '/admin/suppliers', icon: ICONS.suppliers, cu: 'CU07' },
+      { label: 'Suscripción SaaS', path: '/admin/subscription', icon: ICONS.settings, cu: 'CU01' }
     ]
   },
   {
@@ -100,14 +102,16 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: 'Ventas', path: '/reports/sales', icon: ICONS.reports, cu: 'CU21' },
       { label: 'Inventario', path: '/reports/inventory', icon: ICONS.activity, cu: 'CU22' },
-      { label: 'Analítica IA', path: '/reports/analytical', icon: ICONS.sparkles, cu: 'CU24' }
+      { label: 'Analítica IA', path: '/reports/analytical', icon: ICONS.sparkles, cu: 'CU24' },
+      { label: 'Machine Learning & IA', path: '/reports/ml-dashboard', icon: ICONS.sparkles, cu: 'CU20' }
     ]
   },
   {
     label: 'Tienda',
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
-      { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' }
+      { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' },
+      { label: 'Cambio de prendas', path: '/exchanges', icon: ICONS.tag, cu: 'CU15' }
     ]
   }
 ];
@@ -136,7 +140,8 @@ const MANAGER_NAV: NavGroup[] = [
     label: 'Tienda',
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
-      { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' }
+      { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' },
+      { label: 'Cambio de prendas', path: '/exchanges', icon: ICONS.tag, cu: 'CU15' }
     ]
   }
 ];
@@ -147,7 +152,8 @@ const CASHIER_NAV: NavGroup[] = [
     label: 'Tienda',
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
-      { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' }
+      { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' },
+      { label: 'Cambio de prendas', path: '/exchanges', icon: ICONS.tag, cu: 'CU15' }
     ]
   }
 ];

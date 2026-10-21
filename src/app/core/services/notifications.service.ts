@@ -103,6 +103,22 @@ export class NotificationsService {
     this.persist([]);
   }
 
+  success(message: string, title: string = 'Operación Exitosa'): void {
+    this.addNotification({ title, message, type: 'purchase_success' });
+  }
+
+  error(message: string, title: string = 'Error'): void {
+    this.addNotification({ title, message, type: 'payment_rejected' });
+  }
+
+  warning(message: string, title: string = 'Atención'): void {
+    this.addNotification({ title, message, type: 'system' });
+  }
+
+  info(message: string, title: string = 'Información'): void {
+    this.addNotification({ title, message, type: 'system' });
+  }
+
   /**
    * Sincroniza las ventas reales (`/commerce/sales`) con las notificaciones locales,
    * de modo que compras realizadas desde el móvil aparezcan automáticamente en la web.

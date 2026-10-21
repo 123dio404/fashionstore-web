@@ -106,6 +106,27 @@
         </div>
 
         <div class="topbar-right">
+          <div
+            class="sync-indicator"
+            [class.offline]="!syncManager.isOnline()"
+            [title]="syncManager.isOnline() ? (syncManager.isSyncing() ? 'Sincronizando con backend SaaS...' : 'Conectado al servidor SaaS') : 'Modo Offline: datos almacenados localmente en IndexedDB'"
+          >
+            <span class="sync-dot" [class.online]="syncManager.isOnline()" [class.pulse]="syncManager.isSyncing()"></span>
+            <span class="sync-text">{{ syncManager.isOnline() ? (syncManager.isSyncing() ? 'Sincronizando' : 'Online') : 'Offline' }}</span>
+            @if (syncManager.pendingCount() > 0) {
+              <button
+                type="button"
+                class="sync-pill-btn"
+                (click)="syncManager.triggerManualSync()"
+                [disabled]="!syncManager.isOnline() || syncManager.isSyncing()"
+                title="Presione para sincronizar transacciones pendientes"
+              >
+                <span>{{ syncManager.pendingCount() }} pendientes</span>
+                <app-ui-icon [d]="icons.refresh" [size]="11" />
+              </button>
+            }
+          </div>
+
           <a
             routerLink="/recommendations"
             class="ai-quick-link"
@@ -258,7 +279,7 @@
   </main>
 }
 
-@if (offline()) {
+@if (offline() || !syncManager.isOnline()) {
   <div class="offline-banner" role="status">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <line x1="1" y1="1" x2="23" y2="23" />
@@ -269,7 +290,10 @@
       <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
       <line x1="12" y1="20" x2="12.01" y2="20" />
     </svg>
-    Sin conexión a internet
+    <span>Modo Offline activo (IndexedDB)</span>
+    @if (syncManager.pendingCount() > 0) {
+      <span class="offline-sync-badge">{{ syncManager.pendingCount() }} cambios por sincronizar</span>
+    }
   </div>
 }
 

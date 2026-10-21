@@ -49,6 +49,8 @@ export interface VariantResponse {
   codigo: string;
   price: number | null;
   is_active: boolean;
+  size?: SizeResponse | { id: Id; name: string } | null;
+  color?: ColorResponse | { id: Id; name: string } | null;
 }
 
 export interface ProductCreate {

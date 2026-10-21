@@ -111,6 +111,7 @@ export interface SaleItemResponse {
   brand?: string | null;
   size?: string | null;
   color?: string | null;
+  stock?: any;
 }
 
 export interface SalePaymentResponse {

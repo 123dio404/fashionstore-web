@@ -48,16 +48,19 @@ export const routes: Routes = [
   // CU03 / CU20 - Admin only
   { path: 'admin/users', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/users.page').then((m) => m.UsersPage) },
   { path: 'admin/marketing', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/marketing.page').then((m) => m.MarketingPage) },
+  { path: 'admin/subscription', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/subscription.page').then((m) => m.SubscriptionPage) },
 
-  // CU12 / CU14 - Staff operations
+  // CU12 / CU14 / CU15 - Staff operations
   { path: 'pos', canActivate: [authGuard, roleGuard], data: { roles: STAFF }, loadComponent: () => import('./pages/pos/pos.page').then((m) => m.PosPage) },
   { path: 'reservations', canActivate: [authGuard, roleGuard], data: { roles: STAFF }, loadComponent: () => import('./pages/reservations/reservations.page').then((m) => m.ReservationsPage) },
+  { path: 'exchanges', canActivate: [authGuard, roleGuard], data: { roles: STAFF }, loadComponent: () => import('./pages/pos/exchanges.page').then((m) => m.ExchangesPage) },
 
-  // CU21 / CU22 / CU23 / CU24 - Reports
+  // CU21 / CU22 / CU23 / CU24 / ML / IA - Reports
   { path: 'reports/dashboard', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/dashboard.page').then((m) => m.DashboardPage) },
   { path: 'reports/sales', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/reports/sales.page').then((m) => m.SalesReportPage) },
   { path: 'reports/inventory', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/inventory.page').then((m) => m.InventoryReportPage) },
   { path: 'reports/analytical', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/analytical.page').then((m) => m.AnalyticalPage) },
+  { path: 'reports/ml-dashboard', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/ml-dashboard.page').then((m) => m.MlDashboardPage) },
 
   { path: 'forbidden', loadComponent: () => import('./pages/shared/forbidden.page').then((m) => m.ForbiddenPage) },
   { path: '', pathMatch: 'full', redirectTo: 'catalog' },
