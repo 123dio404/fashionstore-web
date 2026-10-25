@@ -45,7 +45,8 @@ export const routes: Routes = [
   { path: 'admin/suppliers', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/suppliers.page').then((m) => m.SuppliersPage) },
   { path: 'admin/inventory', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/admin/inventory.page').then((m) => m.InventoryPage) },
 
-  // CU03 / CU20 - Admin only
+  // CU01 / CU03 / CU20 - Admin only (Superadmin)
+  { path: 'admin/tenants', canActivate: [authGuard, roleGuard], data: { roles: [Role.Superadministrador] }, loadComponent: () => import('./pages/admin/tenants.page').then((m) => m.TenantsPage) },
   { path: 'admin/users', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/users.page').then((m) => m.UsersPage) },
   { path: 'admin/marketing', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/marketing.page').then((m) => m.MarketingPage) },
   { path: 'admin/subscription', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/subscription.page').then((m) => m.SubscriptionPage) },
