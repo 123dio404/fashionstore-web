@@ -24,4 +24,8 @@ export class SaasService {
   getTenants(): Observable<TenantResponse[]> {
     return this.http.get<TenantResponse[]>(`${this.url}/tenants`);
   }
+
+  createTenant(data: any): Observable<TenantResponse> {
+    return this.http.post<TenantResponse>(`${this.url}/tenants`, data);
+  }
 }
