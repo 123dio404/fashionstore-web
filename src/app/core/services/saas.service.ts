@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PlanResponse, SubscriptionResponse, TenantResponse } from '../../models';
+import { PlanResponse, TenantCreateRequest, TenantResponse } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class SaasService {
@@ -13,19 +13,19 @@ export class SaasService {
     return this.http.get<PlanResponse[]>(`${this.url}/plans`);
   }
 
-  getMySubscription(): Observable<SubscriptionResponse> {
-    return this.http.get<SubscriptionResponse>(`${this.url}/my-subscription`);
+  getMySubscription(): Observable<TenantResponse> {
+    return this.http.get<TenantResponse>(`${this.url}/my-subscription`);
   }
 
-  changePlan(planName: string): Observable<{ message: string; subscription: SubscriptionResponse }> {
-    return this.http.post<any>(`${this.url}/change-plan`, { plan_name: planName });
+  changePlan(planName: string): Observable<TenantResponse> {
+    return this.http.post<TenantResponse>(`${this.url}/change-plan`, { plan_name: planName });
   }
 
   getTenants(): Observable<TenantResponse[]> {
     return this.http.get<TenantResponse[]>(`${this.url}/tenants`);
   }
 
-  createTenant(data: any): Observable<TenantResponse> {
+  createTenant(data: TenantCreateRequest): Observable<TenantResponse> {
     return this.http.post<TenantResponse>(`${this.url}/tenants`, data);
   }
 }

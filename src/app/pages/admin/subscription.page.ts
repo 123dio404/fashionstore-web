@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ICONS } from '../../core/navigation';
 import { NotificationsService } from '../../core/services/notifications.service';
 import { SaasService } from '../../core/services/saas.service';
-import { PlanResponse, SubscriptionResponse } from '../../models';
+import { PlanResponse, TenantResponse } from '../../models';
 import { UiIconComponent } from '../../shared/ui/icon.component';
 
 @Component({
@@ -29,23 +29,23 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
       } @else {
         <!-- Tarjeta de Suscripción Actual -->
         @if (subscription(); as sub) {
-          <div class="current-sub-card" [class.pro]="sub.has_ai_reports">
+          <div class="current-sub-card" [class.pro]="sub.subscription?.plan?.has_ai_reports">
             <div class="card-glow"></div>
             <div class="sub-header">
               <div class="tenant-badge">
                 <span class="dot"></span>
-                Empresa: <strong>{{ sub.tenant_name }}</strong>
+                Empresa: <strong>{{ sub.name }}</strong>
               </div>
-              <span class="status-pill active">{{ sub.status }}</span>
+              <span class="status-pill active">{{ sub.subscription?.status || 'Sin suscripción' }}</span>
             </div>
 
             <div class="sub-content">
               <div class="plan-hero">
                 <span class="plan-label">Plan Actual</span>
-                <h2>Plan {{ sub.plan_name }}</h2>
+                <h2>Plan {{ sub.subscription?.plan?.name || 'Sin plan' }}</h2>
                 <div class="price">
                   <span class="currency">Bs.</span>
-                  <span class="amount">{{ sub.monthly_price }}</span>
+                  <span class="amount">{{ sub.subscription?.plan?.monthly_price ?? '—' }}</span>
                   <span class="period">/ mes</span>
                 </div>
               </div>
@@ -54,16 +54,16 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                 <div class="metric-box">
                   <span class="metric-label">Límite de Sucursales</span>
                   <div class="metric-val">
-                    <strong>{{ sub.active_branches_count }}</strong> / {{ sub.max_branches }} permitidas
+                    <strong>{{ sub.active_branches_count }}</strong> / {{ sub.subscription?.plan?.max_branches ?? '—' }} permitidas
                   </div>
                   <div class="progress-bar">
                     <div
                       class="progress-fill"
-                      [style.width.%]="(sub.active_branches_count / sub.max_branches) * 100"
-                      [class.danger]="sub.branches_limit_reached"
+                      [style.width.%]="branchUsage(sub)"
+                      [class.danger]="isAtBranchLimit(sub)"
                     ></div>
                   </div>
-                  @if (sub.branches_limit_reached) {
+                  @if (isAtBranchLimit(sub)) {
                     <span class="limit-warn">⚠️ Has alcanzado el límite máximo de sucursales de tu plan.</span>
                   }
                 </div>
@@ -71,14 +71,14 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                 <div class="metric-box">
                   <span class="metric-label">Módulo de IA Generativa & ML</span>
                   <div class="metric-val">
-                    @if (sub.has_ai_reports) {
+                    @if (sub.subscription?.plan?.has_ai_reports) {
                       <span class="badge-success">✨ Habilitado (Gemini 2.0 + ML)</span>
                     } @else {
                       <span class="badge-locked">🔒 Bloqueado en Plan Básico</span>
                     }
                   </div>
                   <p class="metric-desc">
-                    {{ sub.has_ai_reports ? 'Acceso completo a reportes de lenguaje natural, predicción de demanda y exportaciones.' : 'Actualiza al Plan Profesional para desbloquear analítica generativa.' }}
+                    {{ sub.subscription?.plan?.has_ai_reports ? 'Acceso completo a reportes de lenguaje natural, predicción de demanda y exportaciones.' : 'Actualiza al Plan Profesional para desbloquear analítica generativa.' }}
                   </p>
                 </div>
               </div>
@@ -93,7 +93,7 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
             @for (plan of plans(); track plan.id) {
               <div
                 class="plan-card"
-                [class.is-current]="subscription()?.plan_name === plan.name"
+                [class.is-current]="subscription()?.subscription?.plan?.name === plan.name"
                 [class.is-pro]="plan.name === 'Profesional'"
               >
                 @if (plan.name === 'Profesional') {
@@ -136,7 +136,7 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                 </ul>
 
                 <div class="card-action">
-                  @if (subscription()?.plan_name === plan.name) {
+                  @if (subscription()?.subscription?.plan?.name === plan.name) {
                     <button class="btn btn-current" disabled>Plan Actual</button>
                   } @else {
                     <button
@@ -426,7 +426,7 @@ export class SubscriptionPage implements OnInit {
   private readonly saasService = inject(SaasService);
   private readonly notifs = inject(NotificationsService);
 
-  readonly subscription = signal<SubscriptionResponse | null>(null);
+  readonly subscription = signal<TenantResponse | null>(null);
   readonly plans = signal<PlanResponse[]>([]);
   readonly loading = signal(true);
   readonly switching = signal(false);
@@ -456,14 +456,24 @@ export class SubscriptionPage implements OnInit {
     });
   }
 
+  branchUsage(tenant: TenantResponse): number {
+    const maxBranches = tenant.subscription?.plan?.max_branches;
+    return maxBranches ? Math.min(tenant.active_branches_count / maxBranches * 100, 100) : 0;
+  }
+
+  isAtBranchLimit(tenant: TenantResponse): boolean {
+    const maxBranches = tenant.subscription?.plan?.max_branches;
+    return maxBranches !== undefined && tenant.active_branches_count >= maxBranches;
+  }
+
   changePlan(planName: string): void {
     if (!confirm(`¿Estás seguro de cambiar al Plan ${planName}?`)) return;
 
     this.switching.set(true);
     this.saasService.changePlan(planName).subscribe({
-      next: (res) => {
+      next: (tenant) => {
         this.notifs.success(`Plan actualizado con éxito al Plan ${planName}`);
-        this.subscription.set(res.subscription);
+        this.subscription.set(tenant);
         this.switching.set(false);
       },
       error: (err) => {

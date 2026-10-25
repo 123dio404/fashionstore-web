@@ -11,7 +11,7 @@ import {
   CustomerSegmentsResponse,
   DemandPredictionResponse,
   MlStatusResponse,
-  SubscriptionResponse
+  TenantResponse
 } from '../../models';
 
 @Component({
@@ -201,7 +201,7 @@ import {
           </div>
         </div>
 
-        @if (subscription() && !subscription()?.has_ai_reports) {
+        @if (subscription() && !subscription()?.subscription?.plan?.has_ai_reports) {
           <!-- Candado Plan Básico (RF28) -->
           <div class="plan-locked-card">
             <div class="lock-icon">🔒</div>
@@ -653,7 +653,7 @@ export class MlDashboardPage implements OnInit {
   status = signal<MlStatusResponse | null>(null);
   demand = signal<DemandPredictionResponse | null>(null);
   segments = signal<CustomerSegmentsResponse | null>(null);
-  subscription = signal<SubscriptionResponse | null>(null);
+  subscription = signal<TenantResponse | null>(null);
 
   queryInput = '';
   loadingReport = signal(false);

@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SaasService } from '../../core/services/saas.service';
-import { TenantResponse } from '../../models';
+import { TenantCreateRequest, TenantResponse } from '../../models';
 
 @Component({
   selector: 'app-tenants-page',
@@ -19,10 +19,10 @@ export class TenantsPage implements OnInit {
   showCreate = signal(false);
   creating = signal(false);
 
-  form = {
+  form: TenantCreateRequest = {
     name: '',
     slug: '',
-    tax_id: '',
+    tax_id: null,
     plan_name: 'Básico',
     admin_name: '',
     admin_email: '',
@@ -51,11 +51,11 @@ export class TenantsPage implements OnInit {
       return;
     }
     this.creating.set(true);
-    this.saas.createTenant(this.form as any).subscribe({
+    this.saas.createTenant(this.form).subscribe({
       next: () => {
         this.creating.set(false);
         this.showCreate.set(false);
-        this.form = { name: '', slug: '', tax_id: '', plan_name: 'Básico', admin_name: '', admin_email: '', admin_password: '' };
+        this.form = { name: '', slug: '', tax_id: null, plan_name: 'Básico', admin_name: '', admin_email: '', admin_password: '' };
         this.load();
       },
       error: (err) => {
