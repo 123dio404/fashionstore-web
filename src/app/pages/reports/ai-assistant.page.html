@@ -1,0 +1,24 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Asistente Generativo IA (Texto / Voz)</h1>
+  </div>
+
+  <div class="card">
+    <div class="query-row">
+      <input [(ngModel)]="query" placeholder="Pregunta en lenguaje natural... (ej. Ventas por sucursal del último mes)" (keyup.enter)="ask()" />
+      <button class="btn-secondary" (click)="startVoice()" [disabled]="recognizing()">{{ recognizing() ? 'Escuchando...' : '🎤 Voz' }}</button>
+      <button class="btn-primary" (click)="ask()" [disabled]="loading()">{{ loading() ? 'Consultando...' : 'Consultar' }}</button>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="response()">
+    <div class="response-header">
+      <h2>Resultado</h2>
+      <div class="actions">
+        <button class="btn-secondary" (click)="exportPdf()">Exportar PDF</button>
+        <button class="btn-secondary" (click)="exportExcel()">Exportar Excel</button>
+      </div>
+    </div>
+    <pre class="response-content">{{ response() | json }}</pre>
+  </div>
+</div>

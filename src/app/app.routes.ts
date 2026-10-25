@@ -56,12 +56,16 @@ export const routes: Routes = [
   { path: 'reservations', canActivate: [authGuard, roleGuard], data: { roles: STAFF }, loadComponent: () => import('./pages/reservations/reservations.page').then((m) => m.ReservationsPage) },
   { path: 'exchanges', canActivate: [authGuard, roleGuard], data: { roles: STAFF }, loadComponent: () => import('./pages/pos/exchanges.page').then((m) => m.ExchangesPage) },
 
+  // CU14 - Sync conflicts
+  { path: 'admin/sync-conflicts', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/sync-conflicts.page').then((m) => m.SyncConflictsPage) },
+
   // CU21 / CU22 / CU23 / CU24 / ML / IA - Reports
   { path: 'reports/dashboard', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/dashboard.page').then((m) => m.DashboardPage) },
   { path: 'reports/sales', canActivate: [authGuard, roleGuard], data: { roles: MANAGER }, loadComponent: () => import('./pages/reports/sales.page').then((m) => m.SalesReportPage) },
   { path: 'reports/inventory', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/inventory.page').then((m) => m.InventoryReportPage) },
   { path: 'reports/analytical', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/analytical.page').then((m) => m.AnalyticalPage) },
   { path: 'reports/ml-dashboard', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/ml-dashboard.page').then((m) => m.MlDashboardPage) },
+  { path: 'reports/ai-assistant', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/ai-assistant.page').then((m) => m.AiAssistantPage) },
 
   { path: 'forbidden', loadComponent: () => import('./pages/shared/forbidden.page').then((m) => m.ForbiddenPage) },
   { path: '', pathMatch: 'full', redirectTo: 'catalog' },
