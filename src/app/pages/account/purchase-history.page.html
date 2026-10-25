@@ -114,6 +114,16 @@
           </div>
 
           <div class="detail-actions">
+            @if (p.status === 'en_camino') {
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                style="background: #059669; border-color: #059669; color: white;"
+                (click)="confirmDelivery(p.id)"
+              >
+                ✓ Confirmar recepción conforme
+              </button>
+            }
             <a class="btn btn-dark btn-sm" routerLink="/catalog">Volver a comprar</a>
             @if (p.status !== 'cancelado') {
               <a class="btn btn-outline btn-sm" routerLink="/my-reservations">

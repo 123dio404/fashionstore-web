@@ -156,6 +156,16 @@
                 <span class="now">{{ p.price | currency: 'USD' }}</span>
                 <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
               </p>
+              @if (p.wholesalePrice) {
+                <p style="font-size: 0.75rem; color: #059669; font-weight: 600; margin: 2px 0 0;">
+                  Mayor: {{ p.wholesalePrice | currency: 'USD' }} (≥{{ p.wholesaleMinQty || 3 }}u)
+                </p>
+              }
+              @if (p.material) {
+                <p style="font-size: 0.72rem; color: #6b7280; margin: 2px 0 0;">
+                  Tejido: {{ p.material }}
+                </p>
+              }
             </div>
           </a>
         }

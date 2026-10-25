@@ -71,6 +71,33 @@
         </span>
       </div>
 
+      @if (p.wholesalePrice) {
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.5rem 0.75rem; border-radius: 8px; margin: 0.5rem 0 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; color: #047857; font-size: 0.9rem;">
+              Precio al por mayor: {{ p.wholesalePrice | currency: 'USD' }}
+            </div>
+            <div style="font-size: 0.75rem; color: #065f46;">
+              A partir de {{ p.wholesaleMinQty || 3 }} unidades (aplicado automáticamente al carrito)
+            </div>
+          </div>
+          <span style="background: #059669; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">
+            POR MAYOR
+          </span>
+        </div>
+      }
+
+      @if (p.material) {
+        <div style="margin: 0.5rem 0; font-size: 0.82rem; color: #4b5563;">
+          <strong>Tejido / Composición:</strong> {{ p.material }}
+        </div>
+      }
+      @if (p.secondaryColor) {
+        <div style="margin: 0.25rem 0 0.5rem; font-size: 0.82rem; color: #4b5563;">
+          <strong>Multicolor:</strong> {{ p.secondaryColor }}
+        </div>
+      }
+
       <p class="section-label">Color · {{ colorName() }}</p>
       <div class="color-row">
         @for (c of p.colors; track c.name; let i = $index) {

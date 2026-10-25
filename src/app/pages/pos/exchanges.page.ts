@@ -85,7 +85,7 @@ import { ProductResponse, SaleResponse } from '../../models';
               <!-- Diferencia de Precio y Motivo -->
               @if (returnedPrice !== null && newPrice !== null) {
                 <div class="price-diff-card" [class.payable]="priceDifference > 0" [class.refundable]="priceDifference < 0">
-                  <div class="diff-title">Ajuste de Precios:</div>
+                  <div class="diff-title">Ajuste de Precios según Políticas:</div>
                   <div class="diff-details">
                     <div>Prenda Devuelta: Bs. {{ returnedPrice }}</div>
                     <div>Nueva Prenda: Bs. {{ newPrice }}</div>
@@ -95,6 +95,19 @@ import { ProductResponse, SaleResponse } from '../../models';
                         {{ priceDifference > 0 ? '(Cliente debe abonar)' : (priceDifference < 0 ? '(Saldo a favor del cliente)' : '(Sin diferencia)') }}
                       </span>
                     </div>
+
+                    @if (priceDifference > 0) {
+                      <div style="margin-top: 0.5rem; padding: 0.5rem; background: #eff6ff; border-left: 3px solid #3b82f6; font-size: 0.85rem; color: #1e40af;">
+                        📲 <strong>Notificación Push:</strong> Al confirmar, el sistema emitirá una alerta push inmediata al cliente informando la diferencia pendiente de Bs. {{ priceDifference }} para abonar vía pasarela.
+                      </div>
+                    }
+
+                    @if (priceDifference < 0) {
+                      <div style="margin-top: 0.5rem; padding: 0.5rem; background: #fffbeb; border-left: 3px solid #f59e0b; font-size: 0.85rem; color: #92400e;">
+                        💰 <strong>Política de Reembolso:</strong> Retención administrativa del 10% (Bs. {{ (priceDifference * -0.10).toFixed(2) }}).
+                        Monto neto a devolver: <strong>Bs. {{ (priceDifference * -0.90).toFixed(2) }}</strong> programado para fin de mes por cierre y arqueo de caja.
+                      </div>
+                    }
                   </div>
                 </div>
               }
@@ -113,7 +126,7 @@ import { ProductResponse, SaleResponse } from '../../models';
                 [disabled]="isSaleExpired(sale) || !selectedReturnedVariantId || !selectedNewVariantId || processing()"
                 (click)="submitExchange()"
               >
-                {{ processing() ? 'Procesando Cambio...' : 'Confirmar Cambio de Prenda' }}
+                {{ processing() ? 'Procesando Cambio...' : 'Confirmar Cambio de Prenda (+1 Reingreso Inventario)' }}
               </button>
             </div>
           }
@@ -131,10 +144,11 @@ import { ProductResponse, SaleResponse } from '../../models';
                 <thead>
                   <tr>
                     <th>Comprobante</th>
-                    <th>Venta Orig.</th>
-                    <th>Prenda Devuelta</th>
+                    <th>Venta</th>
+                    <th>Devolución (+1)</th>
                     <th>Nueva Prenda</th>
                     <th>Diferencia</th>
+                    <th>Push / Liquidación</th>
                     <th>Fecha</th>
                   </tr>
                 </thead>
@@ -149,6 +163,21 @@ import { ProductResponse, SaleResponse } from '../../models';
                         <strong [class.text-green]="ex.price_difference === 0" [class.text-amber]="ex.price_difference !== 0">
                           Bs. {{ ex.price_difference }}
                         </strong>
+                      </td>
+                      <td>
+                        @if (ex.push_notification_sent) {
+                          <span style="display: block; font-size: 0.75rem; color: #1d4ed8; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">
+                            📲 Push: {{ ex.push_notification_text }}
+                          </span>
+                        }
+                        @if (ex.refund_amount) {
+                          <span style="display: block; font-size: 0.75rem; color: #b45309; background: #fef3c7; padding: 2px 6px; border-radius: 4px; margin-top: 2px;">
+                            💰 Reembolso fin de mes: Bs. {{ ex.refund_amount }}
+                          </span>
+                        }
+                        @if (!ex.push_notification_sent && !ex.refund_amount) {
+                          <span style="font-size: 0.75rem; color: #047857;">Sin saldo</span>
+                        }
                       </td>
                       <td>{{ ex.created_at | date: 'short' }}</td>
                     </tr>

@@ -115,4 +115,18 @@ export class CommerceService {
   }): Observable<any> {
     return this.http.post<any>(`${this.url}/exchanges`, data);
   }
+
+  // ── LOGÍSTICA Y DESPACHO: CONFIRMACIÓN Y ESTADO DE ENTREGA (RF09-B) ──
+  updateDeliveryStatus(saleId: number, delivery_status: string, customer_notes?: string): Observable<SaleResponse> {
+    return this.http.patch<SaleResponse>(`${this.url}/sales/${saleId}/delivery-status`, {
+      delivery_status,
+      customer_notes
+    });
+  }
+
+  confirmCustomerDelivery(saleId: number, customer_notes?: string): Observable<SaleResponse> {
+    return this.http.post<SaleResponse>(`${this.url}/sales/${saleId}/confirm-delivery`, {
+      customer_notes
+    });
+  }
 }

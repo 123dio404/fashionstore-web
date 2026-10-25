@@ -29,6 +29,12 @@ export interface FigmaProduct {
   isFeatured?: boolean;
   /** CU17: `model_3d_url` del producto cuando el panel lo carga (glb/gltf). */
   model3dUrl?: string | null;
+  /** Audio requirements: precio mayorista, cantidad mínima, tela/material y liquidación */
+  wholesalePrice?: number | null;
+  wholesaleMinQty?: number | null;
+  material?: string | null;
+  secondaryColor?: string | null;
+  isClearance?: boolean;
 }
 
 export interface FigmaBanner {
@@ -56,6 +62,9 @@ export interface FigmaCartItem {
   size: string;
   color: string;
   qty: number;
+  wholesalePrice?: number | null;
+  wholesaleMinQty?: number | null;
+  isWholesaleApplied?: boolean;
 }
 
 export interface FigmaPurchase {

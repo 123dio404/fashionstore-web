@@ -6,6 +6,8 @@ import { environment } from '../../../environments/environment';
 import {
   AvailabilityResponse,
   CategoryResponse,
+  ClearanceBatchRequest,
+  ClearanceBatchResponse,
   ColorResponse,
   ParameterCreate,
   ParameterUpdate,
@@ -101,5 +103,9 @@ export class ProductsService {
       `${this.base}/products/${productId}/availability`,
       { params }
     );
+  }
+
+  batchClearance(data: ClearanceBatchRequest): Observable<ClearanceBatchResponse> {
+    return this.http.post<ClearanceBatchResponse>(`${this.base}/products/clearance/batch`, data);
   }
 }

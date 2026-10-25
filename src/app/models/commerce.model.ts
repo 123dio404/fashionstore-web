@@ -52,6 +52,8 @@ export interface CartItemResponse {
   product_name: string;
   size: string | null;
   color: string | null;
+  is_wholesale_applied?: boolean;
+  wholesale_min_qty?: number;
 }
 
 export interface CartResponse {
@@ -131,8 +133,20 @@ export interface SaleResponse {
   sale_date: string;
   total: number;
   sale_type: SaleType;
+  delivery_status: 'PAGADO' | 'POR_DESPACHAR' | 'ENVIADO' | 'ENTREGADO_CONFORME' | string;
+  customer_notes?: string | null;
+  delivered_at?: string | null;
   items: SaleItemResponse[];
   payments: SalePaymentResponse[];
+}
+
+export interface DeliveryStatusUpdate {
+  delivery_status: 'PAGADO' | 'POR_DESPACHAR' | 'ENVIADO' | 'ENTREGADO_CONFORME';
+  customer_notes?: string | null;
+}
+
+export interface CustomerDeliveryConfirmation {
+  customer_notes?: string | null;
 }
 
 export interface ReceiptResponse {

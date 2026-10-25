@@ -75,8 +75,21 @@
             <p class="product-brand">{{ item.brand }}</p>
             <a class="cart-name" [routerLink]="['/catalog', item.productId]">{{ item.name }}</a>
             <p class="cart-meta">Talla {{ item.size }} · {{ item.color }}</p>
+            @if (item.wholesalePrice && item.qty >= (item.wholesaleMinQty || 3)) {
+              <div style="margin: 0.25rem 0;">
+                <span style="background: #ecfdf5; color: #047857; font-weight: bold; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block;">
+                  🔥 ¡Precio mayorista aplicado! {{ item.wholesalePrice | currency: 'USD' }} c/u
+                </span>
+              </div>
+            } @else if (item.wholesalePrice) {
+              <div style="margin: 0.25rem 0; font-size: 0.72rem; color: #059669;">
+                Lleva {{ (item.wholesaleMinQty || 3) - item.qty }} más para precio mayorista de {{ item.wholesalePrice | currency: 'USD' }} c/u
+              </div>
+            }
             <div class="cart-foot">
-              <span class="cart-price">{{ (item.price * item.qty) | currency: 'USD' }}</span>
+              <span class="cart-price">
+                {{ ((item.wholesalePrice && item.qty >= (item.wholesaleMinQty || 3) ? item.wholesalePrice : item.price) * item.qty) | currency: 'USD' }}
+              </span>
               <div class="qty">
                 <button type="button" (click)="dec(item.productId, item.size)" aria-label="Quitar uno">−</button>
                 <span>{{ item.qty }}</span>

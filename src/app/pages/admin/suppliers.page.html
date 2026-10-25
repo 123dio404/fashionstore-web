@@ -66,6 +66,9 @@
             </td>
             <td>
               <div class="row-actions">
+                <button type="button" class="btn btn-sm" style="background: #059669; color: white;" (click)="openPurchase(supplier)">
+                  + Ingresar compra
+                </button>
                 <button type="button" class="btn btn-sm" (click)="openEdit(supplier)">Editar</button>
                 <button type="button" class="btn btn-sm" (click)="toggleActive(supplier)">
                   {{ supplier.is_active ? 'Desactivar' : 'Activar' }}
@@ -120,6 +123,85 @@
     <button type="button" class="btn" (click)="closeDrawer()">Cancelar</button>
     <button type="button" class="btn-primary" (click)="save()">
       {{ editing() ? 'Guardar cambios' : 'Crear proveedor' }}
+    </button>
+  </div>
+</app-ui-drawer>
+
+<!-- Drawer para Nota de Recepción / Compra a Proveedor (Fuente de Verdad del Inventario) -->
+<app-ui-drawer
+  [open]="purchaseDrawerOpen()"
+  title="Nota de ingreso de mercadería"
+  [subtitle]="(selectedSupplier()?.name || 'Proveedor') + ' (CI/NIT: ' + (selectedSupplier()?.ci || '—') + ')'"
+  [width]="520"
+  (closed)="closePurchaseDrawer()"
+>
+  <p class="field-hint" style="margin-top: 0">
+    Registra la compra formal a proveedor con su factura o nota de remisión para alimentar el inventario físico y actualizar el catálogo disponible.
+  </p>
+
+  <div class="grid-2">
+    <div class="field">
+      <label for="p-branch">Sucursal de destino</label>
+      <select id="p-branch" [(ngModel)]="purchaseForm.branch_id">
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
+      <label for="p-invoice">N° Factura / Nota de entrega</label>
+      <input id="p-invoice" placeholder="FAC-2026-001" [(ngModel)]="purchaseForm.invoice_number" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="p-notes">Observaciones / Glosa de ingreso</label>
+    <input id="p-notes" [(ngModel)]="purchaseForm.notes" />
+  </div>
+
+  <section style="margin-top: 1rem; border-top: 1px solid #e5e7eb; padding-top: 0.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <h4 style="margin: 0; font-size: 0.95rem;">Prendas recibidas ({{ purchaseForm.items.length }})</h4>
+      <button type="button" class="btn btn-sm" (click)="addPurchaseItem()">+ Añadir fila</button>
+    </div>
+
+    @for (item of purchaseForm.items; track $index; let idx = $index) {
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; background: #f9fafb; padding: 0.5rem; border-radius: 6px; align-items: flex-end;">
+        <div class="field" style="margin: 0; flex: 2">
+          <label style="font-size: 0.75rem;">Variante de Prenda</label>
+          <select [(ngModel)]="item.variant_id">
+            @for (prod of products(); track prod.id) {
+              @for (v of prod.variants; track v.id) {
+                <option [ngValue]="v.id">
+                  {{ prod.name }} (SKU: {{ v.codigo }})
+                </option>
+              }
+            }
+          </select>
+        </div>
+        <div class="field" style="margin: 0; flex: 1">
+          <label style="font-size: 0.75rem;">Cantidad</label>
+          <input type="number" min="1" [(ngModel)]="item.quantity" />
+        </div>
+        <div class="field" style="margin: 0; flex: 1">
+          <label style="font-size: 0.75rem;">Costo (Bs)</label>
+          <input type="number" min="0" [(ngModel)]="item.unit_cost" />
+        </div>
+        @if (purchaseForm.items.length > 1) {
+          <button type="button" class="btn-danger btn-sm" style="height: 38px;" (click)="removePurchaseItem(idx)">✕</button>
+        }
+      </div>
+    }
+
+    <div style="text-align: right; margin-top: 0.75rem; font-size: 1.05rem; font-weight: bold; color: #111827;">
+      Total Factura: Bs. {{ calculatePurchaseTotal() }}
+    </div>
+  </section>
+
+  <div drawer-actions>
+    <button type="button" class="btn" (click)="closePurchaseDrawer()">Cancelar</button>
+    <button type="button" class="btn-primary" style="background: #059669;" (click)="submitPurchase()">
+      Confirmar ingreso y cargar stock
     </button>
   </div>
 </app-ui-drawer>

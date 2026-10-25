@@ -23,6 +23,12 @@ const EMPTY_PRODUCT: ProductCreate = {
   category_id: 0,
   season_id: null,
   price: 0,
+  wholesale_price: null,
+  wholesale_min_quantity: 3,
+  material: null,
+  secondary_color: null,
+  is_clearance: false,
+  discount_percentage: 0,
   model_3d_url: null,
   model_3d_format: null,
   technical_metadata: null,
@@ -46,6 +52,7 @@ export class ProductsPage {
   readonly sizes = signal<SizeResponse[]>([]);
   readonly colors = signal<ColorResponse[]>([]);
   readonly drawerOpen = signal(false);
+  readonly batchClearanceOpen = signal(false);
   readonly editing = signal<ProductResponse | null>(null);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
@@ -56,6 +63,12 @@ export class ProductsPage {
 
   form: ProductCreate = { ...EMPTY_PRODUCT };
   variant: VariantCreate = { size_id: 0, color_id: 0, codigo: '', price: null };
+  batchForm = {
+    season_id: null as number | null,
+    category_id: null as number | null,
+    discount_percentage: 40,
+    is_clearance: true
+  };
 
   /** Filtro por nombre/marca, categoría y temporada. */
   get filtered(): ProductResponse[] {
@@ -134,6 +147,12 @@ export class ProductsPage {
       category_id: product.category_id,
       season_id: product.season_id,
       price: product.price,
+      wholesale_price: product.wholesale_price,
+      wholesale_min_quantity: product.wholesale_min_quantity ?? 3,
+      material: product.material,
+      secondary_color: product.secondary_color,
+      is_clearance: product.is_clearance ?? false,
+      discount_percentage: product.discount_percentage ?? 0,
       model_3d_url: product.model_3d_url,
       model_3d_format: product.model_3d_format === 'gltf' ? 'gltf' : product.model_3d_format === 'glb' ? 'glb' : null,
       technical_metadata: product.technical_metadata,
@@ -148,6 +167,29 @@ export class ProductsPage {
   closeDrawer(): void {
     this.drawerOpen.set(false);
     this.editing.set(null);
+  }
+
+  openBatchClearance(): void {
+    this.batchClearanceOpen.set(true);
+    this.message.set(null);
+    this.error.set(null);
+  }
+
+  closeBatchClearance(): void {
+    this.batchClearanceOpen.set(false);
+  }
+
+  applyBatchClearance(): void {
+    this.message.set(null);
+    this.error.set(null);
+    this.service.batchClearance(this.batchForm).subscribe({
+      next: (res) => {
+        this.message.set(`¡${res.message}! Se actualizaron ${res.updated_products_count} prendas.`);
+        this.closeBatchClearance();
+        this.load();
+      },
+      error: (err: Error) => this.fail(err)
+    });
   }
 
   save(): void {
@@ -166,7 +208,7 @@ export class ProductsPage {
     if (!current) {
       this.service.create(this.form).subscribe({
         next: () => {
-          this.message.set('Prenda creada.');
+          this.message.set('Prenda creada con éxito.');
           this.closeDrawer();
           this.load();
         },
@@ -181,6 +223,12 @@ export class ProductsPage {
       category_id: this.form.category_id,
       season_id: this.form.season_id,
       price: this.form.price,
+      wholesale_price: this.form.wholesale_price,
+      wholesale_min_quantity: this.form.wholesale_min_quantity,
+      material: this.form.material,
+      secondary_color: this.form.secondary_color,
+      is_clearance: this.form.is_clearance,
+      discount_percentage: this.form.discount_percentage,
       model_3d_url: this.form.model_3d_url,
       model_3d_format: this.form.model_3d_format,
       technical_metadata: this.form.technical_metadata,
