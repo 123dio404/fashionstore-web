@@ -14,17 +14,11 @@ export interface PlanResponse {
 export interface SubscriptionResponse {
   id: Id;
   tenant_id: Id;
-  tenant_name: string;
   plan_id: Id;
-  plan_name: string;
-  max_branches: number;
-  has_ai_reports: boolean;
-  monthly_price: number;
   start_date: string;
   end_date: string | null;
   status: string;
-  active_branches_count: number;
-  branches_limit_reached: boolean;
+  plan: PlanResponse | null;
 }
 
 export interface ChangePlanRequest {
@@ -38,8 +32,18 @@ export interface TenantResponse {
   slug: string;
   status: string;
   created_at: string;
-  plan_name?: string;
-  branches_count?: number;
+  active_branches_count: number;
+  subscription: SubscriptionResponse | null;
+}
+
+export interface TenantCreateRequest {
+  name: string;
+  slug: string;
+  tax_id: string | null;
+  plan_name: string;
+  admin_name: string;
+  admin_email: string;
+  admin_password: string;
 }
 
 // ── OPERACIONES OFFLINE & IDEMPOTENCIA (PAQ-04) ──

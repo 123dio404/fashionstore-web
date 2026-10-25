@@ -1,6 +1,7 @@
 import { Id } from './common.model';
 
 export enum Role {
+  Superadmin = 'Superadmin',
   Administrador = 'Administrador',
   Encargado = 'Encargado',
   Cajero = 'Cajero',
