@@ -1,0 +1,56 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Empresas (Tenants) - SaaS</h1>
+    <button class="btn-primary" (click)="toggleCreate()">+ Nueva Empresa</button>
+  </div>
+
+  <div class="card" *ngIf="showCreate()">
+    <h2>Registrar Empresa Contratante</h2>
+    <div class="form-grid">
+      <input [(ngModel)]="form.name" placeholder="Razón social *" />
+      <input [(ngModel)]="form.slug" placeholder="Slug (único) *" />
+      <input [(ngModel)]="form.tax_id" placeholder="NIT/CI" />
+      <select [(ngModel)]="form.plan_name">
+        <option value="Básico">Básico</option>
+        <option value="Profesional">Profesional</option>
+      </select>
+      <input [(ngModel)]="form.admin_name" placeholder="Nombre del Administrador *" />
+      <input [(ngModel)]="form.admin_email" placeholder="Correo del Administrador *" />
+      <input [(ngModel)]="form.admin_password" type="password" placeholder="Contraseña temporal *" />
+    </div>
+    <div class="actions">
+      <button class="btn-secondary" (click)="toggleCreate()">Cancelar</button>
+      <button class="btn-primary" (click)="create()" [disabled]="creating()">{{ creating() ? 'Creando...' : 'Crear' }}</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Empresa</th>
+          <th>Slug</th>
+          <th>NIT/CI</th>
+          <th>Plan</th>
+          <th>Sucursales</th>
+          <th>Estado</th>
+          <th>Vencimiento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of tenants()">
+          <td>{{t.id}}</td>
+          <td>{{t.name}}</td>
+          <td>{{t.slug}}</td>
+          <td>{{t.tax_id || '-'}}</td>
+          <td>{{t.subscription?.plan?.name || '-'}}</td>
+          <td>{{t.active_branches_count}} / {{t.subscription?.plan?.max_branches || '-'}}</td>
+          <td>{{t.status}}</td>
+          <td>{{t.subscription?.end_date | date:'short'}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="!loading() && tenants().length === 0" class="empty">Sin empresas registradas</div>
+  </div>
+</div>

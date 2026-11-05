@@ -160,6 +160,11 @@ const CASHIER_NAV: NavGroup[] = [
 
 export function navForRole(role: Role | undefined): NavGroup[] {
   switch (role) {
+    case Role.Superadmin:
+      return [{
+        label: 'Plataforma',
+        items: [{ label: 'Empresas', path: '/admin/tenants', icon: ICONS.store }]
+      }];
     case Role.Administrador:
       return ADMIN_NAV;
     case Role.Encargado:
@@ -175,10 +180,10 @@ export function navForRole(role: Role | undefined): NavGroup[] {
 
 /** Etiqueta y color de la insignia de rol (colores del prototipo web de Figma). */
 export const ROLE_META: Record<Role, { label: string; color: string }> = {
+  [Role.Superadmin]: { label: 'Superadministrador', color: '#7c3aed' },
   [Role.Cliente]: { label: 'Cliente', color: '#6366f1' },
   [Role.Administrador]: { label: 'Administrador', color: 'var(--brand)' },
   [Role.Encargado]: { label: 'Encargado de sucursal', color: '#d97706' },
   [Role.Cajero]: { label: 'Punto de venta', color: '#059669' },
   [Role.Proveedor]: { label: 'Proveedor', color: 'var(--muted)' }
 };
-
