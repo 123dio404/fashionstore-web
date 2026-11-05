@@ -74,11 +74,11 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                     @if (sub.subscription?.plan?.has_ai_reports) {
                       <span class="badge-success">✨ Habilitado (Gemini 2.0 + ML)</span>
                     } @else {
-                      <span class="badge-locked">🔒 Bloqueado en Plan Básico</span>
+                      <span class="badge-locked">🔒 Bloqueado (Requiere Plan Empresarial)</span>
                     }
                   </div>
                   <p class="metric-desc">
-                    {{ sub.subscription?.plan?.has_ai_reports ? 'Acceso completo a reportes de lenguaje natural, predicción de demanda y exportaciones.' : 'Actualiza al Plan Profesional para desbloquear analítica generativa.' }}
+                    {{ sub.subscription?.plan?.has_ai_reports ? 'Acceso completo a reportes de lenguaje natural, predicción de demanda y analítica avanzada.' : 'Actualiza al Plan Empresarial para desbloquear analítica predictiva y generativa con IA.' }}
                   </p>
                 </div>
               </div>
@@ -94,10 +94,13 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
               <div
                 class="plan-card"
                 [class.is-current]="subscription()?.subscription?.plan?.name === plan.name"
-                [class.is-pro]="plan.name === 'Profesional'"
+                [class.is-pro]="plan.name === 'Profesional' || plan.name === 'Empresarial'"
               >
                 @if (plan.name === 'Profesional') {
                   <div class="popular-ribbon">Recomendado</div>
+                }
+                @if (plan.name === 'Empresarial') {
+                  <div class="popular-ribbon" style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">Empresarial · IA</div>
                 }
 
                 <div class="plan-head">
@@ -144,7 +147,7 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                       [disabled]="switching()"
                       (click)="changePlan(plan.name)"
                     >
-                      {{ switching() ? 'Cambiando...' : (plan.name === 'Profesional' ? 'Mejorar a Profesional' : 'Cambiar a Básico') }}
+                      {{ switching() ? 'Cambiando...' : ('Elegir Plan ' + plan.name) }}
                     </button>
                   }
                 </div>
