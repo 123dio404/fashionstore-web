@@ -104,6 +104,8 @@ export interface ProductResponse {
   is_clearance: boolean;
   discount_percentage: number | null;
   is_active: boolean;
+  category_name?: string | null;
+  tenant_id?: Id | null;
   model_3d_url: string | null;
   model_3d_format: string | null;
   technical_metadata: string | null;

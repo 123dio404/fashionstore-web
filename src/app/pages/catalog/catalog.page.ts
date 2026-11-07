@@ -25,8 +25,30 @@ export class CatalogPage {
   readonly store = inject(CatalogStore);
 
   readonly icons = ICONS;
-  readonly categories = CATEGORIES;
-  readonly brands = ['Todas las marcas', ...BRANDS_LIST];
+
+  get categories(): string[] {
+    const cats = new Set<string>();
+    cats.add('Todas');
+    for (const p of this.store.products()) {
+      if (p.category && p.category !== 'Todas') {
+        cats.add(p.category);
+      }
+    }
+    cats.add('Ofertas');
+    return Array.from(cats);
+  }
+
+  get brands(): string[] {
+    const brands = new Set<string>();
+    brands.add('Todas las marcas');
+    for (const p of this.store.products()) {
+      if (p.brand) {
+        brands.add(p.brand);
+      }
+    }
+    return Array.from(brands);
+  }
+
   readonly sorts: { v: SortOption; l: string }[] = [
     { v: 'relevant', l: 'Más relevantes' },
     { v: 'price-asc', l: 'Precio: menor a mayor' },
@@ -108,7 +130,13 @@ export class CatalogPage {
     const max = this.maxPrice === null ? null : Number(this.maxPrice);
 
     const items = this.store.products().filter((product) => {
-      if (this.category !== 'Todas' && product.category !== this.category) return false;
+      if (this.category !== 'Todas') {
+        if (this.category === 'Ofertas') {
+          if (product.discount < 10) return false;
+        } else if (product.category.toLowerCase() !== this.category.toLowerCase()) {
+          return false;
+        }
+      }
       if (this.brand !== 'Todas las marcas' && product.brand !== this.brand) return false;
       if (term && !`${product.name} ${product.brand}`.toLowerCase().includes(term)) {
         return false;
