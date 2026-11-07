@@ -40,7 +40,12 @@ export type CardId = 'visa' | 'mc';
 })
 export class CartPage {
   readonly store = inject(CatalogStore);
-  readonly stores = STORES;
+  readonly realBranches = signal<BranchResponse[]>([]);
+
+  get stores(): Array<{ id: string; name: string }> {
+    const list = this.realBranches();
+    return list.length > 0 ? list.map((b) => ({ id: String(b.id), name: b.name })) : STORES;
+  }
 
   private readonly commerce = inject(CommerceService);
   private readonly products = inject(ProductsService);
@@ -54,6 +59,17 @@ export class CartPage {
   readonly stage = signal<Stage>('cart');
   readonly couponApplied = signal(false);
   readonly orderId = signal('');
+
+  constructor() {
+    this.branches.list().subscribe({
+      next: (b) => {
+        this.realBranches.set(b);
+        if (b.length > 0) {
+          this.storeId.set(String(b[0].id));
+        }
+      }
+    });
+  }
 
   // Métodos de pago (Pasarela Stripe, QR y Efectivo)
   readonly paymentMethod = signal<PaymentMethod>('card');
@@ -94,7 +110,8 @@ export class CartPage {
     for (const item of this.store.cart()) {
       const p = this.store.byId(item.productId);
       if (!p) continue;
-      const available = p.stock[storeKey] ?? 0;
+      const totalAvailable = Object.values(p.stock).reduce((a, b) => a + b, 0);
+      const available = p.stock[this.storeId()] ?? p.stock[storeKey] ?? totalAvailable;
       if (this.delivery() === 'pickup' && item.qty > available) {
         if (available === 0) {
           errors.push(`"${item.name}" no tiene existencias en ${storeName}.`);
@@ -392,7 +409,11 @@ export class CartPage {
       throw new Error('El sistema no tiene sucursales configuradas.');
     }
     const wanted = this.storeId().toLowerCase();
-    return branches.find((branch) => branch.name.toLowerCase().includes(wanted)) ?? branches[0];
+    return (
+      branches.find((b) => String(b.id) === wanted) ||
+      branches.find((b) => b.name.toLowerCase().includes(wanted)) ||
+      branches[0]
+    );
   }
 
   /** Agrega cada prenda del carrito local al carrito del backend. Devuelve las omitidas. */

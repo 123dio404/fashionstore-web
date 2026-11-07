@@ -96,6 +96,7 @@ export class CatalogStore {
           .reduce((sum, s) => sum + Math.max(0, s.available_stock), 0);
 
         newStockMap[bKey] = branchTotal;
+        newStockMap[String(branch.id)] = branchTotal;
         const capitalized = bKey.charAt(0).toUpperCase() + bKey.slice(1).toLowerCase();
         newStockMap[capitalized] = branchTotal;
       }

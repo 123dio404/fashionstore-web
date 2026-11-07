@@ -42,41 +42,7 @@ interface DemoReservation {
   code: string;
 }
 
-const INITIAL: DemoReservation[] = [
-  {
-    id: 'RES-7842',
-    productId: 1,
-    size: 'M',
-    color: 'Negro',
-    date: '24 sep 2026',
-    time: '15:30',
-    storeId: 'centro',
-    status: 'confirmada',
-    code: 'FS-7842',
-  },
-  {
-    id: 'RES-7901',
-    productId: 5,
-    size: '40',
-    color: 'Blanco',
-    date: '28 sep 2026',
-    time: '11:00',
-    storeId: 'norte',
-    status: 'pendiente',
-    code: 'FS-7901',
-  },
-  {
-    id: 'RES-7650',
-    productId: 2,
-    size: 'S',
-    color: 'Terracota',
-    date: '10 sep 2026',
-    time: '14:00',
-    storeId: 'sur',
-    status: 'cancelada',
-    code: 'FS-7650',
-  },
-];
+const INITIAL: DemoReservation[] = [];
 
 const STATUS_MAP: Record<string, { label: string; tone: string }> = {
   confirmada: { label: 'Confirmada', tone: 'ok' },
@@ -124,36 +90,54 @@ export class MyReservationsPage {
   private readonly sync = inject(SyncManagerService);
   private readonly db = inject(IndexedDbService);
 
-  readonly products = PRODUCTS;
-  readonly stores = STORES;
+  get products(): FigmaProduct[] {
+    const list = this.store.products();
+    return list.length > 0 ? list : PRODUCTS;
+  }
+
+  get stores(): Array<{ id: string; name: string }> {
+    const list = this.branches();
+    return list.length > 0 ? list.map((b) => ({ id: String(b.id), name: b.name })) : STORES;
+  }
+
   readonly slots = TIME_SLOTS;
   readonly dates = DEMO_DATES;
 
-  readonly reservations = signal<DemoReservation[]>([...INITIAL]);
+  readonly reservations = signal<DemoReservation[]>([]);
   readonly filter = signal<string>('all');
   readonly showModal = signal(false);
   readonly created = signal(false);
   readonly createdOffline = signal(false);
   readonly saving = signal(false);
 
-  private readonly branches = signal<BranchResponse[]>([]);
+  readonly branches = signal<BranchResponse[]>([]);
   private readonly apiProducts = signal<ProductResponse[]>([]);
   private readonly sizes = signal<SizeResponse[]>([]);
   private readonly stocks = signal<StockResponse[]>([]);
 
-  productId = PRODUCTS[0].id;
-  storeId = STORES[0].id;
+  productId = 1;
+  storeId = '1';
   date = '25 sep 2026';
   time = TIME_SLOTS[0];
   size = 'M';
 
   constructor() {
     this.branchesService.list().subscribe({
-      next: (items) => this.branches.set(items),
+      next: (items) => {
+        this.branches.set(items);
+        if (items.length > 0) {
+          this.storeId = String(items[0].id);
+        }
+      },
       error: () => void this.loadCachedBranches()
     });
     this.productsService.list().subscribe({
-      next: (items) => this.apiProducts.set(items),
+      next: (items) => {
+        this.apiProducts.set(items);
+        if (items.length > 0) {
+          this.productId = items[0].id;
+        }
+      },
       error: () => void this.loadCachedCatalog()
     });
     this.productsService.listSizes().subscribe({
@@ -165,6 +149,40 @@ export class MyReservationsPage {
       error: () => void this.loadCachedInventory()
     });
     void this.sync.refreshQueue();
+    this.loadReservations();
+  }
+
+  private loadReservations(): void {
+    this.commerce.listReservations().subscribe({
+      next: (items) => {
+        const mapped: DemoReservation[] = items.map((res) => {
+          const matched = this.store.products().find((p) => p.id === res.items[0]?.stock_id || p.id === Number(res.id));
+          return {
+            id: `RES-${res.id}`,
+            serverId: Number(res.id),
+            productId: matched?.id ?? (this.products[0]?.id ?? 1),
+            size: 'Única',
+            color: 'Negro',
+            date: res.reservation_date,
+            time: res.reservation_time,
+            storeId: String(res.branch_id),
+            status: this.mapStatus(res.status),
+            code: `FS-${res.id}`,
+          };
+        });
+        this.reservations.set(mapped);
+      },
+      error: () => {
+        this.reservations.set([]);
+      }
+    });
+  }
+
+  private mapStatus(status: string): 'confirmada' | 'pendiente' | 'cancelada' {
+    const s = String(status).toLowerCase();
+    if (s.includes('confirm') || s.includes('list') || s.includes('prepar') || s.includes('asign')) return 'confirmada';
+    if (s.includes('cancel')) return 'cancelada';
+    return 'pendiente';
   }
 
   private async loadCachedBranches(): Promise<void> {
@@ -211,6 +229,8 @@ export class MyReservationsPage {
   }
 
   storeName(id: string): string {
+    const match = this.branches().find((b) => String(b.id) === String(id));
+    if (match) return match.name;
     return this.stores.find((item) => item.id === id)?.name ?? 'Sucursal';
   }
 

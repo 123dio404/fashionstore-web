@@ -5,9 +5,9 @@ import { firstValueFrom } from 'rxjs';
 
 import {
   FigmaPurchase,
-  INITIAL_PURCHASES,
   PRODUCTS,
 } from '../../core/figma-data';
+import { CatalogStore } from '../../core/services/catalog-store.service';
 import { CommerceService } from '../../core/services/commerce.service';
 import { PaymentStatus, SaleResponse } from '../../models';
 
@@ -55,9 +55,10 @@ const STEPS = ['Procesando', 'En camino', 'Entregado'];
 })
 export class PurchaseHistoryPage {
   private readonly commerce = inject(CommerceService);
+  private readonly catalog = inject(CatalogStore);
 
-  readonly purchases = signal<FigmaPurchase[]>(INITIAL_PURCHASES);
-  readonly expanded = signal<string | null>(INITIAL_PURCHASES[0]?.id ?? null);
+  readonly purchases = signal<FigmaPurchase[]>([]);
+  readonly expanded = signal<string | null>(null);
   readonly steps = STEPS;
 
   readonly totalSpent = computed(() =>
@@ -90,8 +91,8 @@ export class PurchaseHistoryPage {
         this.expanded.set(null);
       }
     } catch {
-      this.purchases.set(INITIAL_PURCHASES);
-      this.expanded.set(INITIAL_PURCHASES[0]?.id ?? null);
+      this.purchases.set([]);
+      this.expanded.set(null);
     }
   }
 
@@ -110,20 +111,19 @@ export class PurchaseHistoryPage {
         : 'Pago',
       deliveryMethod: 'home',
       items: sale.items.map((item) => {
-        const demo = item.product_name
-          ? PRODUCTS.find(
-              (product) =>
-                product.name.trim().toLowerCase() === item.product_name?.trim().toLowerCase()
-            )
-          : undefined;
+        const matched = this.catalog.products().find(
+          (p) =>
+            (item.product_name && p.name.trim().toLowerCase() === item.product_name.trim().toLowerCase()) ||
+            (item.product_id && p.id === item.product_id)
+        );
         return {
           productId: Number(item.product_id ?? 0),
           name: item.product_name ?? `Artículo #${item.stock_id}`,
-          brand: item.brand ?? demo?.brand ?? '',
+          brand: item.brand ?? matched?.brand ?? 'Mundo Medias',
           price: Number(item.unit_price),
-          image: demo?.image ?? '',
-          size: item.size ?? '',
-          color: item.color ?? '',
+          image: matched?.image || 'https://images.unsplash.com/photo-1582966772680-860e372bb558?w=600&auto=format&fit=crop&q=80',
+          size: item.size ?? 'Única',
+          color: item.color ?? 'Negro',
           qty: item.quantity,
         };
       }),
