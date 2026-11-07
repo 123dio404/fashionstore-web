@@ -11,6 +11,16 @@ export interface PlanResponse {
   is_active: boolean;
 }
 
+export interface PlanCreateRequest {
+  name: string;
+  max_branches: number;
+  has_ai_reports: boolean;
+  monthly_price: number;
+  is_active: boolean;
+}
+
+export type PlanUpdateRequest = Partial<PlanCreateRequest>;
+
 export interface SubscriptionResponse {
   id: Id;
   tenant_id: Id;
@@ -62,18 +72,20 @@ export interface OfflineQueueItem {
   error?: string;
 }
 
+/**
+ * Respuesta real de `POST /sync/batch` (backend `SyncBatchResponse`).
+ * El backend usa snake_case en inglés; el cliente traduce a los estados locales.
+ */
 export interface SyncBatchResponse {
-  total_recibidas: number;
-  confirmadas: number;
-  duplicadas_idempotentes: number;
-  conflictos: number;
-  resultados: Array<{
+  processed: number;
+  confirmed: number;
+  conflicts: number;
+  results: Array<{
     uuid: string;
-    tipo: string;
-    estado: OfflineSyncStatus;
-    mensaje: string;
-    id_servidor?: number;
-    motivo_conflicto?: string;
+    type: string;
+    status: OfflineSyncStatus;
+    server_id?: number | null;
+    message?: string | null;
   }>;
 }
 

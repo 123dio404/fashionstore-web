@@ -1,26 +1,36 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { FigmaCartItem, FigmaProduct, PRODUCTS, STORES } from '../figma-data';
+import { FigmaCartItem, FigmaProduct, PRODUCTS } from '../figma-data';
+import { BranchResponse, ProductResponse, SizeResponse, StockResponse } from '../../models';
 import { BranchesService } from './branches.service';
+import { IndexedDbService } from './indexed-db.service';
 import { InventoryService } from './inventory.service';
 import { ProductsService } from './products.service';
 
 /**
  * Estado del catálogo público y sincronización de inventario en tiempo real
  * entre clientes, cajeros (POS) y administradores.
+ *
+ * CU-09: cada carga exitosa deja una copia del catálogo, las existencias y las
+ * sucursales en IndexedDB. Si la red falla, el catálogo se reconstruye desde
+ * esa copia local para que la tienda siga navegable sin conexión.
  */
 @Injectable({ providedIn: 'root' })
 export class CatalogStore {
   private readonly branchesService = inject(BranchesService);
   private readonly inventoryService = inject(InventoryService);
   private readonly productsService = inject(ProductsService);
+  private readonly db = inject(IndexedDbService);
 
   readonly products = signal<FigmaProduct[]>(PRODUCTS);
   readonly cart = signal<FigmaCartItem[]>([]);
   readonly favs = signal<number[]>([]);
   readonly toast = signal<string | null>(null);
   readonly stockLoaded = signal(false);
+  /** true cuando el mapa de stock mostrado proviene de IndexedDB (sin red). */
+  readonly servedFromCache = signal(false);
+  readonly lastCachedAt = signal<string | null>(null);
 
   private toastTimer?: ReturnType<typeof setTimeout>;
 
@@ -29,67 +39,111 @@ export class CatalogStore {
   }
 
   /**
-   * Consulta el stock real de todas las sucursales en la base de datos de la API
-   * y actualiza el mapa de existencias para que clientes, cajeros y administradores
-   * vean exactamente el mismo inventario disponible.
+   * Consulta el stock real de todas las sucursales en la base de datos de la API,
+   * actualiza el mapa de existencias y guarda la instantánea en IndexedDB.
    */
   refreshStock(): void {
     forkJoin({
       branches: this.branchesService.list(),
       apiProducts: this.productsService.list(),
       stocks: this.inventoryService.listStock(),
+      sizes: this.productsService.listSizes(),
     }).subscribe({
-      next: ({ branches, apiProducts, stocks }) => {
-        this.products.update((current) =>
-          current.map((p) => {
-            // Emparejar producto del catálogo con el del servidor
-            const apiProd = apiProducts.find(
-              (ap) =>
-                ap.name.trim().toLowerCase() === p.name.trim().toLowerCase() ||
-                ap.id === p.id
-            );
-            if (!apiProd) return p;
-
-            const variantIds = new Set(apiProd.variants.map((v) => v.id));
-            const newStockMap: Record<string, number> = { ...p.stock };
-
-            for (const branch of branches) {
-              const bKey =
-                branch.name.replace(/^Sucursal\s+/i, '').trim();
-              // Suma del stock disponible de las variantes de este producto en esta sucursal
-              const branchTotal = stocks
-                .filter(
-                  (s) =>
-                    s.branch_id === branch.id && variantIds.has(s.variant_id)
-                )
-                .reduce((sum, s) => sum + Math.max(0, s.available_stock), 0);
-
-              newStockMap[bKey] = branchTotal;
-              // También normalizar con la primera letra mayúscula (ej. 'Centro', 'Norte', 'Sur')
-              const capitalized = bKey.charAt(0).toUpperCase() + bKey.slice(1).toLowerCase();
-              newStockMap[capitalized] = branchTotal;
-            }
-
-            return {
-              ...p,
-              wholesalePrice: apiProd.wholesale_price !== null && apiProd.wholesale_price !== undefined
-                ? Number(apiProd.wholesale_price)
-                : (p.wholesalePrice ?? Math.round(p.price * 0.8 * 100) / 100),
-              wholesaleMinQty: apiProd.wholesale_min_quantity ?? (p.wholesaleMinQty ?? 3),
-              material: apiProd.material ?? p.material ?? '100% Algodón hipoalergénico',
-              secondaryColor: apiProd.secondary_color ?? p.secondaryColor,
-              isClearance: apiProd.is_clearance ?? p.isClearance ?? false,
-              stock: newStockMap,
-            };
-          })
-        );
-        this.stockLoaded.set(true);
+      next: ({ branches, apiProducts, stocks, sizes }) => {
+        this.applySnapshot(branches, apiProducts, stocks);
+        this.servedFromCache.set(false);
+        // Persistencia para CU-09. No bloquea la UI si IndexedDB no está disponible.
+        void this.persistSnapshot(branches, apiProducts, stocks, sizes);
       },
       error: () => {
-        // En caso de estar offline o error de red, mantiene los valores precargados
-        this.stockLoaded.set(true);
+        void this.loadFromCache();
       },
     });
+  }
+
+  /** Acción manual “Preparar catálogo offline”. */
+  prepareOffline(): void {
+    this.refreshStock();
+    this.showToast('Preparando catálogo y existencias para uso offline…');
+  }
+
+  private applySnapshot(
+    branches: BranchResponse[],
+    apiProducts: ProductResponse[],
+    stocks: StockResponse[]
+  ): void {
+    this.products.update((current) =>
+      current.map((p) => {
+        // Emparejar producto del catálogo con el del servidor
+        const apiProd = apiProducts.find(
+          (ap) =>
+            ap.name.trim().toLowerCase() === p.name.trim().toLowerCase() ||
+            ap.id === p.id
+        );
+        if (!apiProd) return p;
+
+        const variantIds = new Set(apiProd.variants.map((v) => v.id));
+        const newStockMap: Record<string, number> = { ...p.stock };
+
+        for (const branch of branches) {
+          const bKey = branch.name.replace(/^Sucursal\s+/i, '').trim();
+          // Suma del stock disponible de las variantes de este producto en esta sucursal
+          const branchTotal = stocks
+            .filter(
+              (s) => s.branch_id === branch.id && variantIds.has(s.variant_id)
+            )
+            .reduce((sum, s) => sum + Math.max(0, s.available_stock), 0);
+
+          newStockMap[bKey] = branchTotal;
+          // También normalizar con la primera letra mayúscula (ej. 'Centro', 'Norte', 'Sur')
+          const capitalized = bKey.charAt(0).toUpperCase() + bKey.slice(1).toLowerCase();
+          newStockMap[capitalized] = branchTotal;
+        }
+
+        return { ...p, stock: newStockMap };
+      })
+    );
+    this.stockLoaded.set(true);
+  }
+
+  private async persistSnapshot(
+    branches: BranchResponse[],
+    apiProducts: ProductResponse[],
+    stocks: StockResponse[],
+    sizes: SizeResponse[]
+  ): Promise<void> {
+    try {
+      await this.db.saveCatalog(apiProducts);
+      await this.db.saveInventory(stocks);
+      await this.db.saveBranches(branches);
+      await this.db.saveSizes(sizes);
+      this.lastCachedAt.set(new Date().toISOString());
+    } catch {
+      // IndexedDB puede estar deshabilitado (modo privado); la app sigue online.
+    }
+  }
+
+  private async loadFromCache(): Promise<void> {
+    try {
+      const [branches, apiProducts, stocks] = await Promise.all([
+        this.db.getBranches(),
+        this.db.getCatalog(),
+        this.db.getInventory(),
+      ]);
+
+      if (apiProducts.length > 0 && branches.length > 0) {
+        this.applySnapshot(branches, apiProducts, stocks);
+        this.servedFromCache.set(true);
+        this.showToast('Sin conexión: catálogo y existencias cargados desde IndexedDB.');
+      } else {
+        // Nunca se preparó la copia offline: se mantienen los datos demo precargados.
+        this.stockLoaded.set(true);
+        this.servedFromCache.set(true);
+      }
+    } catch {
+      this.stockLoaded.set(true);
+      this.servedFromCache.set(true);
+    }
   }
 
   readonly cartCount = computed(() =>

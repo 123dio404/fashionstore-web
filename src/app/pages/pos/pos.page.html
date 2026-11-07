@@ -4,6 +4,11 @@
     <p class="page-sub">Venta presencial en caja: abre la caja, cobra y emite el comprobante.</p>
   </div>
   <div class="page-actions">
+    @if (!syncManager.isOnline()) {
+      <span class="chip" style="border-color: #f59e0b; color: #b45309">
+        Sin conexión · {{ syncManager.pendingCount() }} pendiente(s)
+      </span>
+    }
     @if (sessionOpen()) {
       <span class="chip selected">Caja abierta · {{ branchName() }}</span>
       <button type="button" class="btn btn-sm" (click)="closeSession()">Cerrar caja</button>

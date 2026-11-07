@@ -93,8 +93,12 @@
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h3>¡Reserva confirmada!</h3>
-          <p class="muted">Te enviaremos un recordatorio el día del turno.</p>
+          <h3>{{ createdOffline() ? '¡Reserva guardada!' : '¡Reserva confirmada!' }}</h3>
+          <p class="muted">
+            {{ createdOffline()
+              ? 'Sin conexión: la reserva quedó en la cola local y se sincronizará automáticamente.'
+              : 'Te enviaremos un recordatorio el día del turno.' }}
+          </p>
           <button type="button" class="btn btn-dark" (click)="closeModal()">Cerrar</button>
         </div>
       } @else {
@@ -150,8 +154,13 @@
           </label>
         </div>
 
-        <button type="button" class="btn btn-dark full" (click)="confirm()">
-          Confirmar reserva
+        <button
+          type="button"
+          class="btn btn-dark full"
+          [disabled]="saving()"
+          (click)="confirm()"
+        >
+          {{ saving() ? 'Guardando…' : 'Confirmar reserva' }}
         </button>
       }
     </div>

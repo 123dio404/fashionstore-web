@@ -1,8 +1,16 @@
 import { Injectable } from '@angular/core';
-import { OfflineQueueItem, ProductResponse, StockResponse } from '../../models';
+import {
+  BranchResponse,
+  OfflineQueueItem,
+  ProductResponse,
+  SizeResponse,
+  StockResponse
+} from '../../models';
 
 const DB_NAME = 'FashionStoreOfflineDB';
-const DB_VERSION = 1;
+// v2 agrega el almacén de sucursales; v3 agrega tallas para poder mapear
+// variante → talla al crear reservas sin conexión (CU-15).
+const DB_VERSION = 3;
 
 @Injectable({ providedIn: 'root' })
 export class IndexedDbService {
@@ -29,6 +37,16 @@ export class IndexedDbService {
           // Existencias de inventario local
           if (!db.objectStoreNames.contains('inventory')) {
             db.createObjectStore('inventory', { keyPath: 'id' });
+          }
+
+          // Sucursales locales (necesarias para armar el mapa de stock offline)
+          if (!db.objectStoreNames.contains('branches')) {
+            db.createObjectStore('branches', { keyPath: 'id' });
+          }
+
+          // Tallas locales (mapean variant.size_id → nombre de talla offline)
+          if (!db.objectStoreNames.contains('sizes')) {
+            db.createObjectStore('sizes', { keyPath: 'id' });
           }
 
           // Cola de sincronización resiliente con índice por UUID y estado
@@ -100,6 +118,60 @@ export class IndexedDbService {
     });
   }
 
+  // ── SUCURSALES LOCAL ──
+
+  async saveBranches(branches: BranchResponse[]): Promise<void> {
+    const db = await this.getDB();
+    const tx = db.transaction('branches', 'readwrite');
+    const store = tx.objectStore('branches');
+    store.clear();
+    for (const b of branches) {
+      store.put(b);
+    }
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getBranches(): Promise<BranchResponse[]> {
+    const db = await this.getDB();
+    const tx = db.transaction('branches', 'readonly');
+    const store = tx.objectStore('branches');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ── TALLAS LOCAL ──
+
+  async saveSizes(sizes: SizeResponse[]): Promise<void> {
+    const db = await this.getDB();
+    const tx = db.transaction('sizes', 'readwrite');
+    const store = tx.objectStore('sizes');
+    store.clear();
+    for (const s of sizes) {
+      store.put(s);
+    }
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getSizes(): Promise<SizeResponse[]> {
+    const db = await this.getDB();
+    const tx = db.transaction('sizes', 'readonly');
+    const store = tx.objectStore('sizes');
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // ── COLA DE SINCRONIZACIÓN (SYNC_QUEUE) ──
 
   async addToQueue(item: Omit<OfflineQueueItem, 'id'>): Promise<OfflineQueueItem> {
@@ -145,6 +217,16 @@ export class IndexedDbService {
         putReq.onerror = () => reject(putReq.error);
       };
       getReq.onerror = () => reject(getReq.error);
+    });
+  }
+
+  async removeQueueItem(id: number): Promise<void> {
+    const db = await this.getDB();
+    const tx = db.transaction('sync_queue', 'readwrite');
+    tx.objectStore('sync_queue').delete(id);
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
     });
   }
 
