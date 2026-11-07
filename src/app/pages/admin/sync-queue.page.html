@@ -1,0 +1,85 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Cola de sincronización offline</h2>
+    <p class="page-sub">
+      Operaciones registradas sin conexión (ventas y reservas). Cada una viaja con un UUID único
+      para garantizar idempotencia al sincronizar.
+    </p>
+  </div>
+  <div class="page-actions">
+    <span class="chip" [class.selected]="sync.isOnline()">
+      {{ sync.isOnline() ? 'En línea' : 'Sin conexión' }}
+    </span>
+    <span class="chip">{{ sync.pendingCount() }} pendiente(s)</span>
+    <button type="button" class="btn btn-sm" (click)="refresh()">Actualizar</button>
+    <button type="button" class="btn btn-sm" (click)="prepareOffline()">Preparar offline</button>
+    <button
+      type="button"
+      class="btn-primary btn-sm"
+      [disabled]="sync.isSyncing() || !sync.isOnline() || sync.pendingCount() === 0"
+      (click)="syncNow()"
+    >
+      {{ sync.isSyncing() ? 'Sincronizando…' : 'Sincronizar ahora' }}
+    </button>
+  </div>
+</div>
+
+@if (sync.lastError()) {
+  <div class="alert alert-error">Último error de sincronización: {{ sync.lastError() }}</div>
+}
+
+<div class="summary-strip">
+  <span>Última sincronización: {{ (sync.lastSync() | date: 'medium') || '—' }}</span>
+  <span>Catálogo offline: {{ catalog.lastCachedAt() ? 'preparado' : 'no preparado' }}</span>
+</div>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>UUID</th>
+        <th>Tipo</th>
+        <th>Fecha local</th>
+        <th>Ítems</th>
+        <th>Total</th>
+        <th>Estado</th>
+        <th>Mensaje del servidor</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of sync.queue(); track item.uuid) {
+        <tr>
+          <td><code>{{ item.uuid }}</code></td>
+          <td>{{ item.tipo === 'reserva' ? 'Reserva' : 'Venta' }}</td>
+          <td>{{ item.fecha | date: 'medium' }}</td>
+          <td>{{ itemCount(item) }}</td>
+          <td>{{ totalOf(item) | currency: 'USD' }}</td>
+          <td>
+            <span class="badge" [ngClass]="badgeClass(item.estado)">
+              {{ statusLabels[item.estado] || item.estado }}
+            </span>
+          </td>
+          <td class="muted">{{ item.mensaje_servidor || item.error || '—' }}</td>
+          <td>
+            @if (item.estado === 'CONFLICTO' || item.estado === 'LOCAL') {
+              <button type="button" class="btn-danger btn-sm" (click)="discard(item)">
+                Descartar
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (sync.queue().length === 0) {
+    <p class="muted empty">No hay operaciones en la cola local.</p>
+  }
+</div>
+
+<div class="page-actions" style="margin-top: 1rem">
+  <button type="button" class="btn-ghost btn-sm" (click)="clearConfirmed()">
+    Limpiar historial confirmado
+  </button>
+</div>

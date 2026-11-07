@@ -47,6 +47,7 @@ export const routes: Routes = [
 
   // CU01 / CU03 / CU20 - Admin only (Superadmin)
   { path: 'admin/tenants', canActivate: [authGuard, roleGuard], data: { roles: [Role.Superadmin] }, loadComponent: () => import('./pages/admin/tenants.page').then((m) => m.TenantsPage) },
+  { path: 'admin/plans', canActivate: [authGuard, roleGuard], data: { roles: [Role.Superadmin] }, loadComponent: () => import('./pages/admin/plans.page').then((m) => m.PlansPage) },
   { path: 'admin/users', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/users.page').then((m) => m.UsersPage) },
   { path: 'admin/marketing', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/marketing.page').then((m) => m.MarketingPage) },
   { path: 'admin/subscription', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/subscription.page').then((m) => m.SubscriptionPage) },
@@ -58,6 +59,9 @@ export const routes: Routes = [
 
   // CU14 - Sync conflicts
   { path: 'admin/sync-conflicts', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/admin/sync-conflicts.page').then((m) => m.SyncConflictsPage) },
+
+  // CU-12 / CU-13 - Cola offline y sincronización de ventas/reservas
+  { path: 'admin/sync-queue', canActivate: [authGuard, roleGuard], data: { roles: STAFF }, loadComponent: () => import('./pages/admin/sync-queue.page').then((m) => m.SyncQueuePage) },
 
   // CU21 / CU22 / CU23 / CU24 / ML / IA - Reports
   { path: 'reports/dashboard', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/dashboard.page').then((m) => m.DashboardPage) },

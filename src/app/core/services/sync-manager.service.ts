@@ -5,6 +5,18 @@ import { OfflineQueueItem, SyncBatchResponse } from '../../models';
 import { IndexedDbService } from './indexed-db.service';
 import { NotificationsService } from './notifications.service';
 
+/** Operación que viaja al endpoint `POST /sync/batch`. */
+interface SyncOperationPayload {
+  uuid: string;
+  type: 'SALE' | 'RESERVATION';
+  created_at: string;
+  branch_id: number;
+  client_id: number | null;
+  total: number;
+  payment_method: string;
+  items: Array<{ stock_id: number; quantity: number; unit_price: number }>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SyncManagerService {
   private readonly http = inject(HttpClient);
@@ -15,6 +27,7 @@ export class SyncManagerService {
   readonly isSyncing = signal<boolean>(false);
   readonly pendingCount = signal<number>(0);
   readonly lastSync = signal<Date | null>(null);
+  readonly lastError = signal<string | null>(null);
   readonly queue = signal<OfflineQueueItem[]>([]);
 
   constructor() {
@@ -22,7 +35,7 @@ export class SyncManagerService {
       window.addEventListener('online', () => {
         this.isOnline.set(true);
         this.notifs.info('Conexión reestablecida. Sincronizando operaciones pendientes...');
-        this.syncAll();
+        void this.syncAll();
       });
 
       window.addEventListener('offline', () => {
@@ -31,13 +44,17 @@ export class SyncManagerService {
       });
     }
 
-    this.refreshQueue();
+    void this.refreshQueue();
   }
 
   async refreshQueue(): Promise<void> {
     const items = await this.db.getQueue();
+    // Más recientes primero para la pantalla de monitoreo (CU-12).
+    items.sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
     this.queue.set(items);
-    const pending = items.filter((i) => i.estado === 'LOCAL' || i.estado === 'CONFLICTO').length;
+    const pending = items.filter(
+      (i) => i.estado === 'LOCAL' || i.estado === 'CONFLICTO' || i.estado === 'ENVIADO'
+    ).length;
     this.pendingCount.set(pending);
   }
 
@@ -45,19 +62,39 @@ export class SyncManagerService {
     return this.syncAll();
   }
 
+  async clearConfirmed(): Promise<void> {
+    await this.db.clearConfirmed();
+    await this.refreshQueue();
+  }
+
+  async discardItem(item: OfflineQueueItem): Promise<void> {
+    if (item.id === undefined) return;
+    await this.db.removeQueueItem(item.id);
+    await this.refreshQueue();
+  }
+
   // ── REGISTRO DE VENTA OFFLINE (RN-03, RN-04, RNF05) ──
 
   async recordOfflineSale(data: {
     branch_id: number;
     client_id?: number;
+    payment_method?: string;
     items: Array<{ stock_id: number; quantity: number; unit_price?: number }>;
     total?: number;
   }): Promise<OfflineQueueItem> {
-    const uuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `offline-${Date.now()}`;
+    const uuid = this.newUuid();
+    const items = data.items.map((item) => ({
+      stock_id: item.stock_id,
+      quantity: item.quantity,
+      unit_price: Number(item.unit_price ?? 0)
+    }));
+    const total =
+      data.total ?? items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+
     const queueItem = await this.db.addToQueue({
       uuid,
       tipo: 'venta',
-      datos: data,
+      datos: { ...data, items, total },
       fecha: new Date().toISOString(),
       estado: 'LOCAL'
     });
@@ -66,7 +103,7 @@ export class SyncManagerService {
     this.notifs.success(`Venta guardada localmente con UUID: ${uuid.substring(0, 8)}...`);
 
     if (this.isOnline()) {
-      this.syncAll();
+      void this.syncAll();
     }
 
     return queueItem;
@@ -76,14 +113,23 @@ export class SyncManagerService {
 
   async recordOfflineReservation(data: {
     branch_id: number;
+    client_id?: number;
     customer_name?: string;
-    items: Array<{ variant_id: number; quantity: number }>;
+    /** Fecha/hora elegida por el cliente (`YYYY-MM-DDTHH:mm:ss`). */
+    created_at?: string;
+    items: Array<{ stock_id: number; quantity: number; unit_price?: number }>;
   }): Promise<OfflineQueueItem> {
-    const uuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `offline-${Date.now()}`;
+    const uuid = this.newUuid();
+    const items = data.items.map((item) => ({
+      stock_id: item.stock_id,
+      quantity: item.quantity,
+      unit_price: Number(item.unit_price ?? 0)
+    }));
+
     const queueItem = await this.db.addToQueue({
       uuid,
       tipo: 'reserva',
-      datos: data,
+      datos: { ...data, items, total: 0 },
       fecha: new Date().toISOString(),
       estado: 'LOCAL'
     });
@@ -92,7 +138,7 @@ export class SyncManagerService {
     this.notifs.success(`Reserva guardada localmente con UUID: ${uuid.substring(0, 8)}...`);
 
     if (this.isOnline()) {
-      this.syncAll();
+      void this.syncAll();
     }
 
     return queueItem;
@@ -104,6 +150,7 @@ export class SyncManagerService {
     if (this.isSyncing() || !this.isOnline()) return null;
 
     const allItems = await this.db.getQueue();
+    // Un CONFLICTO requiere revisión manual; se reintentan solo las locales.
     const localItems = allItems.filter((i) => i.estado === 'LOCAL');
 
     if (localItems.length === 0) {
@@ -112,47 +159,43 @@ export class SyncManagerService {
     }
 
     this.isSyncing.set(true);
+    this.lastError.set(null);
 
-    const payload = {
-      operaciones: localItems.map((item) => ({
-        uuid: item.uuid,
-        tipo: item.tipo,
-        datos: item.datos,
-        fecha_local: item.fecha
-      }))
-    };
+    const payload = { operations: localItems.map((item) => this.toOperation(item)) };
 
     try {
       const response = await this.http
         .post<SyncBatchResponse>(`${environment.apiUrl}/sync/batch`, payload)
         .toPromise();
 
-      if (response && response.resultados) {
-        for (const res of response.resultados) {
+      if (response && response.results) {
+        for (const res of response.results) {
           const matched = localItems.find((i) => i.uuid === res.uuid);
-          if (matched && matched.id) {
+          if (matched && matched.id !== undefined) {
             await this.db.updateQueueItem(matched.id, {
-              estado: res.estado,
-              mensaje_servidor: res.mensaje
+              estado: res.status,
+              mensaje_servidor: res.message ?? undefined
             });
           }
         }
 
-        // Limpiar las transacciones que ya fueron confirmadas con éxito
+        // Las confirmadas y los duplicados idempotentes ya no requieren seguimiento.
         await this.db.clearConfirmed();
         this.lastSync.set(new Date());
 
-        const confirmadas = response.confirmadas || 0;
-        const conflictos = response.conflictos || 0;
-        const dup = response.duplicadas_idempotentes || 0;
+        const confirmadas = response.confirmed ?? 0;
+        const conflictos = response.conflicts ?? 0;
+        const duplicadas = response.results.filter(
+          (r) => r.status === 'DUPLICADO_IDEMPOTENTE'
+        ).length;
 
         if (conflictos > 0) {
           this.notifs.warning(
-            `Sincronización finalizada: ${confirmadas} confirmadas, ${dup} duplicadas idempotentes, pero se detectaron ${conflictos} conflicto(s) de inventario.`
+            `Sincronización finalizada: ${confirmadas} confirmadas, ${duplicadas} duplicadas idempotentes, pero se detectaron ${conflictos} conflicto(s) de inventario.`
           );
         } else {
           this.notifs.success(
-            `Sincronización exitosa: ${confirmadas} operaciones confirmadas (${dup} idempotentes).`
+            `Sincronización exitosa: ${confirmadas} operaciones confirmadas (${duplicadas} idempotentes).`
           );
         }
 
@@ -160,12 +203,40 @@ export class SyncManagerService {
         return response;
       }
     } catch (err: any) {
-      this.notifs.error(`Error al sincronizar con el servidor: ${err.message || 'Error de red'}`);
+      const message = err?.error?.detail || err?.message || 'Error de red';
+      this.lastError.set(String(message));
+      this.notifs.error(`Error al sincronizar con el servidor: ${message}`);
     } finally {
       this.isSyncing.set(false);
       await this.refreshQueue();
     }
 
     return null;
+  }
+
+  /** Traduce una fila local al contrato real del backend (`SyncOperationItem`). */
+  private toOperation(item: OfflineQueueItem): SyncOperationPayload {
+    const datos = item.datos ?? {};
+    const items = (datos.items ?? []).map((row: any) => ({
+      stock_id: Number(row.stock_id),
+      quantity: Number(row.quantity),
+      unit_price: Number(row.unit_price ?? 0)
+    }));
+    return {
+      uuid: item.uuid,
+      type: item.tipo === 'reserva' ? 'RESERVATION' : 'SALE',
+      created_at: datos.created_at ?? item.fecha,
+      branch_id: Number(datos.branch_id),
+      client_id: datos.client_id ?? null,
+      total: Number(datos.total ?? 0),
+      payment_method: datos.payment_method ?? 'efectivo',
+      items
+    };
+  }
+
+  private newUuid(): string {
+    return typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `offline-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 }

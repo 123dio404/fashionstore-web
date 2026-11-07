@@ -110,6 +110,7 @@ const ADMIN_NAV: NavGroup[] = [
     label: 'Tienda',
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
+      { label: 'Cola offline', path: '/admin/sync-queue', icon: ICONS.activity, cu: 'CU12' },
       { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' },
       { label: 'Cambio de prendas', path: '/exchanges', icon: ICONS.tag, cu: 'CU15' }
     ]
@@ -140,6 +141,7 @@ const MANAGER_NAV: NavGroup[] = [
     label: 'Tienda',
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
+      { label: 'Cola offline', path: '/admin/sync-queue', icon: ICONS.activity, cu: 'CU12' },
       { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' },
       { label: 'Cambio de prendas', path: '/exchanges', icon: ICONS.tag, cu: 'CU15' }
     ]
@@ -152,6 +154,7 @@ const CASHIER_NAV: NavGroup[] = [
     label: 'Tienda',
     items: [
       { label: 'Terminal de venta', path: '/pos', icon: ICONS.terminal, cu: 'CU12' },
+      { label: 'Cola offline', path: '/admin/sync-queue', icon: ICONS.activity, cu: 'CU12' },
       { label: 'Reservas en tienda', path: '/reservations', icon: ICONS.calendar, cu: 'CU14' },
       { label: 'Cambio de prendas', path: '/exchanges', icon: ICONS.tag, cu: 'CU15' }
     ]
@@ -163,7 +166,10 @@ export function navForRole(role: Role | undefined): NavGroup[] {
     case Role.Superadmin:
       return [{
         label: 'Plataforma',
-        items: [{ label: 'Empresas', path: '/admin/tenants', icon: ICONS.store }]
+        items: [
+          { label: 'Empresas', path: '/admin/tenants', icon: ICONS.store },
+          { label: 'Planes SaaS', path: '/admin/plans', icon: ICONS.tag }
+        ]
       }];
     case Role.Administrador:
       return ADMIN_NAV;

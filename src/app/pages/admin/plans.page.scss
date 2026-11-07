@@ -1,0 +1,43 @@
+.table-card {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
+  white-space: nowrap;
+
+  &.ok {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &.off {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+}

@@ -1,0 +1,105 @@
+<div class="page-head">
+  <div>
+    <h2 class="page-title">Planes de suscripción</h2>
+    <p class="page-sub">
+      Define los límites de sucursales, el acceso a informes de IA y el precio mensual de cada plan.
+    </p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn btn-sm" (click)="load()">Actualizar</button>
+    <button type="button" class="btn-primary btn-sm" (click)="openCreate()">
+      Nuevo plan
+    </button>
+  </div>
+</div>
+
+@if (showForm()) {
+  <div class="card">
+    <h3 style="margin-top: 0">
+      {{ editingId ? 'Editar plan' : 'Crear plan' }}
+    </h3>
+    <div class="grid-2">
+      <div class="field">
+        <label for="plan-name">Nombre</label>
+        <input id="plan-name" [(ngModel)]="form.name" placeholder="Ej. Profesional" />
+      </div>
+      <div class="field">
+        <label for="plan-price">Precio mensual (USD)</label>
+        <input id="plan-price" type="number" min="0" step="0.01" [(ngModel)]="form.monthly_price" />
+      </div>
+      <div class="field">
+        <label for="plan-branches">Máximo de sucursales</label>
+        <input id="plan-branches" type="number" min="1" [(ngModel)]="form.max_branches" />
+      </div>
+      <div class="field">
+        <label>Informes de IA</label>
+        <label class="checkbox">
+          <input type="checkbox" [(ngModel)]="form.has_ai_reports" />
+          Incluye analítica con Inteligencia Artificial
+        </label>
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <label class="checkbox">
+          <input type="checkbox" [(ngModel)]="form.is_active" />
+          Plan activo (visible para contratación)
+        </label>
+      </div>
+    </div>
+
+    <div class="page-actions" style="margin-top: 1rem">
+      <button type="button" class="btn-ghost" (click)="closeForm()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Guardando…' : (editingId ? 'Guardar cambios' : 'Crear plan') }}
+      </button>
+    </div>
+  </div>
+}
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Plan</th>
+        <th>Sucursales</th>
+        <th>Informes IA</th>
+        <th>Precio mensual</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (plan of plans(); track plan.id) {
+        <tr>
+          <td><strong>{{ plan.name }}</strong></td>
+          <td>{{ plan.max_branches }}</td>
+          <td>
+            <span class="badge" [class.ok]="plan.has_ai_reports">
+              {{ plan.has_ai_reports ? 'Incluidos' : 'No incluidos' }}
+            </span>
+          </td>
+          <td>{{ plan.monthly_price | currency: 'USD' }}</td>
+          <td>
+            <span class="badge" [class.ok]="plan.is_active" [class.off]="!plan.is_active">
+              {{ plan.is_active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="actions">
+            <button type="button" class="btn btn-sm" (click)="openEdit(plan)">Editar</button>
+            <button type="button" class="btn-ghost btn-sm" (click)="toggleActive(plan)">
+              {{ plan.is_active ? 'Desactivar' : 'Activar' }}
+            </button>
+            <button type="button" class="btn-danger btn-sm" (click)="remove(plan)">Eliminar</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (!loading() && plans().length === 0) {
+    <p class="muted empty">No hay planes configurados.</p>
+  }
+  @if (loading()) {
+    <p class="muted empty">Cargando planes…</p>
+  }
+</div>

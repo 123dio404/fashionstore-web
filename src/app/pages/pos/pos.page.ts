@@ -5,8 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { BranchesService } from '../../core/services/branches.service';
 import { CommerceService } from '../../core/services/commerce.service';
+import { IndexedDbService } from '../../core/services/indexed-db.service';
 import { InventoryService } from '../../core/services/inventory.service';
 import { ProductsService } from '../../core/services/products.service';
+import { SyncManagerService } from '../../core/services/sync-manager.service';
 import {
   BranchResponse,
   ReceiptResponse,
@@ -40,6 +42,8 @@ export class PosPage {
   private readonly commerce = inject(CommerceService);
   private readonly products = inject(ProductsService);
   private readonly auth = inject(AuthService);
+  readonly syncManager = inject(SyncManagerService);
+  private readonly db = inject(IndexedDbService);
 
   readonly branches = signal<BranchResponse[]>([]);
   readonly sizes = signal<SizeResponse[]>([]);
@@ -100,27 +104,51 @@ export class PosPage {
   constructor() {
     this.branchesService.list().subscribe({
       next: (items) => this.branches.set(items),
-      error: (err: Error) => this.error.set(err.message)
+      error: () => void this.loadCachedBranches()
     });
-    this.products.listSizes().subscribe((items) => this.sizes.set(items));
+    this.products.listSizes().subscribe({
+      next: (items) => this.sizes.set(items),
+      error: () => undefined
+    });
     // Catálogo completo: permite buscar por código de barras/SKU y conocer el precio de cada variante.
     this.products.list().subscribe({
-      next: (items) => {
-        const map = new Map<number, VariantInfo>();
-        for (const product of items) {
-          for (const variant of product.variants) {
-            map.set(variant.id, {
-              codigo: variant.codigo,
-              productName: product.name,
-              price: Number(variant.price ?? product.price),
-              sizeId: variant.size_id
-            });
-          }
-        }
-        this.variants.set(map);
-      },
-      error: (err: Error) => this.error.set(err.message)
+      next: (items) => this.indexCatalog(items),
+      error: () => void this.loadCachedCatalog()
     });
+  }
+
+  /** CU-09/CU-10: la caja puede abrirse y vender con la copia local de IndexedDB. */
+  private async loadCachedBranches(): Promise<void> {
+    try {
+      const branches = await this.db.getBranches();
+      if (branches.length) this.branches.set(branches);
+    } catch {
+      // Sin caché local: el usuario verá el error al abrir caja.
+    }
+  }
+
+  private async loadCachedCatalog(): Promise<void> {
+    try {
+      const products = await this.db.getCatalog();
+      if (products.length) this.indexCatalog(products);
+    } catch {
+      this.error.set('No hay catálogo local disponible para operar sin conexión.');
+    }
+  }
+
+  private indexCatalog(items: Array<{ name: string; price: number; variants: Array<{ id: number; codigo: string; size_id: number | null; price: number | null }> }>): void {
+    const map = new Map<number, VariantInfo>();
+    for (const product of items) {
+      for (const variant of product.variants) {
+        map.set(variant.id, {
+          codigo: variant.codigo,
+          productName: product.name,
+          price: Number(variant.price ?? product.price),
+          sizeId: variant.size_id
+        });
+      }
+    }
+    this.variants.set(map);
   }
 
   /** Información de la variante detrás de una línea de la caja o de un ítem del comprobante. */
@@ -157,14 +185,45 @@ export class PosPage {
     const branchId = this.branchId();
     if (!branchId) return;
     this.error.set(null);
+
+    if (!this.syncManager.isOnline()) {
+      void this.openSessionFromCache(branchId);
+      return;
+    }
+
     this.inventory.listStock(branchId).subscribe({
       next: (rows) => {
         this.applyStock(rows);
         this.sessionOpen.set(true);
         this.message.set('Caja abierta. Stock de la sucursal cargado.');
       },
-      error: (err: Error) => this.error.set(err.message)
+      error: () => void this.openSessionFromCache(branchId)
     });
+  }
+
+  /** CU-09: apertura de caja sin red usando las existencias guardadas en IndexedDB. */
+  private async openSessionFromCache(branchId: number): Promise<void> {
+    try {
+      if (this.variants().size === 0) {
+        await this.loadCachedCatalog();
+      }
+      const rows = (await this.db.getInventory()).filter(
+        (row) => row.branch_id === branchId
+      );
+      if (rows.length === 0) {
+        this.error.set(
+          'No hay existencias guardadas para esta sucursal. Abre la caja con conexión al menos una vez.'
+        );
+        return;
+      }
+      this.applyStock(rows);
+      this.sessionOpen.set(true);
+      this.message.set(
+        'Caja abierta en modo offline con las existencias guardadas en el dispositivo.'
+      );
+    } catch {
+      this.error.set('No se pudo abrir la caja sin conexión: no hay datos locales.');
+    }
   }
 
   closeSession(): void {
@@ -217,6 +276,13 @@ export class PosPage {
 
     this.submitting.set(true);
     this.error.set(null);
+
+    // CU-12/CU-13: sin red la venta se encola en IndexedDB y se sincroniza después.
+    if (!this.syncManager.isOnline()) {
+      void this.queueOfflineSale(branchId);
+      return;
+    }
+
     this.commerce
       .posSale({
         branch_id: branchId,
@@ -234,11 +300,53 @@ export class PosPage {
           this.loadReceipt(sale.id);
           this.refreshStock(branchId);
         },
-        error: (err: Error) => {
+        error: (err: any) => {
+          // status 0 = fallo de red: se conserva la venta como operación local.
+          if (!err?.status) {
+            void this.queueOfflineSale(branchId);
+            return;
+          }
           this.submitting.set(false);
-          this.error.set(err.message);
+          this.error.set(err?.error?.detail || err?.message || 'No se pudo registrar la venta.');
         }
       });
+  }
+
+  /** Guarda la venta en la cola offline con el contrato que espera `POST /sync/batch`. */
+  private async queueOfflineSale(branchId: number): Promise<void> {
+    try {
+      const items = this.lines().map((line) => ({
+        stock_id: line.stock_id,
+        quantity: line.quantity,
+        unit_price: this.variantOf(line.stock_id)?.price ?? 0
+      }));
+      const total = items.reduce(
+        (sum, item) => sum + item.unit_price * item.quantity,
+        0
+      );
+
+      const queued = await this.syncManager.recordOfflineSale({
+        branch_id: branchId,
+        client_id: this.clientId || undefined,
+        payment_method: this.paymentMethod(),
+        items,
+        total
+      });
+
+      this.lines.set([]);
+      this.sale.set(null);
+      this.receipt.set(null);
+      this.message.set(
+        `Venta registrada offline (UUID ${queued.uuid}). Se sincronizará automáticamente al recuperar la conexión.`
+      );
+    } catch (err) {
+      this.error.set(
+        'No se pudo guardar la venta offline: ' +
+          (err instanceof Error ? err.message : 'error desconocido')
+      );
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
   private loadReceipt(saleId: number): void {

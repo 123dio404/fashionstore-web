@@ -48,6 +48,16 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                   <span class="amount">{{ sub.subscription?.plan?.monthly_price ?? '—' }}</span>
                   <span class="period">/ mes</span>
                 </div>
+                <p class="metric-desc" style="margin-top: 0.5rem">
+                  Vigencia:
+                  {{ sub.subscription?.start_date | date: 'dd/MM/yyyy' }}
+                  —
+                  {{
+                    sub.subscription?.end_date
+                      ? (sub.subscription?.end_date | date: 'dd/MM/yyyy')
+                      : 'sin vencimiento'
+                  }}
+                </p>
               </div>
 
               <div class="sub-metrics">
