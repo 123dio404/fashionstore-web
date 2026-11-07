@@ -1,7 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { FigmaCartItem, FigmaProduct, PRODUCTS } from '../figma-data';
+import { FigmaCartItem, FigmaProduct, PRODUCTS, resolveProductImage } from '../figma-data';
+import { environment } from '../../../environments/environment';
 import { BranchResponse, ProductResponse, SizeResponse, StockResponse } from '../../models';
 import { BranchesService } from './branches.service';
 import { IndexedDbService } from './indexed-db.service';
@@ -101,7 +102,11 @@ export class CatalogStore {
         newStockMap[capitalized] = branchTotal;
       }
 
-      const img = this.resolveProductImage(apiProd.name);
+      const serverImg = apiProd.image_url?.trim();
+      const normalizedImg = serverImg?.startsWith('/uploads/')
+        ? `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}${serverImg}`
+        : serverImg;
+      const img = normalizedImg || resolveProductImage(apiProd.name);
 
       if (existing) {
         return {

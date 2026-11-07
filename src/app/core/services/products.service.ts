@@ -26,8 +26,19 @@ export class ProductsService {
   private readonly base = environment.apiUrl;
 
   // CU06 - Parameters
-  listCategories(): Observable<CategoryResponse[]> {
-    return this.http.get<CategoryResponse[]>(`${this.base}/parameters/categories`);
+  listCategories(tenantId?: number): Observable<CategoryResponse[]> {
+    const params = tenantId ? `?tenant_id=${tenantId}` : '';
+    return this.http.get<CategoryResponse[]>(`${this.base}/parameters/categories${params}`);
+  }
+
+  uploadImage(file: File): Observable<{ url: string; filename: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string; filename: string }>(`${this.base}/uploads/image`, formData);
+  }
+
+  uploadImageBase64(filename: string, data: string): Observable<{ url: string; filename: string }> {
+    return this.http.post<{ url: string; filename: string }>(`${this.base}/uploads/image-base64`, { filename, data });
   }
   createCategory(data: ParameterCreate): Observable<CategoryResponse> {
     return this.http.post<CategoryResponse>(`${this.base}/parameters/categories`, data);

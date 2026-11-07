@@ -15,6 +15,7 @@ export interface ParameterUpdate {
 export interface CategoryResponse {
   id: Id;
   name: string;
+  tenant_id?: Id | null;
 }
 
 export interface SeasonResponse {
@@ -66,6 +67,7 @@ export interface ProductCreate {
   is_clearance?: boolean;
   discount_percentage?: number | null;
   is_active?: boolean;
+  image_url?: string | null;
   model_3d_url?: string | null;
   model_3d_format?: 'glb' | 'gltf' | null;
   technical_metadata?: string | null;
@@ -85,6 +87,7 @@ export interface ProductUpdate {
   is_clearance?: boolean;
   discount_percentage?: number | null;
   is_active?: boolean;
+  image_url?: string | null;
   model_3d_url?: string | null;
   model_3d_format?: 'glb' | 'gltf' | null;
   technical_metadata?: string | null;
@@ -106,6 +109,7 @@ export interface ProductResponse {
   is_active: boolean;
   category_name?: string | null;
   tenant_id?: Id | null;
+  image_url?: string | null;
   model_3d_url: string | null;
   model_3d_format: string | null;
   technical_metadata: string | null;

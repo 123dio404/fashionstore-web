@@ -621,31 +621,153 @@ export const DEMO_DATES: { short: string; day: string; full: string }[] = [
 ];
 
 /** Imagen de reserva para prendas que no están en el catálogo demo. */
-const FALLBACK_IMAGE = `${U}1558618666-fcd25c85cd64?w=120&h=150&fit=crop&auto=format`;
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&auto=format&fit=crop&q=80';
 
 /**
- * Imagen demo para las tablas del panel: busca la prenda del catálogo demo por
- * nombre (el backend no expone imágenes). Devuelve un placeholder si no hay coincidencia.
+ * Resuelve de forma inteligente y contextual la imagen de cualquier prenda según sus palabras clave.
+ * Si se pasa una URL personalizada (ej. subida por el usuario o de base de datos), la respeta inmediatamente.
  */
-export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
-  const words = name
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((word) => word.length > 3);
-
-  let bestScore = 0;
-  let bestImage = fallback;
-
-  for (const product of PRODUCTS) {
-    const target = product.name.toLowerCase();
-    const score = words.filter((word) => target.includes(word)).length;
-    if (score > bestScore) {
-      bestScore = score;
-      bestImage = product.image;
-    }
+export function resolveProductImage(name: string, customUrl?: string | null): string {
+  if (customUrl && customUrl.trim()) {
+    return customUrl.trim();
   }
 
-  return bestImage;
+  const n = (name || '').toLowerCase();
+
+  // ── 1. CALCETERÍA Y MEDIAS (Mundo Medias) ──────────────────────────
+  if (n.includes('invisible') || n.includes('antideslizante')) {
+    return 'https://images.unsplash.com/photo-1585499583264-491df5142e83?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('tobillera') || (n.includes('medias') && n.includes('deportiv'))) {
+    return 'https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('térmica') || n.includes('termica') || n.includes('polar')) {
+    return 'https://images.unsplash.com/photo-1646725582781-c09e1bcd431d?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('compresión') || n.includes('compresion')) {
+    return 'https://images.unsplash.com/photo-1582966772680-860e372bb558?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('panti') || n.includes('pantis')) {
+    return 'https://images.unsplash.com/photo-1582966772680-860e372bb558?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('ejecutiva') || n.includes('escocia')) {
+    return 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('merino') || n.includes('senderismo') || n.includes('calcetin') || n.includes('calcetín')) {
+    return 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('bucanera') || n.includes('canalé') || n.includes('canale')) {
+    return 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('media') || n.includes('medias') || n.includes('sock')) {
+    return 'https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 2. ALTA COSTURA & SASTRERÍA (Elegance Boutique) ────────────────
+  if (n.includes('smoking') || n.includes('esmoquin') || n.includes('black tie')) {
+    return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('traje') || n.includes('sartorial') || n.includes('sastreria') || n.includes('sastrería')) {
+    return 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('seda royale') || n.includes('gala') || n.includes('noche')) {
+    return 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('sirena') || n.includes('corset')) {
+    return 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('cachemira') || n.includes('abrigo') || n.includes('tapado')) {
+    return 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('plisado') || n.includes('champagne')) {
+    return 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('blusa') || n.includes('organza') || n.includes('crepe')) {
+    return 'https://images.unsplash.com/photo-1551803091-e20673f15770?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('doble botonadura')) {
+    return 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 3. STREETWEAR & MODA URBANA (Moda Urbana) ─────────────────────
+  if (n.includes('hoodie') || n.includes('sudadera')) {
+    return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('cargo') || n.includes('pantalon') || n.includes('pantalón')) {
+    return 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('oxford') || n.includes('camisa')) {
+    return 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('remera') || n.includes('camiseta') || n.includes('t-shirt')) {
+    return 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('chunky') || n.includes('sneakers blancas')) {
+    return 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('sneaker') || n.includes('zapatilla') || n.includes('calzado')) {
+    return 'https://images.unsplash.com/photo-1605523741177-cd660595c2cf?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('denim') || n.includes('vaquera') || n.includes('chaqueta')) {
+    return 'https://images.unsplash.com/photo-1603189343302-e603f7add05a?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('windbreaker') || n.includes('rompevientos') || n.includes('bomber')) {
+    return 'https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('jogger') || n.includes('baggy')) {
+    return 'https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('gorra') || n.includes('cap') || n.includes('trucker')) {
+    return 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 4. VESTIDOS Y PRENDAS GENERALES ────────────────────────────────
+  if (n.includes('rojo') && n.includes('vestido')) {
+    return 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('fluido') || (n.includes('vestido') && n.includes('midi'))) {
+    return 'https://images.unsplash.com/photo-1664076458686-3449062080ac?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('vestido')) {
+    return 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('blazer oversize') || n.includes('blazer lana')) {
+    return 'https://images.unsplash.com/photo-1613915617430-8ab0fd7c6baf?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('blazer')) {
+    return 'https://images.unsplash.com/photo-1629511565591-a1d494ad6c58?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('acanalado') || n.includes('punto')) {
+    return 'https://images.unsplash.com/photo-1645996830718-127f7e4f74fc?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 5. ACCESORIOS EXPLÍCITOS ───────────────────────────────────────
+  if (n.includes('gafas') || n.includes('lentes')) {
+    return 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('collar') || n.includes('gargantilla')) {
+    return 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('reloj') || n.includes('watch')) {
+    return 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('sombrero') || n.includes('fedora')) {
+    return 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=800&auto=format&fit=crop&q=80';
+  }
+
+  return FALLBACK_IMAGE;
+}
+
+/**
+ * Imagen demo para tablas y listas: prioriza el resolver contextual para que
+ * cada categoría (medias, vestidos, trajes, etc.) reciba una imagen coherente.
+ */
+export function demoImageFor(name: string, fallback = FALLBACK_IMAGE): string {
+  const resolved = resolveProductImage(name);
+  if (resolved !== FALLBACK_IMAGE) {
+    return resolved;
+  }
+  return fallback;
 }
 
 /* --------------------------------------------------------------- CU17 ----- */

@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { demoImageFor } from '../../core/figma-data';
+import { demoImageFor, resolveProductImage } from '../../core/figma-data';
+import { environment } from '../../../environments/environment';
 import { ProductsService } from '../../core/services/products.service';
 import {
   CategoryResponse,
@@ -29,6 +30,7 @@ const EMPTY_PRODUCT: ProductCreate = {
   secondary_color: null,
   is_clearance: false,
   discount_percentage: 0,
+  image_url: null,
   model_3d_url: null,
   model_3d_format: null,
   technical_metadata: null,
@@ -96,8 +98,67 @@ export class ProductsPage {
     return (product.brand || product.name).charAt(0).toUpperCase();
   }
 
-  /** Imagen demo para la fila: el backend no expone imágenes de prenda. */
-  readonly imageFor = (product: ProductResponse): string => demoImageFor(product.name);
+  readonly uploadingImage = signal(false);
+
+  /** Imagen para la fila: utiliza la URL real si existe, o el resolver contextual por palabra clave. */
+  readonly imageFor = (product: ProductResponse): string => {
+    if (product.image_url && product.image_url.trim()) {
+      if (product.image_url.startsWith('/uploads/')) {
+        return `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}${product.image_url}`;
+      }
+      return product.image_url;
+    }
+    return resolveProductImage(product.name);
+  };
+
+  previewImageUrl(): string {
+    if (this.form.image_url && this.form.image_url.trim()) {
+      if (this.form.image_url.startsWith('/uploads/')) {
+        return `${environment.apiUrl.replace(/\/api\/v1\/?$/, '')}${this.form.image_url}`;
+      }
+      return this.form.image_url;
+    }
+    if (this.form.name && this.form.name.trim()) {
+      return resolveProductImage(this.form.name);
+    }
+    return 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&auto=format&fit=crop&q=80';
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.uploadingImage.set(true);
+    this.message.set(null);
+    this.error.set(null);
+
+    this.service.uploadImage(file).subscribe({
+      next: (res) => {
+        this.uploadingImage.set(false);
+        this.form.image_url = res.url;
+        this.message.set('Imagen subida con éxito.');
+      },
+      error: () => {
+        // Fallback robusto a Data URL si el endpoint no responde
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.uploadingImage.set(false);
+          this.form.image_url = reader.result as string;
+          this.message.set('Imagen cargada.');
+        };
+        reader.onerror = () => {
+          this.uploadingImage.set(false);
+          this.fail(new Error('No se pudo leer el archivo de imagen.'));
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  removeImage(): void {
+    this.form.image_url = null;
+  }
 
   categoryName(product: ProductResponse): string {
     return (
@@ -153,6 +214,7 @@ export class ProductsPage {
       secondary_color: product.secondary_color,
       is_clearance: product.is_clearance ?? false,
       discount_percentage: product.discount_percentage ?? 0,
+      image_url: product.image_url,
       model_3d_url: product.model_3d_url,
       model_3d_format: product.model_3d_format === 'gltf' ? 'gltf' : product.model_3d_format === 'glb' ? 'glb' : null,
       technical_metadata: product.technical_metadata,
@@ -229,6 +291,7 @@ export class ProductsPage {
       secondary_color: this.form.secondary_color,
       is_clearance: this.form.is_clearance,
       discount_percentage: this.form.discount_percentage,
+      image_url: this.form.image_url,
       model_3d_url: this.form.model_3d_url,
       model_3d_format: this.form.model_3d_format,
       technical_metadata: this.form.technical_metadata,

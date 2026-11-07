@@ -138,6 +138,34 @@
   [width]="480"
   (closed)="closeDrawer()"
 >
+  <!-- Sección de Imagen de la Prenda (Subida de archivo o URL con Vista Previa) -->
+  <div class="image-upload-box">
+    <div class="preview-wrapper">
+      <img [src]="previewImageUrl()" alt="Vista previa de prenda" />
+    </div>
+    <div class="upload-controls">
+      <span class="image-type-badge">
+        {{ form.image_url ? 'Imagen personalizada' : 'Sugerencia automática por nombre' }}
+      </span>
+      <div class="upload-btn-row">
+        <label class="btn btn-sm btn-primary" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 4px;">
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none" />
+          📷 {{ uploadingImage() ? 'Subiendo...' : 'Subir imagen' }}
+        </label>
+        @if (form.image_url) {
+          <button type="button" class="btn btn-sm btn-ghost" style="color: #dc2626; padding: 0.25rem 0.5rem;" (click)="removeImage()">
+            Quitar
+          </button>
+        }
+      </div>
+      <input
+        type="text"
+        placeholder="O pega una URL: https://images.unsplash.com/..."
+        [(ngModel)]="form.image_url"
+      />
+    </div>
+  </div>
+
   <div class="field">
     <label for="d-name">Nombre</label>
     <input id="d-name" [(ngModel)]="form.name" />
