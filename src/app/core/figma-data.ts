@@ -279,8 +279,8 @@ export const PRODUCTS: FigmaProduct[] = [
     price: 74.99,
     oldPrice: 99.99,
     discount: 25,
-    image: `${U}1662532577856-e8ee8b138a8b${CARD}`,
-    images: [`${U}1662532577856-e8ee8b138a8b${CARD}`],
+    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80',
+    images: ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80'],
     colors: [
       { name: 'Rojo', hex: '#DC2626' },
       { name: 'Terracota', hex: '#E05A47' },
