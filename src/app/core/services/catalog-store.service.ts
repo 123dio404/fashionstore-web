@@ -23,7 +23,7 @@ export class CatalogStore {
   private readonly productsService = inject(ProductsService);
   private readonly db = inject(IndexedDbService);
 
-  readonly products = signal<FigmaProduct[]>(PRODUCTS);
+  readonly products = signal<FigmaProduct[]>([]);
   readonly cart = signal<FigmaCartItem[]>([]);
   readonly favs = signal<number[]>([]);
   readonly toast = signal<string | null>(null);
@@ -73,6 +73,7 @@ export class CatalogStore {
     stocks: StockResponse[]
   ): void {
     if (!apiProducts || apiProducts.length === 0) {
+      this.products.set([]);
       this.stockLoaded.set(true);
       return;
     }
@@ -151,20 +152,29 @@ export class CatalogStore {
 
   private resolveProductImage(name: string): string {
     const n = name.toLowerCase();
-    if (n.includes('deportiva')) {
+    if (n.includes('invisible') || n.includes('antideslizante')) {
+      return 'https://images.unsplash.com/photo-1585499583264-491df5142e83?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('tobillera') || n.includes('deportiva')) {
       return 'https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('térmica') || n.includes('termica') || n.includes('polar')) {
+      return 'https://images.unsplash.com/photo-1646725582781-c09e1bcd431d?w=800&auto=format&fit=crop&q=80';
     }
     if (n.includes('compresión') || n.includes('compresion')) {
       return 'https://images.unsplash.com/photo-1582966772680-860e372bb558?w=800&auto=format&fit=crop&q=80';
     }
-    if (n.includes('térmica') || n.includes('termica') || n.includes('polar')) {
-      return 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=800&auto=format&fit=crop&q=80';
-    }
-    if (n.includes('invisible') || n.includes('antideslizante')) {
-      return 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80';
-    }
     if (n.includes('panti') || n.includes('seda')) {
-      return 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=800&auto=format&fit=crop&q=80';
+      return 'https://images.unsplash.com/photo-1789304795560-8e6718c809dd?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('hoodie') || n.includes('sudadera')) {
+      return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('cargo') || n.includes('pantalon') || n.includes('pantalón')) {
+      return 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('bomber')) {
+      return 'https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80';
     }
     if (n.includes('gala') || n.includes('vestido')) {
       return 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80';

@@ -2,6 +2,8 @@ import { Injectable, computed, signal } from '@angular/core';
 
 export interface NotificationItem {
   id: string;
+  tenantId?: number | null;
+  userId?: number | null;
   title: string;
   message: string;
   date: string;
@@ -14,19 +16,31 @@ export interface NotificationItem {
   link?: string;
 }
 
-const STORAGE_KEY = 'fashionstore_notifications_v1';
+const STORAGE_PREFIX = 'fs_notifs_t_';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
-  readonly notifications = signal<NotificationItem[]>(this.loadInitial());
+  private currentKey = 'guest';
+
+  readonly notifications = signal<NotificationItem[]>([]);
 
   readonly unreadCount = computed(
     () => this.notifications().filter((n) => !n.isRead).length
   );
 
-  private loadInitial(): NotificationItem[] {
+  constructor() {
+    this.reloadForUser(null);
+  }
+
+  reloadForUser(user: any): void {
+    const key = user?.tenant_id ? `tenant_${user.tenant_id}` : (user?.id ? `user_${user.id}` : 'guest');
+    this.currentKey = key;
+    this.notifications.set(this.loadForStorageKey(key));
+  }
+
+  private loadForStorageKey(key: string): NotificationItem[] {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
       if (saved) {
         return JSON.parse(saved) as NotificationItem[];
       }
@@ -34,32 +48,22 @@ export class NotificationsService {
       // Fallback
     }
 
-    // Notificaciones iniciales de cortesía para la plataforma SaaS
     return [
       {
-        id: 'notif-welcome',
-        title: '¡Bienvenido a FashionStore SaaS!',
-        message: 'Plataforma multitenant activa. Catálogo de productos y stock aislados según tu empresa y sucursal.',
+        id: `notif-welcome-${key}`,
+        title: '¡Bienvenido a la plataforma SaaS!',
+        message: 'Catálogo de productos, pedidos, reservas y stock aislados según tu empresa.',
         date: 'Hoy',
         type: 'system',
         isRead: false,
         link: '/catalog',
-      },
-      {
-        id: 'notif-promo',
-        title: 'Sincronización Multitenant',
-        message: 'Las sucursales y terminales POS operan con aislamiento de inventario y facturación independiente.',
-        date: 'Hoy',
-        type: 'system',
-        isRead: false,
-        link: '/pos',
       },
     ];
   }
 
   private persist(items: NotificationItem[]): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(`${STORAGE_PREFIX}${this.currentKey}`, JSON.stringify(items));
     } catch {
       // Ignore quota errors
     }

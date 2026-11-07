@@ -185,10 +185,11 @@ export class App {
       }
     });
 
-    // Recarga reactiva del catálogo al cambiar el usuario o tenant
+    // Recarga reactiva del catálogo y notificaciones al cambiar el usuario o tenant
     effect(() => {
       const u = this.user();
       this.catalogStore.refreshStock();
+      this.notifs.reloadForUser(u);
     });
 
     // El contador del carrito solo aplica al cliente (CU10).
