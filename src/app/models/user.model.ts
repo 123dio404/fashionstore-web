@@ -11,6 +11,9 @@ export enum Role {
 
 export interface UserResponse {
   id: Id;
+  tenant_id?: number | null;
+  tenant_name?: string | null;
+  plan_name?: string | null;
   email: string;
   full_name: string;
   role: Role;

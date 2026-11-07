@@ -66,6 +66,9 @@ export class PosPage {
 
   clientId = this.auth.currentUser()?.id ?? 0;
 
+  readonly tenantName = computed(() => this.auth.currentUser()?.tenant_name ?? null);
+  readonly planName = computed(() => this.auth.currentUser()?.plan_name ?? null);
+
   readonly branchName = computed(
     () => this.branches().find((branch) => branch.id === this.branchId())?.name ?? '—'
   );

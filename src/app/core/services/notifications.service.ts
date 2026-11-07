@@ -34,12 +34,12 @@ export class NotificationsService {
       // Fallback
     }
 
-    // Notificaciones iniciales de cortesía
+    // Notificaciones iniciales de cortesía para la plataforma SaaS
     return [
       {
         id: 'notif-welcome',
-        title: '¡Bienvenido a FashionStore!',
-        message: 'Explora nuestra nueva colección Otoño-Invierno con recomendaciones personalizadas de IA.',
+        title: '¡Bienvenido a FashionStore SaaS!',
+        message: 'Plataforma multitenant activa. Catálogo de productos y stock aislados según tu empresa y sucursal.',
         date: 'Hoy',
         type: 'system',
         isRead: false,
@@ -47,12 +47,12 @@ export class NotificationsService {
       },
       {
         id: 'notif-promo',
-        title: 'Cupón de Descuento Disponible',
-        message: 'Usa el cupón FASHION10 en tu carrito para obtener un 10% de descuento en tu compra.',
+        title: 'Sincronización Multitenant',
+        message: 'Las sucursales y terminales POS operan con aislamiento de inventario y facturación independiente.',
         date: 'Hoy',
         type: 'system',
         isRead: false,
-        link: '/cart',
+        link: '/pos',
       },
     ];
   }

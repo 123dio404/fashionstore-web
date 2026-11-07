@@ -5,7 +5,10 @@
         <a class="brand" routerLink="/catalog">
           <img src="/img/brand/logo.svg" alt="" height="26" />
           @if (!collapsed()) {
-            <span class="brand-name">FashionStore SaaS</span>
+            <div class="brand-text-col">
+              <span class="brand-name">{{ tenantBadge()?.name || 'FashionStore SaaS' }}</span>
+              <span class="brand-sub">{{ tenantBadge() ? (tenantBadge()?.plan + ' · SaaS') : 'Plataforma Multitenant' }}</span>
+            </div>
           }
         </a>
         <button
@@ -17,6 +20,18 @@
           <app-ui-icon [d]="collapsed() ? icons.expand : icons.collapse" [size]="16" />
         </button>
       </div>
+
+      @if (tenantBadge(); as t) {
+        @if (!collapsed()) {
+          <div class="tenant-identity-card" [style.border-color]="t.borderColor" [style.background]="t.bgColor + '28'">
+            <div class="tenant-avatar" [style.background]="t.color">{{ t.initials }}</div>
+            <div class="tenant-meta">
+              <span class="tenant-company">{{ t.name }}</span>
+              <span class="tenant-tagline" [style.color]="t.color">{{ t.tag }}</span>
+            </div>
+          </div>
+        }
+      }
 
       @if (roleMeta(); as meta) {
         @if (!collapsed()) {
@@ -106,6 +121,14 @@
         </div>
 
         <div class="topbar-right">
+          @if (tenantBadge(); as t) {
+            <div class="tenant-topbar-pill" [style.border-color]="t.borderColor" [style.background]="t.bgColor + '28'">
+              <span class="tenant-topbar-dot" [style.background]="t.color"></span>
+              <span class="tenant-topbar-name" [style.color]="t.color">{{ t.name }}</span>
+              <span class="tenant-topbar-plan">{{ t.plan }}</span>
+            </div>
+          }
+
           <div
             class="sync-indicator"
             [class.offline]="!syncManager.isOnline()"

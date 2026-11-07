@@ -1,7 +1,13 @@
 <div class="page-head">
   <div>
     <h2 class="page-title">Terminal de venta</h2>
-    <p class="page-sub">Venta presencial en caja: abre la caja, cobra y emite el comprobante.</p>
+    <p class="page-sub">
+      Venta presencial en caja
+      @if (tenantName()) {
+        · <strong style="color: var(--brand)">{{ tenantName() }}</strong>
+      }
+      ({{ branchName() }}): abre la caja, cobra y emite el comprobante.
+    </p>
   </div>
   <div class="page-actions">
     @if (!syncManager.isOnline()) {

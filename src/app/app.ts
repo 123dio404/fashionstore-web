@@ -87,6 +87,56 @@ export class App {
     return parts.map((part) => part.charAt(0).toUpperCase()).join('') || 'FS';
   });
 
+  readonly tenantName = computed(() => this.user()?.tenant_name || null);
+  readonly planName = computed(() => this.user()?.plan_name || null);
+
+  readonly tenantBadge = computed(() => {
+    const tenant = this.tenantName();
+    if (!tenant) return null;
+    if (tenant.includes('Mundo Medias')) {
+      return {
+        name: 'Mundo Medias S.R.L.',
+        tag: 'Especialista en Medias',
+        plan: this.planName() || 'Plan Profesional',
+        initials: 'MM',
+        color: '#10B981',
+        bgColor: '#064E3B',
+        borderColor: '#059669'
+      };
+    }
+    if (tenant.includes('Elegance')) {
+      return {
+        name: 'Elegance Boutique S.R.L.',
+        tag: 'Alta Costura & Lujo',
+        plan: this.planName() || 'Plan Empresarial',
+        initials: 'EB',
+        color: '#F59E0B',
+        bgColor: '#78350F',
+        borderColor: '#D97706'
+      };
+    }
+    if (tenant.includes('Moda Urbana')) {
+      return {
+        name: 'Moda Urbana S.A.',
+        tag: 'Moda Casual & Streetwear',
+        plan: this.planName() || 'Plan Básico',
+        initials: 'MU',
+        color: '#6366F1',
+        bgColor: '#312E81',
+        borderColor: '#4F46E5'
+      };
+    }
+    return {
+      name: tenant,
+      tag: 'Empresa Contratante',
+      plan: this.planName() || 'Tenant SaaS',
+      initials: tenant.slice(0, 2).toUpperCase(),
+      color: '#38BDF8',
+      bgColor: '#0C4A6E',
+      borderColor: '#0284C7'
+    };
+  });
+
   constructor() {
     this.auth.restoreSession().subscribe();
 
@@ -104,6 +154,18 @@ export class App {
           this.refreshCart();
         }
       });
+
+    // Actualiza dinámicamente el título de la pestaña según el tenant autenticado
+    effect(() => {
+      const u = this.user();
+      if (u?.tenant_name) {
+        document.title = `${u.tenant_name} · FashionStore SaaS`;
+      } else if (u?.role === Role.Superadmin) {
+        document.title = 'Superadmin SaaS · FashionStore Plataforma';
+      } else {
+        document.title = 'FashionStore SaaS · Plataforma de Moda';
+      }
+    });
 
     // El contador del carrito solo aplica al cliente (CU10).
     effect(() => {
