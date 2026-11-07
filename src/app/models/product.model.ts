@@ -59,6 +59,12 @@ export interface ProductCreate {
   name: string;
   brand?: string | null;
   price: number;
+  wholesale_price?: number | null;
+  wholesale_min_quantity?: number | null;
+  material?: string | null;
+  secondary_color?: string | null;
+  is_clearance?: boolean;
+  discount_percentage?: number | null;
   is_active?: boolean;
   model_3d_url?: string | null;
   model_3d_format?: 'glb' | 'gltf' | null;
@@ -72,6 +78,12 @@ export interface ProductUpdate {
   name?: string;
   brand?: string | null;
   price?: number;
+  wholesale_price?: number | null;
+  wholesale_min_quantity?: number | null;
+  material?: string | null;
+  secondary_color?: string | null;
+  is_clearance?: boolean;
+  discount_percentage?: number | null;
   is_active?: boolean;
   model_3d_url?: string | null;
   model_3d_format?: 'glb' | 'gltf' | null;
@@ -85,11 +97,33 @@ export interface ProductResponse {
   name: string;
   brand: string | null;
   price: number;
+  wholesale_price: number | null;
+  wholesale_min_quantity: number | null;
+  material: string | null;
+  secondary_color: string | null;
+  is_clearance: boolean;
+  discount_percentage: number | null;
   is_active: boolean;
   model_3d_url: string | null;
   model_3d_format: string | null;
   technical_metadata: string | null;
   variants: VariantResponse[];
+}
+
+export interface ClearanceBatchRequest {
+  season_id?: Id | null;
+  category_id?: Id | null;
+  discount_percentage: number;
+  is_clearance: boolean;
+}
+
+export interface ClearanceBatchResponse {
+  message: string;
+  updated_products_count: number;
+  season_id: Id | null;
+  category_id: Id | null;
+  discount_percentage: number;
+  is_clearance: boolean;
 }
 
 export interface AvailabilityResponse {

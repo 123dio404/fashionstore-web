@@ -3,13 +3,13 @@
     <div class="auth-panel">
       <div class="auth-brand">
         <img src="/img/brand/logo.svg" alt="" />
-        <span>FashionStore</span>
+        <span>FashionStore SaaS</span>
       </div>
 
       <div class="auth-pitch">
         <h1>Moda que<br />inspira, plataforma<br />que impulsa.</h1>
         <p>
-          Gestión integral de inventario, ventas y atención al cliente en una sola plataforma.
+          Plataforma SaaS multitenant para gestión integral de inventario, sucursales, terminales POS y analítica con IA.
         </p>
         <div class="auth-stats">
           <div class="auth-stat">
@@ -32,7 +32,49 @@
   <section class="auth-main">
     <form class="auth-form" (ngSubmit)="submit()">
       <h2>Bienvenida de nuevo</h2>
-      <p class="auth-sub">Selecciona tu rol e inicia sesión para continuar.</p>
+      <p class="auth-sub">Plataforma SaaS Multitenant · Selecciona tu rol e inicia sesión</p>
+
+      <!-- Panel de Acceso Rápido Demo para Evaluación -->
+      <div class="demo-box">
+        <div class="demo-header">
+          <span class="demo-badge">Acceso Rápido</span>
+          <span class="demo-title">Cuentas Demo Evaluables (Clave: Admin123)</span>
+        </div>
+
+        <div class="demo-tabs">
+          @for (tenant of demoTenants; track tenant.name; let idx = $index) {
+            <button
+              type="button"
+              class="demo-tab-btn"
+              [class.active]="activeDemoTenantIndex() === idx"
+              (click)="activeDemoTenantIndex.set(idx)"
+            >
+              {{ tenant.shortName }}
+            </button>
+          }
+        </div>
+
+        @if (demoTenants[activeDemoTenantIndex()]; as currentDemo) {
+          <div class="demo-content">
+            <span class="demo-plan-pill" [style.color]="currentDemo.color">
+              {{ currentDemo.name }} · {{ currentDemo.plan }}
+            </span>
+            <div class="demo-buttons">
+              @for (acc of currentDemo.accounts; track acc.email) {
+                <button
+                  type="button"
+                  class="demo-account-btn"
+                  (click)="fillDemo(acc)"
+                  [title]="'Cargar credenciales de ' + acc.email"
+                >
+                  <span class="acc-role">{{ acc.label }}</span>
+                  <span class="acc-email">{{ acc.email }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
 
       <div class="auth-field auth-field-roles">
         <span class="auth-label">Acceso como</span>
@@ -98,7 +140,7 @@
       </button>
 
       <p class="auth-alt">¿No tienes cuenta? <a routerLink="/auth/register">Crear una cuenta</a></p>
-      <p class="auth-foot">© 2026 FashionStore · Versión {{ version }}</p>
+      <p class="auth-foot">© 2026 FashionStore SaaS · Versión {{ version }}</p>
     </form>
   </section>
 </div>

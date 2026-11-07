@@ -151,7 +151,12 @@ export class CatalogStore {
   );
 
   readonly subtotal = computed(() =>
-    this.cart().reduce((sum, item) => sum + item.price * item.qty, 0)
+    this.cart().reduce((sum, item) => {
+      const minQty = item.wholesaleMinQty ?? 3;
+      const unitPrice =
+        item.wholesalePrice && item.qty >= minQty ? item.wholesalePrice : item.price;
+      return sum + unitPrice * item.qty;
+    }, 0)
   );
 
   readonly favCount = computed(() => this.favs().length);
@@ -167,7 +172,7 @@ export class CatalogStore {
   byCategory(category: string): FigmaProduct[] {
     if (category === 'Todas') return this.products();
     if (category === 'Ofertas') {
-      return this.products().filter((product) => product.discount >= 25);
+      return this.products().filter((product) => product.discount >= 25 || product.isClearance);
     }
     return this.products().filter((product) => product.category === category);
   }
@@ -175,19 +180,23 @@ export class CatalogStore {
   add(product: FigmaProduct, size?: string, color?: string): void {
     const pickedSize = size ?? product.sizes[0] ?? 'M';
     const pickedColor = color ?? product.colors[0]?.name ?? '';
+    const minQty = product.wholesaleMinQty ?? 3;
     const existing = this.cart().find(
       (item) => item.productId === product.id && item.size === pickedSize
     );
 
     if (existing) {
+      const newQty = existing.qty + 1;
+      const isWholesale = Boolean(product.wholesalePrice && newQty >= minQty);
       this.cart.update((items) =>
         items.map((item) =>
           item.productId === product.id && item.size === pickedSize
-            ? { ...item, qty: item.qty + 1 }
+            ? { ...item, qty: newQty, isWholesaleApplied: isWholesale }
             : item
         )
       );
     } else {
+      const isWholesale = Boolean(product.wholesalePrice && 1 >= minQty);
       this.cart.update((items) => [
         ...items,
         {
@@ -195,6 +204,9 @@ export class CatalogStore {
           name: product.name,
           brand: product.brand,
           price: product.price,
+          wholesalePrice: product.wholesalePrice ?? Math.round(product.price * 0.8 * 100) / 100,
+          wholesaleMinQty: minQty,
+          isWholesaleApplied: isWholesale,
           image: product.image,
           size: pickedSize,
           color: pickedColor,
@@ -207,21 +219,29 @@ export class CatalogStore {
 
   inc(productId: number, size: string): void {
     this.cart.update((items) =>
-      items.map((item) =>
-        item.productId === productId && item.size === size
-          ? { ...item, qty: item.qty + 1 }
-          : item
-      )
+      items.map((item) => {
+        if (item.productId === productId && item.size === size) {
+          const newQty = item.qty + 1;
+          const minQty = item.wholesaleMinQty ?? 3;
+          const isWholesale = Boolean(item.wholesalePrice && newQty >= minQty);
+          return { ...item, qty: newQty, isWholesaleApplied: isWholesale };
+        }
+        return item;
+      })
     );
   }
 
   dec(productId: number, size: string): void {
     this.cart.update((items) =>
-      items.map((item) =>
-        item.productId === productId && item.size === size
-          ? { ...item, qty: Math.max(1, item.qty - 1) }
-          : item
-      )
+      items.map((item) => {
+        if (item.productId === productId && item.size === size) {
+          const newQty = Math.max(1, item.qty - 1);
+          const minQty = item.wholesaleMinQty ?? 3;
+          const isWholesale = Boolean(item.wholesalePrice && newQty >= minQty);
+          return { ...item, qty: newQty, isWholesaleApplied: isWholesale };
+        }
+        return item;
+      })
     );
   }
 

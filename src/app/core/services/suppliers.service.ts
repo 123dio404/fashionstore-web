@@ -3,7 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { SupplierCreate, SupplierResponse, SupplierUpdate } from '../../models';
+import {
+  PurchaseOrderCreate,
+  PurchaseOrderResponse,
+  SupplierCreate,
+  SupplierResponse,
+  SupplierUpdate
+} from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class SuppliersService {
@@ -24,5 +30,9 @@ export class SuppliersService {
 
   remove(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
+  }
+
+  registerPurchase(supplierId: number, data: PurchaseOrderCreate): Observable<PurchaseOrderResponse> {
+    return this.http.post<PurchaseOrderResponse>(`${this.url}/${supplierId}/purchases`, data);
   }
 }

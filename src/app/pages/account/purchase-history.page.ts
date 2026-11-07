@@ -131,11 +131,26 @@ export class PurchaseHistoryPage {
   }
 
   private statusOf(sale: SaleResponse): Status {
+    if (sale.delivery_status === 'ENTREGADO_CONFORME') return 'entregado';
+    if (sale.delivery_status === 'ENVIADO') return 'en_camino';
+    if (sale.delivery_status === 'POR_DESPACHAR') return 'procesando';
     const status = sale.payments.at(-1)?.status;
     if (status === PaymentStatus.Fallido || status === PaymentStatus.Reembolsado) {
       return 'cancelado';
     }
     return 'procesando';
+  }
+
+  confirmDelivery(orderCode: string): void {
+    const saleId = parseInt(orderCode.replace(/\D/g, ''), 10);
+    if (!saleId) return;
+    this.commerce.confirmCustomerDelivery(saleId, 'Cliente confirma recepción conforme del pedido').subscribe({
+      next: () => {
+        alert('¡Entrega confirmada conforme! Gracias por verificar la recepción.');
+        void this.loadPurchases();
+      },
+      error: (err: any) => alert('Error al confirmar recepción: ' + (err.error?.detail || err.message))
+    });
   }
 
   /** `2026-09-21T10:00:00Z` → `21 sep 2026`. */
