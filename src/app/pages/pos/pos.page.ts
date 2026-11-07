@@ -63,8 +63,20 @@ export class PosPage {
   readonly scan = signal('');
   readonly cashReceived = signal('');
   readonly paymentMethod = signal('efectivo');
+  readonly qrCodeBase64 = signal<string | null>(null);
+  readonly loadingQr = signal(false);
 
-  clientId = this.auth.currentUser()?.id ?? 0;
+  private defaultClientId(): number {
+    const user = this.auth.currentUser();
+    if (user && user.role === 'Cliente') return user.id;
+    const tenantId = user?.tenant_id;
+    if (tenantId === 1) return 10;
+    if (tenantId === 2) return 13;
+    if (tenantId === 3) return 16;
+    return 4;
+  }
+
+  clientId = this.defaultClientId();
 
   readonly tenantName = computed(() => this.auth.currentUser()?.tenant_name ?? null);
   readonly planName = computed(() => this.auth.currentUser()?.plan_name ?? null);
@@ -177,10 +189,43 @@ export class PosPage {
     const max = stock?.available_stock ?? 1;
     const value = Math.min(Math.max(1, Number(quantity) || 1), Math.max(1, max));
     this.lines.set(this.lines().map((item, i) => (i === index ? { ...item, quantity: value } : item)));
+    if (this.paymentMethod() === 'qr') {
+      this.generateQr();
+    }
   }
 
   removeLine(index: number): void {
     this.lines.set(this.lines().filter((_, i) => i !== index));
+    if (this.paymentMethod() === 'qr') {
+      this.generateQr();
+    }
+  }
+
+  setPaymentMethod(method: string): void {
+    this.paymentMethod.set(method);
+    if (method === 'qr' && !this.qrCodeBase64()) {
+      this.generateQr();
+    }
+  }
+
+  generateQr(): void {
+    if (this.subtotal() <= 0) return;
+    this.loadingQr.set(true);
+    this.commerce
+      .createQrPayment({
+        amount: this.subtotal(),
+        currency: 'usd',
+        description: `Cobro POS ${this.tenantName() || 'FashionStore'} - ${this.branchName()}`
+      })
+      .subscribe({
+        next: (res) => {
+          this.qrCodeBase64.set(res.qr_code_base64);
+          this.loadingQr.set(false);
+        },
+        error: () => {
+          this.loadingQr.set(false);
+        }
+      });
   }
 
   /** Apertura de caja: habilita la terminal y carga el stock de la sucursal. */
@@ -271,6 +316,9 @@ export class PosPage {
       return;
     }
     this.lines.set([...this.lines(), { stock_id: stockId, quantity }]);
+    if (this.paymentMethod() === 'qr') {
+      this.generateQr();
+    }
   }
 
   submit(): void {
@@ -292,7 +340,7 @@ export class PosPage {
         client_id: this.clientId,
         items: this.lines(),
         paid: true,
-        payment_provider: this.paymentMethod() === 'efectivo' ? 'cash' : this.paymentMethod()
+        payment_provider: this.paymentMethod() === 'efectivo' ? 'cash' : (this.paymentMethod() === 'qr' ? 'qr' : this.paymentMethod())
       })
       .subscribe({
         next: (sale) => {
@@ -379,6 +427,8 @@ export class PosPage {
     this.sale.set(null);
     this.receipt.set(null);
     this.message.set(null);
+    this.cashReceived.set('');
+    this.qrCodeBase64.set(null);
     const branchId = this.branchId();
     if (branchId) {
       this.refreshStock(branchId);

@@ -142,30 +142,38 @@
 
       <div class="field" style="margin-top: 1rem">
         <label>Método de pago</label>
-        <div class="seg">
+        <div class="seg" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
           <button
             type="button"
             class="chip"
             [class.selected]="paymentMethod() === 'efectivo'"
-            (click)="paymentMethod.set('efectivo')"
+            (click)="setPaymentMethod('efectivo')"
           >
-            Efectivo
+            💵 Efectivo
           </button>
           <button
             type="button"
             class="chip"
             [class.selected]="paymentMethod() === 'tarjeta'"
-            (click)="paymentMethod.set('tarjeta')"
+            (click)="setPaymentMethod('tarjeta')"
           >
-            Tarjeta
+            💳 Tarjeta (Stripe)
+          </button>
+          <button
+            type="button"
+            class="chip"
+            [class.selected]="paymentMethod() === 'qr'"
+            (click)="setPaymentMethod('qr')"
+          >
+            📱 QR (Stripe)
           </button>
           <button
             type="button"
             class="chip"
             [class.selected]="paymentMethod() === 'datafono'"
-            (click)="paymentMethod.set('datafono')"
+            (click)="setPaymentMethod('datafono')"
           >
-            Datáfono
+            📟 Datáfono
           </button>
         </div>
       </div>
@@ -189,6 +197,46 @@
           } @else if (receivedCash() > 0 && cashChange() === 0) {
             <p class="field-hint">Pago exacto, sin cambio.</p>
           }
+        </div>
+      }
+
+      @if (paymentMethod() === 'tarjeta') {
+        <div class="pay-details" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03));">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+            <strong style="font-size: 0.88rem;">Pasarela Stripe (Simulador)</strong>
+            <span class="badge ok" style="font-size: 0.7rem;">Sandbox</span>
+          </div>
+          <p style="margin: 0; font-size: 0.82rem; color: var(--muted)">Tarjeta demo: <code>4242 •••• •••• 4242</code></p>
+          <p style="margin: 0.25rem 0 0; font-size: 0.74rem; color: var(--muted)">Al registrar cobro se autoriza la transacción en Stripe y se actualiza el stock.</p>
+        </div>
+      }
+
+      @if (paymentMethod() === 'qr') {
+        <div class="pay-details qr-box" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03)); text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+            <strong style="font-size: 0.88rem;">Cobro QR Dinámico (Stripe)</strong>
+            <span class="badge ok" style="font-size: 0.7rem;">En Línea</span>
+          </div>
+          @if (loadingQr()) {
+            <p style="font-size: 0.82rem; color: var(--muted); margin: 0.5rem 0;">Generando código QR con Stripe…</p>
+          } @else if (qrCodeBase64(); as qr) {
+            <div style="margin: 0.5rem auto; width: 140px; height: 140px; background: #fff; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+              <img [src]="qr" alt="Código QR Stripe" style="width: 100%; height: 100%; object-fit: contain;" />
+            </div>
+            <p style="margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted)">El cliente escanea el QR desde su teléfono o app de pago.</p>
+          } @else {
+            <button type="button" class="btn btn-sm" style="margin-top: 0.5rem;" (click)="generateQr()">Generar código QR</button>
+          }
+        </div>
+      }
+
+      @if (paymentMethod() === 'datafono') {
+        <div class="pay-details" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03));">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+            <strong style="font-size: 0.88rem;">Terminal POS / Datáfono</strong>
+            <span class="badge ok" style="font-size: 0.7rem;">Mostrador</span>
+          </div>
+          <p style="margin: 0; font-size: 0.82rem; color: var(--muted)">Inserta o aproxima la tarjeta física del cliente en el terminal.</p>
         </div>
       }
 
