@@ -72,38 +72,124 @@ export class CatalogStore {
     apiProducts: ProductResponse[],
     stocks: StockResponse[]
   ): void {
-    this.products.update((current) =>
-      current.map((p) => {
-        // Emparejar producto del catálogo con el del servidor
-        const apiProd = apiProducts.find(
-          (ap) =>
-            ap.name.trim().toLowerCase() === p.name.trim().toLowerCase() ||
-            ap.id === p.id
-        );
-        if (!apiProd) return p;
+    if (!apiProducts || apiProducts.length === 0) {
+      this.stockLoaded.set(true);
+      return;
+    }
 
-        const variantIds = new Set(apiProd.variants.map((v) => v.id));
-        const newStockMap: Record<string, number> = { ...p.stock };
+    const mapped: FigmaProduct[] = apiProducts.map((apiProd) => {
+      const existing = PRODUCTS.find(
+        (p) =>
+          p.id === apiProd.id ||
+          p.name.trim().toLowerCase() === apiProd.name.trim().toLowerCase()
+      );
 
-        for (const branch of branches) {
-          const bKey = branch.name.replace(/^Sucursal\s+/i, '').trim();
-          // Suma del stock disponible de las variantes de este producto en esta sucursal
-          const branchTotal = stocks
-            .filter(
-              (s) => s.branch_id === branch.id && variantIds.has(s.variant_id)
-            )
-            .reduce((sum, s) => sum + Math.max(0, s.available_stock), 0);
+      const variantIds = new Set(apiProd.variants.map((v) => v.id));
+      const newStockMap: Record<string, number> = existing ? { ...existing.stock } : {};
 
-          newStockMap[bKey] = branchTotal;
-          // También normalizar con la primera letra mayúscula (ej. 'Centro', 'Norte', 'Sur')
-          const capitalized = bKey.charAt(0).toUpperCase() + bKey.slice(1).toLowerCase();
-          newStockMap[capitalized] = branchTotal;
-        }
+      for (const branch of branches) {
+        const bKey = branch.name.replace(/^Sucursal\s+/i, '').trim();
+        const branchTotal = stocks
+          .filter(
+            (s) => s.branch_id === branch.id && variantIds.has(s.variant_id)
+          )
+          .reduce((sum, s) => sum + Math.max(0, s.available_stock), 0);
 
-        return { ...p, stock: newStockMap };
-      })
-    );
+        newStockMap[bKey] = branchTotal;
+        const capitalized = bKey.charAt(0).toUpperCase() + bKey.slice(1).toLowerCase();
+        newStockMap[capitalized] = branchTotal;
+      }
+
+      if (existing) {
+        return {
+          ...existing,
+          id: apiProd.id,
+          name: apiProd.name,
+          brand: apiProd.brand || existing.brand,
+          price: Number(apiProd.price),
+          wholesalePrice: apiProd.wholesale_price ? Number(apiProd.wholesale_price) : existing.wholesalePrice,
+          wholesaleMinQty: apiProd.wholesale_min_quantity ?? existing.wholesaleMinQty,
+          isClearance: apiProd.is_clearance,
+          stock: newStockMap,
+        };
+      }
+
+      // Producto exclusivo del Tenant (ej. Medias o Alta Costura)
+      const img = this.resolveProductImage(apiProd.name);
+      return {
+        id: apiProd.id,
+        name: apiProd.name,
+        brand: apiProd.brand || 'Colección Exclusiva',
+        category: this.resolveCategory(apiProd.name),
+        price: Number(apiProd.price),
+        oldPrice: Math.round(Number(apiProd.price) * 1.25 * 100) / 100,
+        discount: 20,
+        image: img,
+        images: [img],
+        colors: [
+          { name: 'Blanco', hex: '#FFFFFF' },
+          { name: 'Negro', hex: '#111827' },
+          { name: 'Gris', hex: '#6B7280' },
+        ],
+        sizes: apiProd.variants.length > 0 ? [...new Set(apiProd.variants.map(v => v.size_id ? String(v.size_id) : 'M'))] : ['S', 'M', 'L'],
+        description: this.resolveDescription(apiProd.name),
+        stock: newStockMap,
+        rating: 4.9,
+        reviews: 32,
+        isFeatured: true,
+        wholesalePrice: apiProd.wholesale_price ? Number(apiProd.wholesale_price) : Math.round(Number(apiProd.price) * 0.85 * 100) / 100,
+        wholesaleMinQty: apiProd.wholesale_min_quantity ?? 3,
+        isClearance: apiProd.is_clearance,
+      } as FigmaProduct;
+    });
+
+    this.products.set(mapped);
     this.stockLoaded.set(true);
+  }
+
+  private resolveProductImage(name: string): string {
+    const n = name.toLowerCase();
+    if (n.includes('deportiva')) {
+      return 'https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('compresión') || n.includes('compresion')) {
+      return 'https://images.unsplash.com/photo-1582966772680-860e372bb558?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('térmica') || n.includes('termica') || n.includes('polar')) {
+      return 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('invisible') || n.includes('antideslizante')) {
+      return 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('panti') || n.includes('seda')) {
+      return 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('gala') || n.includes('vestido')) {
+      return 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('traje') || n.includes('ejecutivo')) {
+      return 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&auto=format&fit=crop&q=80';
+  }
+
+  private resolveCategory(name: string): string {
+    const n = name.toLowerCase();
+    if (n.includes('media') || n.includes('panti')) return 'Accesorios';
+    if (n.includes('traje')) return 'Hombre';
+    if (n.includes('vestido') || n.includes('gala')) return 'Mujer';
+    return 'Todas';
+  }
+
+  private resolveDescription(name: string): string {
+    const n = name.toLowerCase();
+    if (n.includes('media') || n.includes('panti')) {
+      return 'Confeccionadas con algodón peinado y fibras elásticas de alta durabilidad, respirabilidad y ajuste ergonómico.';
+    }
+    if (n.includes('gala') || n.includes('traje')) {
+      return 'Confección de alta costura con textiles premium de importación y terminaciones de lujo.';
+    }
+    return 'Prenda de confección de alta calidad con diseño exclusivo.';
   }
 
   private async persistSnapshot(
