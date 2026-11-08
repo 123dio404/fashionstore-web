@@ -1,12 +1,12 @@
 <div class="page-head">
   <div>
-    <h2 class="page-title">Terminal de venta</h2>
+    <h2 class="page-title">Terminal de venta (POS)</h2>
     <p class="page-sub">
       Venta presencial en caja
       @if (tenantName()) {
         · <strong style="color: var(--brand)">{{ tenantName() }}</strong>
       }
-      ({{ branchName() }}): abre la caja, cobra y emite el comprobante.
+      ({{ branchName() }}): apertura con fondo de caja, cobro presencial, arqueo y entrega de reservas.
     </p>
   </div>
   <div class="page-actions">
@@ -17,7 +17,7 @@
     }
     @if (sessionOpen()) {
       <span class="chip selected">Caja abierta · {{ branchName() }}</span>
-      <button type="button" class="btn btn-sm" (click)="closeSession()">Cerrar caja</button>
+      <button type="button" class="btn btn-sm" (click)="closeSession()">🔒 Arqueo y Cerrar Turno</button>
     } @else {
       <span class="chip">Caja cerrada</span>
     }
@@ -31,9 +31,131 @@
   <div class="alert alert-success">{{ message() }}</div>
 }
 
+<!-- PUNTO 1: ACTA DE ARQUEO Y CIERRE DE CAJA (AL CERRAR TURNO) -->
+@if (arqueoSummary(); as arqueo) {
+  <div class="card" style="border: 2px solid #2563EB; background: #F8FAFC; margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #CBD5E1; padding-bottom: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+      <div>
+        <h3 style="margin: 0; color: #1E3A8A;">📋 Acta de Arqueo y Cierre de Caja (Turno Finalizado)</h3>
+        <p class="muted" style="margin: 0; font-size: 0.82rem;">{{ arqueo.branchName }} · Cajero: {{ arqueo.cashier }} · {{ arqueo.closedAt }}</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-sm" (click)="printReceipt()">🖨️ Imprimir Acta</button>
+        <button type="button" class="btn-ghost btn-sm" (click)="dismissArqueoSummary()">✕ Descartar</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.25rem;">
+      <div style="background: #FFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+        <span class="muted" style="font-size: 0.75rem; font-weight: 600;">Fondo Inicial</span>
+        <div style="font-weight: 700; font-size: 1.1rem; color: #334155;">{{ arqueo.initial | currency: 'BOB' : 'Bs. ' }}</div>
+      </div>
+      <div style="background: #FFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+        <span class="muted" style="font-size: 0.75rem; font-weight: 600;">Ventas Efectivo</span>
+        <div style="font-weight: 700; font-size: 1.1rem; color: #166534;">+{{ arqueo.cashSales | currency: 'BOB' : 'Bs. ' }}</div>
+      </div>
+      <div style="background: #FFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+        <span class="muted" style="font-size: 0.75rem; font-weight: 600;">Ventas Tarjeta</span>
+        <div style="font-weight: 700; font-size: 1.1rem; color: #2563EB;">{{ arqueo.cardSales | currency: 'BOB' : 'Bs. ' }}</div>
+      </div>
+      <div style="background: #FFF; padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+        <span class="muted" style="font-size: 0.75rem; font-weight: 600;">Ventas QR / Otros</span>
+        <div style="font-weight: 700; font-size: 1.1rem; color: #7C3AED;">{{ arqueo.qrSales | currency: 'BOB' : 'Bs. ' }}</div>
+      </div>
+    </div>
+
+    <div style="background: #FFF; padding: 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 0.9rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span>Total ventas de turno ({{ arqueo.salesCount }} transacciones):</span>
+        <strong>{{ arqueo.totalSales | currency: 'BOB' : 'Bs. ' }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span>Efectivo esperado en gaveta (Fondo + Efectivo recibido):</span>
+        <strong>{{ arqueo.expected | currency: 'BOB' : 'Bs. ' }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span>Efectivo contado físicamente por el cajero:</span>
+        <strong>{{ arqueo.counted | currency: 'BOB' : 'Bs. ' }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px dashed #CBD5E1; font-size: 1.05rem;">
+        <span>Resultado del cuadre:</span>
+        <strong [style.color]="arqueo.diff === 0 ? '#166534' : (arqueo.diff > 0 ? '#2563EB' : '#DC2626')">
+          {{ arqueo.status }}
+        </strong>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL INTERACTIVO DE ARQUEO DE CAJA AL CERRAR TURNO -->
+@if (showArqueoModal()) {
+  <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #FFF; border-radius: 12px; width: 100%; max-width: 480px; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
+      <h3 style="margin-top: 0; color: #1E293B;">🔒 Arqueo y Cierre de Turno</h3>
+      <p style="font-size: 0.85rem; color: #64748B; margin-top: -6px;">
+        Realice el conteo físico de los billetes y monedas en gaveta para validar el cuadre de caja antes de finalizar el turno.
+      </p>
+
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; margin-bottom: 1rem; font-size: 0.88rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span class="muted">Fondo inicial de turno:</span>
+          <span>{{ initialCashAmount() | currency: 'BOB' : 'Bs. ' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span class="muted">Ventas en efectivo acumuladas:</span>
+          <span style="color: #166534; font-weight: 600;">+{{ sessionCashSales() | currency: 'BOB' : 'Bs. ' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span class="muted">Ventas con tarjeta:</span>
+          <span>{{ sessionCardSales() | currency: 'BOB' : 'Bs. ' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span class="muted">Ventas con QR / Otros:</span>
+          <span>{{ sessionQrSales() | currency: 'BOB' : 'Bs. ' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid #CBD5E1; font-weight: 700;">
+          <span>Efectivo esperado en gaveta:</span>
+          <span style="color: #1E3A8A;">{{ expectedCashInDrawer() | currency: 'BOB' : 'Bs. ' }}</span>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom: 1rem;">
+        <label for="counted-cash" style="font-weight: 600; display: block; margin-bottom: 4px;">Efectivo contado físicamente (Bs.)</label>
+        <input
+          id="counted-cash"
+          type="number"
+          min="0"
+          step="0.5"
+          [ngModel]="countedCash()"
+          (ngModelChange)="countedCash.set($event)"
+          style="width: 100%; font-size: 1.15rem; font-weight: 700; padding: 8px 12px; border-radius: 6px; border: 2px solid #3B82F6;"
+        />
+        <p class="field-hint" style="margin: 4px 0 0;">Ingrese el monto exacto contado en billetes y monedas.</p>
+      </div>
+
+      <div style="padding: 10px; border-radius: 6px; margin-bottom: 1.25rem; font-size: 0.88rem; font-weight: 600;"
+        [style.background]="cashVariance() === 0 ? '#DCFCE7' : (cashVariance() > 0 ? '#EFF6FF' : '#FEE2E2')"
+        [style.color]="cashVariance() === 0 ? '#166534' : (cashVariance() > 0 ? '#1E40AF' : '#991B1B')">
+        @if (cashVariance() === 0) {
+          <span>✔️ Caja cuadrada: El conteo físico coincide exactamente con el sistema.</span>
+        } @else if (cashVariance() > 0) {
+          <span>ℹ️ Sobrante en caja: Hay Bs. {{ cashVariance().toFixed(2) }} adicionales en gaveta.</span>
+        } @else {
+          <span>⚠️ Faltante en caja: Faltan Bs. {{ (-cashVariance()).toFixed(2) }} respecto al registro.</span>
+        }
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn" (click)="cancelArqueo()">Volver a Caja</button>
+        <button type="button" class="btn-primary" (click)="confirmArqueo()">Confirmar Arqueo y Cerrar Turno</button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (!sessionOpen()) {
   <div class="card">
-    <h3 style="margin-top: 0">Apertura de caja</h3>
+    <h3 style="margin-top: 0">Apertura de turno de caja</h3>
     <div class="grid-2">
       <div class="field">
         <label for="pos-branch">Sucursal</label>
@@ -45,7 +167,20 @@
         </select>
       </div>
       <div class="field">
-        <label for="pos-client">Cliente (ID)</label>
+        <label for="pos-initial-cash">Fondo inicial en gaveta (Bs.)</label>
+        <input
+          id="pos-initial-cash"
+          type="number"
+          min="0"
+          step="10"
+          [ngModel]="initialCashAmount()"
+          (ngModelChange)="initialCashAmount.set($event)"
+          placeholder="Ej: 100"
+        />
+        <p class="field-hint">Monto físico en efectivo con el que se abre la caja para cambio/vuelto.</p>
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label for="pos-client">Cliente por defecto (ID)</label>
         <input id="pos-client" type="number" min="1" [(ngModel)]="clientId" />
         <p class="field-hint">Por defecto se usa tu usuario; el cliente debe existir en el sistema.</p>
       </div>
@@ -59,215 +194,309 @@
       Abrir caja y cargar stock
     </button>
     <p class="note">
-      Al abrir la caja se cargan las prendas con stock en esta sucursal. Búscalas por código de
-      barras, SKU o nombre para agregarlas a la venta.
+      Al abrir la caja se cargan las prendas con stock en esta sucursal y las reservas activas del día.
     </p>
   </div>
 } @else {
-  <div class="two-col">
-    <div>
-      <div class="page-toolbar">
-        <div class="field" style="margin: 0; min-width: 16rem">
-          <label for="pos-scan">Código de barras / SKU</label>
-          <input
-            id="pos-scan"
-            placeholder="Escanea o escribe el código y pulsa Enter"
-            [ngModel]="scan()"
-            (ngModelChange)="scan.set($event)"
-            (keyup.enter)="scanAdd()"
-          />
-        </div>
-        <button type="button" class="btn" (click)="scanAdd()">Añadir por código</button>
-        <span class="spacer"></span>
-        <span class="muted">{{ availableVariants().length }} variantes con stock</span>
-      </div>
+  <!-- PESTAÑAS: VENTA DE MOSTRADOR O RESERVAS EN TIENDA (PUNTO 4) -->
+  <div style="display: flex; gap: 8px; margin-bottom: 1.25rem;">
+    <button
+      type="button"
+      class="chip"
+      [class.selected]="activeTab() === 'pos'"
+      (click)="activeTab.set('pos')"
+      style="cursor: pointer; padding: 6px 14px; font-weight: 600;"
+    >
+      🛒 Venta de Mostrador
+    </button>
+    <button
+      type="button"
+      class="chip"
+      [class.selected]="activeTab() === 'reservations'"
+      (click)="activeTab.set('reservations'); loadBranchReservations()"
+      style="cursor: pointer; padding: 6px 14px; font-weight: 600;"
+    >
+      📋 Reservas de Hoy en Sucursal ({{ branchReservations().length }})
+    </button>
+  </div>
 
-      <div class="table-card">
-        <h3>Artículos en caja ({{ lines().length }})</h3>
-        @if (lines().length === 0) {
-          <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
-            Sin artículos. Escanea un código o elige una variante de la sucursal.
+  @if (activeTab() === 'reservations') {
+    <!-- PUNTO 4: CHECK-IN Y COBRO DE RESERVAS EN SUCURSAL -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h3 style="margin: 0;">Reservas Presenciales en Sucursal ({{ branchName() }})</h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem;">
+            Flujo O2O: Los clientes que apartaron prendas online o para probador se presentan a retirar y pagar.
           </p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Prenda</th>
-                <th>Código</th>
-                <th>Talla</th>
-                <th>Precio</th>
-                <th>Cantidad</th>
-                <th>Subtotal</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (line of lines(); track line.stock_id; let i = $index) {
-                <tr>
-                  <td>{{ variantOf(line.stock_id)?.productName || '—' }}</td>
-                  <td><code>{{ variantOf(line.stock_id)?.codigo || '—' }}</code></td>
-                  <td>{{ sizeName(variantOf(line.stock_id)?.sizeId) }}</td>
-                  <td>{{ (variantOf(line.stock_id)?.price ?? 0) | currency: 'BOB' : 'Bs. ' }}</td>
-                  <td>
-                    <div class="qty">
-                      <button type="button" class="btn btn-sm" (click)="changeQuantity(i, line.quantity - 1)">−</button>
-                      <span>{{ line.quantity }}</span>
-                      <button type="button" class="btn btn-sm" (click)="changeQuantity(i, line.quantity + 1)">+</button>
-                    </div>
-                  </td>
-                  <td><strong>{{ lineTotal(line) | currency: 'BOB' : 'Bs. ' }}</strong></td>
-                  <td><button type="button" class="btn-danger btn-sm" (click)="removeLine(i)">Quitar</button></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </div>
-    </div>
-
-    <aside class="aside-card">
-      <h3 class="aside-title">Cobro</h3>
-      <div class="summary-row">
-        <span class="label">Artículos</span>
-        <span>{{ totalUnits() }}</span>
-      </div>
-      <div class="summary-row">
-        <span class="label">Subtotal</span>
-        <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
-      </div>
-      <div class="summary-row total">
-        <span>Total</span>
-        <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
-      </div>
-
-      <div class="field" style="margin-top: 1rem">
-        <label>Método de pago</label>
-        <div class="seg" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="paymentMethod() === 'efectivo'"
-            (click)="setPaymentMethod('efectivo')"
-          >
-            💵 Efectivo
-          </button>
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="paymentMethod() === 'tarjeta'"
-            (click)="setPaymentMethod('tarjeta')"
-          >
-            💳 Tarjeta (Stripe)
-          </button>
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="paymentMethod() === 'qr'"
-            (click)="setPaymentMethod('qr')"
-          >
-            📱 QR (Stripe)
-          </button>
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="paymentMethod() === 'datafono'"
-            (click)="setPaymentMethod('datafono')"
-          >
-            📟 Datáfono
-          </button>
         </div>
+        <button type="button" class="btn btn-sm" (click)="loadBranchReservations()">🔄 Actualizar Reservas</button>
       </div>
 
-      @if (paymentMethod() === 'efectivo') {
-        <div class="field" style="margin-top: 1rem">
-          <label for="pos-cash">Efectivo recibido</label>
-          <input
-            id="pos-cash"
-            type="number"
-            min="0"
-            step="0.01"
-            [ngModel]="cashReceived()"
-            (ngModelChange)="cashReceived.set($event)"
-            placeholder="Pago exacto si se deja vacío"
-          />
-          @if (cashChange() > 0) {
-            <p class="field-hint" style="color: var(--success); font-weight: 600">
-              Cambio a entregar: {{ cashChange() | currency: 'BOB' : 'Bs. ' }}
-            </p>
-          } @else if (receivedCash() > 0 && cashChange() === 0) {
-            <p class="field-hint">Pago exacto, sin cambio.</p>
-          }
-        </div>
-      }
-
-      @if (paymentMethod() === 'tarjeta') {
-        <div class="pay-details" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03));">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
-            <strong style="font-size: 0.88rem;">Pasarela Stripe (Simulador)</strong>
-            <span class="badge ok" style="font-size: 0.7rem;">Sandbox</span>
-          </div>
-          <p style="margin: 0; font-size: 0.82rem; color: var(--muted)">Tarjeta demo: <code>4242 •••• •••• 4242</code></p>
-          <p style="margin: 0.25rem 0 0; font-size: 0.74rem; color: var(--muted)">Al registrar cobro se autoriza la transacción en Stripe y se actualiza el stock.</p>
-        </div>
-      }
-
-      @if (paymentMethod() === 'qr') {
-        <div class="pay-details qr-box" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03)); text-align: center;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
-            <strong style="font-size: 0.88rem;">Cobro QR Dinámico (Stripe)</strong>
-            <span class="badge ok" style="font-size: 0.7rem;">En Línea</span>
-          </div>
-          @if (loadingQr()) {
-            <p style="font-size: 0.82rem; color: var(--muted); margin: 0.5rem 0;">Generando código QR con Stripe…</p>
-          } @else if (qrCodeBase64(); as qr) {
-            <div style="margin: 0.5rem auto; width: 140px; height: 140px; background: #fff; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-              <img [src]="qr" alt="Código QR Stripe" style="width: 100%; height: 100%; object-fit: contain;" />
+      @if (loadingReservations()) {
+        <p class="muted" style="padding: 1.5rem; text-align: center;">Cargando reservas de la sucursal…</p>
+      } @else if (branchReservations().length === 0) {
+        <p class="muted" style="padding: 1.5rem; text-align: center; border: 1px dashed var(--border); border-radius: 8px;">
+          No hay reservas activas pendientes de entrega en esta sucursal.
+        </p>
+      } @else {
+        <div style="display: grid; gap: 12px;">
+          @for (res of branchReservations(); track res.id) {
+            <div style="background: var(--surface-2, #F8FAFC); border: 1px solid var(--border, #E2E8F0); border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <strong>Reserva #{{ res.id }}</strong>
+                  <span class="badge ok" style="font-size: 0.72rem; text-transform: uppercase;">{{ res.status }}</span>
+                  <span class="muted" style="font-size: 0.8rem;">Fecha: {{ res.reservation_date }} · {{ res.reservation_time }}</span>
+                </div>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--muted, #475569);">
+                  Cliente ID: #{{ res.client_id }} · Probador: {{ res.fitting_room || 'General' }} · {{ res.items.length }} artículo(s)
+                </p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button
+                  type="button"
+                  class="btn-primary"
+                  [disabled]="convertingReservationId() === res.id"
+                  (click)="convertReservation(res.id)"
+                  style="background: #16A34A; border: none; font-size: 0.85rem; padding: 8px 14px;"
+                >
+                  {{ convertingReservationId() === res.id ? 'Cobrando…' : '💳 Cobrar y Entregar Prenda' }}
+                </button>
+              </div>
             </div>
-            <p style="margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted)">El cliente escanea el QR desde su teléfono o app de pago.</p>
-          } @else {
-            <button type="button" class="btn btn-sm" style="margin-top: 0.5rem;" (click)="generateQr()">Generar código QR</button>
           }
         </div>
       }
-
-      @if (paymentMethod() === 'datafono') {
-        <div class="pay-details" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03));">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
-            <strong style="font-size: 0.88rem;">Terminal POS / Datáfono</strong>
-            <span class="badge ok" style="font-size: 0.7rem;">Mostrador</span>
+    </div>
+  } @else {
+    <!-- VENTA DIRECTA EN MOSTRADOR -->
+    <div class="two-col">
+      <div>
+        <div class="page-toolbar">
+          <div class="field" style="margin: 0; min-width: 16rem">
+            <label for="pos-scan">Código de barras / SKU</label>
+            <input
+              id="pos-scan"
+              placeholder="Escanea o escribe el código y pulsa Enter"
+              [ngModel]="scan()"
+              (ngModelChange)="scan.set($event)"
+              (keyup.enter)="scanAdd()"
+            />
           </div>
-          <p style="margin: 0; font-size: 0.82rem; color: var(--muted)">Inserta o aproxima la tarjeta física del cliente en el terminal.</p>
+          <button type="button" class="btn" (click)="scanAdd()">Añadir por código</button>
+          <span class="spacer"></span>
+          <span class="muted">{{ availableVariants().length }} variantes con stock</span>
         </div>
-      }
 
-      <button
-        type="button"
-        class="btn-primary btn-block"
-        [disabled]="!canPay()"
-        (click)="submit()"
-      >
-        {{ submitting() ? 'Procesando…' : 'Cobrar y registrar' }}
-      </button>
-      <p class="note">El comprobante se emite al confirmar el cobro.</p>
+        <div class="table-card">
+          <h3>Artículos en caja ({{ lines().length }})</h3>
+          @if (lines().length === 0) {
+            <p class="muted" style="padding: 0 1.25rem 1.25rem; margin: 0">
+              Sin artículos. Escanea un código o elige una variante de la sucursal.
+            </p>
+          } @else {
+            <table>
+              <thead>
+                <tr>
+                  <th>Prenda</th>
+                  <th>Código</th>
+                  <th>Talla</th>
+                  <th>Precio</th>
+                  <th>Cantidad</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of lines(); track line.stock_id; let i = $index) {
+                  <tr>
+                    <td>{{ variantOf(line.stock_id)?.productName || '—' }}</td>
+                    <td><code>{{ variantOf(line.stock_id)?.codigo || '—' }}</code></td>
+                    <td>{{ sizeName(variantOf(line.stock_id)?.sizeId) }}</td>
+                    <td>{{ (variantOf(line.stock_id)?.price ?? 0) | currency: 'BOB' : 'Bs. ' }}</td>
+                    <td>
+                      <div class="qty">
+                        <button type="button" class="btn btn-sm" (click)="changeQuantity(i, line.quantity - 1)">−</button>
+                        <span>{{ line.quantity }}</span>
+                        <button type="button" class="btn btn-sm" (click)="changeQuantity(i, line.quantity + 1)">+</button>
+                      </div>
+                    </td>
+                    <td><strong>{{ lineTotal(line) | currency: 'BOB' : 'Bs. ' }}</strong></td>
+                    <td><button type="button" class="btn-danger btn-sm" (click)="removeLine(i)">Quitar</button></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
 
-      @if (sale(); as completed) {
-        <div class="summary-row" style="margin-top: 1rem">
-          <span class="label">Venta</span>
-          <span>#{{ completed.id }}</span>
+      <aside class="aside-card">
+        <h3 class="aside-title">Cobro</h3>
+        <div class="summary-row">
+          <span class="label">Artículos</span>
+          <span>{{ totalUnits() }}</span>
         </div>
         <div class="summary-row">
-          <span class="label">Estado</span>
-          <span class="badge ok">{{ completed.payments[0]?.status || 'completado' }}</span>
+          <span class="label">Subtotal</span>
+          <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
-        <button type="button" class="btn btn-block" style="margin-top: 0.75rem" (click)="printReceipt()">
-          Imprimir comprobante
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
+        </div>
+
+        <!-- FACTURACIÓN SIMULADA CON NIT/CI Y RAZÓN SOCIAL (PUNTO 2) -->
+        <div class="field" style="margin-top: 1rem; padding: 10px; background: var(--surface-2, rgba(255,255,255,0.03)); border: 1px solid var(--border); border-radius: 8px;">
+          <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Datos de Facturación (Opcional)</label>
+          <div style="display: grid; gap: 6px;">
+            <input
+              type="text"
+              placeholder="NIT o C.I. (0 para Consumidor Final)"
+              [ngModel]="posTaxId()"
+              (ngModelChange)="posTaxId.set($event)"
+              style="font-size: 0.82rem; padding: 6px 8px; width: 100%; box-sizing: border-box;"
+            />
+            <input
+              type="text"
+              placeholder="Razón Social / Nombre"
+              [ngModel]="posBusinessName()"
+              (ngModelChange)="posBusinessName.set($event)"
+              style="font-size: 0.82rem; padding: 6px 8px; width: 100%; box-sizing: border-box;"
+            />
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 1rem">
+          <label>Método de pago</label>
+          <div class="seg" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="paymentMethod() === 'efectivo'"
+              (click)="setPaymentMethod('efectivo')"
+            >
+              💵 Efectivo
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="paymentMethod() === 'tarjeta'"
+              (click)="setPaymentMethod('tarjeta')"
+            >
+              💳 Tarjeta (Stripe)
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="paymentMethod() === 'qr'"
+              (click)="setPaymentMethod('qr')"
+            >
+              📱 QR (Stripe)
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="paymentMethod() === 'datafono'"
+              (click)="setPaymentMethod('datafono')"
+            >
+              📟 Datáfono
+            </button>
+          </div>
+        </div>
+
+        @if (paymentMethod() === 'efectivo') {
+          <div class="field" style="margin-top: 1rem">
+            <label for="pos-cash">Efectivo recibido</label>
+            <input
+              id="pos-cash"
+              type="number"
+              min="0"
+              step="0.01"
+              [ngModel]="cashReceived()"
+              (ngModelChange)="cashReceived.set($event)"
+              placeholder="Pago exacto si se deja vacío"
+            />
+            @if (cashChange() > 0) {
+              <p class="field-hint" style="color: var(--success); font-weight: 600">
+                Cambio a entregar: {{ cashChange() | currency: 'BOB' : 'Bs. ' }}
+              </p>
+            } @else if (receivedCash() > 0 && cashChange() === 0) {
+              <p class="field-hint">Pago exacto, sin cambio.</p>
+            }
+          </div>
+        }
+
+        @if (paymentMethod() === 'tarjeta') {
+          <div class="pay-details" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03));">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+              <strong style="font-size: 0.88rem;">Pasarela Stripe (Simulador)</strong>
+              <span class="badge ok" style="font-size: 0.7rem;">Sandbox</span>
+            </div>
+            <p style="margin: 0; font-size: 0.82rem; color: var(--muted)">Tarjeta demo: <code>4242 •••• •••• 4242</code></p>
+            <p style="margin: 0.25rem 0 0; font-size: 0.74rem; color: var(--muted)">Al registrar cobro se autoriza la transacción en Stripe y se actualiza el stock.</p>
+          </div>
+        }
+
+        @if (paymentMethod() === 'qr') {
+          <div class="pay-details qr-box" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03)); text-align: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+              <strong style="font-size: 0.88rem;">Cobro QR Dinámico (Stripe)</strong>
+              <span class="badge ok" style="font-size: 0.7rem;">En Línea</span>
+            </div>
+            @if (loadingQr()) {
+              <p style="font-size: 0.82rem; color: var(--muted); margin: 0.5rem 0;">Generando código QR con Stripe…</p>
+            } @else if (qrCodeBase64(); as qr) {
+              <div style="margin: 0.5rem auto; width: 140px; height: 140px; background: #fff; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <img [src]="qr" alt="Código QR Stripe" style="width: 100%; height: 100%; object-fit: contain;" />
+              </div>
+              <p style="margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted)">El cliente escanea el QR desde su teléfono o app de pago.</p>
+            } @else {
+              <button type="button" class="btn btn-sm" style="margin-top: 0.5rem;" (click)="generateQr()">Generar código QR</button>
+            }
+          </div>
+        }
+
+        @if (paymentMethod() === 'datafono') {
+          <div class="pay-details" style="margin-top: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.03));">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+              <strong style="font-size: 0.88rem;">Terminal POS / Datáfono</strong>
+              <span class="badge ok" style="font-size: 0.7rem;">Mostrador</span>
+            </div>
+            <p style="margin: 0; font-size: 0.82rem; color: var(--muted)">Inserta o aproxima la tarjeta física del cliente en el terminal.</p>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="btn-primary btn-block"
+          [disabled]="!canPay()"
+          (click)="submit()"
+        >
+          {{ submitting() ? 'Procesando…' : 'Cobrar y registrar' }}
         </button>
-        <button type="button" class="btn-ghost btn-block" style="margin-top: 0.5rem" (click)="newSale()">
-          Nueva venta
-        </button>
-      }
-    </aside>
-  </div>
+        <p class="note">El comprobante se emite al confirmar el cobro.</p>
+
+        @if (sale(); as completed) {
+          <div class="summary-row" style="margin-top: 1rem">
+            <span class="label">Venta</span>
+            <span>#{{ completed.id }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Estado</span>
+            <span class="badge ok">{{ completed.payments[0]?.status || 'completado' }}</span>
+          </div>
+          <button type="button" class="btn btn-block" style="margin-top: 0.75rem" (click)="printReceipt()">
+            Imprimir comprobante
+          </button>
+          <button type="button" class="btn-ghost btn-block" style="margin-top: 0.5rem" (click)="newSale()">
+            Nueva venta
+          </button>
+        }
+      </aside>
+    </div>
+  }
 
   @if (receipt(); as doc) {
     <section class="receipt">
@@ -284,6 +513,10 @@
       <div class="summary-row">
         <span class="label">Fecha</span>
         <span>{{ doc.sale_date | date: 'medium' }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Datos Fiscales</span>
+        <span><strong>{{ doc.business_name || 'Consumidor Final' }}</strong> (NIT/CI: {{ doc.tax_id || '0' }})</span>
       </div>
       <div class="summary-row">
         <span class="label">Sucursal / Cliente</span>

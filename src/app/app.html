@@ -204,10 +204,14 @@
                           <span>✕</span>
                         } @else if (n.type === 'reservation') {
                           <span>📅</span>
-                        } @else if (n.type === 'billing_reminder' || n.type === 'subscription_alert') {
+                        } @else if (n.type === 'billing_reminder' || n.type === 'subscription_alert' || n.type === 'subscription_payment') {
                           <span>💳</span>
-                        } @else if (n.type === 'promotion') {
+                        } @else if (n.type === 'promotion' || n.type === 'pos_sale') {
                           <span>🏷️</span>
+                        } @else if (n.type === 'cash_close') {
+                          <span>💵</span>
+                        } @else if (n.type === 'stock_critical') {
+                          <span>⚠️</span>
                         } @else {
                           <span>ℹ</span>
                         }

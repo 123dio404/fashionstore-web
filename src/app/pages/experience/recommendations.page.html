@@ -7,7 +7,7 @@
 
     <p class="field-label">Categoría</p>
     <div class="chip-wrap">
-      @for (c of categories; track c) {
+      @for (c of categories(); track c) {
         <button
           type="button"
           class="chip"
@@ -21,7 +21,7 @@
 
     <p class="field-label">Marca</p>
     <div class="chip-wrap">
-      @for (b of brands; track b) {
+      @for (b of brands(); track b) {
         <button
           type="button"
           class="chip"

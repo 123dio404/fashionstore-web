@@ -242,7 +242,7 @@ export class ReservationsPage {
     if (!confirm(`¿Confirmar retiro de prendas de la Reserva #${reservation.id}? Se convertirá en venta oficial y se descontará el inventario físico.`)) return;
     this.commerce.completeReservation(reservation.id).subscribe({
       next: (res) => {
-        this.message.set(`¡Reserva #${reservation.id} completada y facturada como Venta #${res.sale_id}! Total: Bs. ${res.total}`);
+        this.message.set(`¡Reserva #${reservation.id} completada y facturada como Venta #${res.id}! Total: Bs. ${res.total}`);
         this.load();
       },
       error: (err: any) => this.error.set(err.error?.detail || err.message)

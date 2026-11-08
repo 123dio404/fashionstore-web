@@ -1,24 +1,133 @@
 <div class="page-container">
-  <div class="page-header">
-    <h1>Asistente Generativo IA (Texto / Voz)</h1>
-  </div>
-
-  <div class="card">
-    <div class="query-row">
-      <input [(ngModel)]="query" placeholder="Pregunta en lenguaje natural... (ej. Ventas por sucursal del último mes)" (keyup.enter)="ask()" />
-      <button class="btn-secondary" (click)="startVoice()" [disabled]="recognizing()">{{ recognizing() ? 'Escuchando...' : '🎤 Voz' }}</button>
-      <button class="btn-primary" (click)="ask()" [disabled]="loading()">{{ loading() ? 'Consultando...' : 'Consultar' }}</button>
+  <div class="hero-banner">
+    <div class="hero-icon">✨</div>
+    <div class="hero-text">
+      <h1>Asistente Analítico Generativo con IA (Texto / Voz)</h1>
+      <p>Consulta en lenguaje natural el estado de ventas, rotación de prendas, comparativas trimestrales y alertas de stock de tu empresa en Bolivianos (Bs.).</p>
     </div>
   </div>
 
-  <div class="card" *ngIf="response()">
-    <div class="response-header">
-      <h2>Resultado</h2>
-      <div class="actions">
-        <button class="btn-secondary" (click)="exportPdf()">Exportar PDF</button>
-        <button class="btn-secondary" (click)="exportExcel()">Exportar Excel</button>
+  <div class="card query-card">
+    <label class="query-label">CONSULTA EN LENGUAJE NATURAL</label>
+    <div class="query-row">
+      <input
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        placeholder="Pregunta en lenguaje natural... (ej. ¿Cuáles fueron las ventas por sucursal del último mes?)"
+        (keyup.enter)="ask()"
+      />
+      <button type="button" class="btn-voice" [class.listening]="recognizing()" (click)="startVoice()" [disabled]="recognizing()">
+        {{ recognizing() ? '🎙️ Escuchando...' : '🎤 Hablar' }}
+      </button>
+      <button type="button" class="btn-primary" (click)="ask()" [disabled]="loading()">
+        {{ loading() ? 'Analizando...' : '✨ Consultar IA' }}
+      </button>
+    </div>
+
+    <div class="suggestions-row">
+      <span class="suggestions-label">Consultas sugeridas:</span>
+      <button
+        type="button"
+        class="suggestion-chip"
+        *ngFor="let s of suggestions"
+        (click)="useSuggestion(s)"
+      >
+        {{ s }}
+      </button>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="error()">
+    <div>
+      <strong>🔒 {{ planLocked() ? 'Función Exclusiva (Plan Profesional / Empresarial)' : 'Aviso' }}:</strong>
+      {{ error() }}
+    </div>
+    <a
+      *ngIf="planLocked()"
+      routerLink="/admin/subscription"
+      style="display: inline-block; margin-top: 10px; background: #4F46E5; color: #fff; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px;"
+    >
+      Actualizar a Plan Profesional / Empresarial →
+    </a>
+  </div>
+
+  <div class="loading-box" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Procesando datos de tu empresa y redactando informe ejecutivo con IA...</p>
+  </div>
+
+  <ng-container *ngIf="response() as rep">
+    <div class="card summary-card" *ngIf="!loading()">
+      <div class="response-header">
+        <div>
+          <span class="tenant-badge">{{ rep.empresa }}</span>
+          <h2>{{ rep.titulo }}</h2>
+          <p class="meta-line">Generado: {{ rep.generado_en }} · Consulta: "{{ rep.prompt_original || query() }}"</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-export pdf" (click)="exportPdf()">📄 Exportar PDF</button>
+          <button type="button" class="btn-export excel" (click)="exportExcel()">📊 Exportar Excel</button>
+        </div>
+      </div>
+
+      <div class="executive-box">
+        <div class="exec-title">🧠 SÍNTESIS EJECUTIVA Y RECOMENDACIÓN IA</div>
+        <p class="exec-body">{{ rep.resumen_ejecutivo }}</p>
       </div>
     </div>
-    <pre class="response-content">{{ response() | json }}</pre>
-  </div>
+
+    <div class="results-grid" *ngIf="!loading()">
+      <div class="card chart-card" *ngIf="chartRows().length">
+        <h3>Visualización Gráfica · {{ chartRows()[0]?.metricLabel }}</h3>
+        <div class="bars-list">
+          <div class="bar-item" *ngFor="let row of chartRows()">
+            <div class="bar-head">
+              <span class="bar-name">{{ row.label }}</span>
+              <strong class="bar-val">{{ formatCell(row.metricLabel || '', row.value) }}</strong>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="row.pct" [style.background]="row.color"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card table-card" *ngIf="rep.columnas?.length">
+        <h3>Detalle Consolidado ({{ rep.filas.length }} registros)</h3>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th *ngFor="let col of rep.columnas">{{ col }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rep.filas">
+                <td *ngFor="let col of rep.columnas">
+                  <ng-container *ngIf="col === 'Estado'; else normalCell">
+                    <span
+                      class="status-pill"
+                      [class.agotado]="row[col] === 'AGOTADO'"
+                      [class.critico]="row[col] === 'CRÍTICO'"
+                      [class.precaucion]="row[col] === 'PRECAUCIÓN'"
+                    >
+                      {{ row[col] }}
+                    </span>
+                  </ng-container>
+                  <ng-template #normalCell>
+                    {{ formatCell(col, row[col]) }}
+                  </ng-template>
+                </td>
+              </tr>
+              <tr *ngIf="!rep.filas?.length">
+                <td [attr.colspan]="rep.columnas.length" class="empty-cell">
+                  Sin registros en el período consultado.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
 </div>

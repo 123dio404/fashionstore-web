@@ -7,11 +7,13 @@ import { BranchesService } from '../../core/services/branches.service';
 import { CommerceService } from '../../core/services/commerce.service';
 import { IndexedDbService } from '../../core/services/indexed-db.service';
 import { InventoryService } from '../../core/services/inventory.service';
+import { NotificationsService } from '../../core/services/notifications.service';
 import { ProductsService } from '../../core/services/products.service';
 import { SyncManagerService } from '../../core/services/sync-manager.service';
 import {
   BranchResponse,
   ReceiptResponse,
+  ReservationResponse,
   SaleResponse,
   SizeResponse,
   StockResponse
@@ -42,6 +44,7 @@ export class PosPage {
   private readonly commerce = inject(CommerceService);
   private readonly products = inject(ProductsService);
   private readonly auth = inject(AuthService);
+  private readonly notifs = inject(NotificationsService);
   readonly syncManager = inject(SyncManagerService);
   private readonly db = inject(IndexedDbService);
 
@@ -65,6 +68,49 @@ export class PosPage {
   readonly paymentMethod = signal('efectivo');
   readonly qrCodeBase64 = signal<string | null>(null);
   readonly loadingQr = signal(false);
+
+  // ── PUNTO 1: ARQUEO Y CIERRE DE CAJA ──
+  readonly initialCashAmount = signal<number>(100);
+  readonly sessionCashSales = signal<number>(0);
+  readonly sessionCardSales = signal<number>(0);
+  readonly sessionQrSales = signal<number>(0);
+  readonly sessionSalesCount = signal<number>(0);
+  readonly showArqueoModal = signal<boolean>(false);
+  readonly countedCash = signal<number | null>(null);
+  readonly arqueoSummary = signal<{
+    initial: number;
+    cashSales: number;
+    cardSales: number;
+    qrSales: number;
+    totalSales: number;
+    salesCount: number;
+    expected: number;
+    counted: number;
+    diff: number;
+    status: string;
+    closedAt: string;
+    branchName: string;
+    cashier: string;
+  } | null>(null);
+
+  // ── PUNTO 2: FACTURACIÓN SIMULADA (NIT/CI Y RAZÓN SOCIAL) ──
+  readonly posTaxId = signal<string>('');
+  readonly posBusinessName = signal<string>('');
+
+  // ── PUNTO 4: RESERVAS DE HOY EN SUCURSAL ──
+  readonly activeTab = signal<'pos' | 'reservations'>('pos');
+  readonly branchReservations = signal<ReservationResponse[]>([]);
+  readonly loadingReservations = signal<boolean>(false);
+  readonly convertingReservationId = signal<number | null>(null);
+
+  readonly expectedCashInDrawer = computed(
+    () => this.initialCashAmount() + this.sessionCashSales()
+  );
+
+  readonly cashVariance = computed(() => {
+    const counted = this.countedCash() ?? this.expectedCashInDrawer();
+    return counted - this.expectedCashInDrawer();
+  });
 
   private defaultClientId(): number {
     const user = this.auth.currentUser();
@@ -233,6 +279,11 @@ export class PosPage {
     const branchId = this.branchId();
     if (!branchId) return;
     this.error.set(null);
+    this.sessionCashSales.set(0);
+    this.sessionCardSales.set(0);
+    this.sessionQrSales.set(0);
+    this.sessionSalesCount.set(0);
+    this.arqueoSummary.set(null);
 
     if (!this.syncManager.isOnline()) {
       void this.openSessionFromCache(branchId);
@@ -244,6 +295,7 @@ export class PosPage {
         this.applyStock(rows);
         this.sessionOpen.set(true);
         this.message.set('Caja abierta. Stock de la sucursal cargado.');
+        this.loadBranchReservations();
       },
       error: () => void this.openSessionFromCache(branchId)
     });
@@ -269,17 +321,128 @@ export class PosPage {
       this.message.set(
         'Caja abierta en modo offline con las existencias guardadas en el dispositivo.'
       );
+      this.loadBranchReservations();
     } catch {
       this.error.set('No se pudo abrir la caja sin conexión: no hay datos locales.');
     }
   }
 
-  closeSession(): void {
+  openArqueoModal(): void {
+    this.countedCash.set(this.expectedCashInDrawer());
+    this.showArqueoModal.set(true);
+  }
+
+  cancelArqueo(): void {
+    this.showArqueoModal.set(false);
+  }
+
+  confirmArqueo(): void {
+    const counted = this.countedCash() ?? this.expectedCashInDrawer();
+    const expected = this.expectedCashInDrawer();
+    const diff = Number((counted - expected).toFixed(2));
+    let statusText = 'Cuadrado exacto (Sin diferencias)';
+    if (diff > 0) statusText = `Sobrante en gaveta (+Bs. ${diff.toFixed(2)})`;
+    if (diff < 0) statusText = `Faltante en gaveta (-Bs. ${Math.abs(diff).toFixed(2)})`;
+
+    this.arqueoSummary.set({
+      initial: this.initialCashAmount(),
+      cashSales: this.sessionCashSales(),
+      cardSales: this.sessionCardSales(),
+      qrSales: this.sessionQrSales(),
+      totalSales: this.sessionCashSales() + this.sessionCardSales() + this.sessionQrSales(),
+      salesCount: this.sessionSalesCount(),
+      expected,
+      counted,
+      diff,
+      status: statusText,
+      closedAt: new Date().toLocaleString(),
+      branchName: this.branchName(),
+      cashier: this.auth.currentUser()?.full_name || 'Cajero de Turno'
+    });
+
+    const bId = this.branchId();
+    if (bId) {
+      this.commerce.cashClose({
+        branch_id: bId,
+        initial_amount: this.initialCashAmount(),
+        cash_sales: this.sessionCashSales(),
+        card_sales: this.sessionCardSales(),
+        qr_sales: this.sessionQrSales(),
+        total_sales: this.sessionCashSales() + this.sessionCardSales() + this.sessionQrSales(),
+        sales_count: this.sessionSalesCount(),
+        counted_amount: counted,
+        difference: diff,
+        status_text: statusText
+      }).subscribe({
+        next: () => {
+          this.notifs.fetchFromBackend();
+        },
+        error: (err) => console.warn('Error al registrar cierre de caja en backend:', err)
+      });
+    }
+
+    this.showArqueoModal.set(false);
     this.sessionOpen.set(false);
     this.lines.set([]);
     this.sale.set(null);
     this.receipt.set(null);
-    this.message.set('Caja cerrada en esta pantalla.');
+    this.message.set('Turno de caja cerrado exitosamente. Comprobante de arqueo emitido.');
+  }
+
+  dismissArqueoSummary(): void {
+    this.arqueoSummary.set(null);
+  }
+
+  loadBranchReservations(): void {
+    const bId = this.branchId();
+    if (!bId) return;
+    this.loadingReservations.set(true);
+    this.commerce.listReservations({ branchId: bId }).subscribe({
+      next: (list) => {
+        const activeStatuses = new Set([
+          'pendiente',
+          'confirmada',
+          'preparacion',
+          'lista',
+          'en_probador',
+          'checkout',
+          'en_tienda'
+        ]);
+        this.branchReservations.set(list.filter((r) => activeStatuses.has(r.status)));
+        this.loadingReservations.set(false);
+      },
+      error: () => this.loadingReservations.set(false)
+    });
+  }
+
+  convertReservation(resId: number): void {
+    this.convertingReservationId.set(resId);
+    this.commerce.completeReservation(resId).subscribe({
+      next: (sale) => {
+        this.convertingReservationId.set(null);
+        const totalVal = Number(sale.total);
+        this.sessionCashSales.update((v) => v + totalVal);
+        this.sessionSalesCount.update((v) => v + 1);
+        this.message.set(`¡Reserva #${resId} cobrada con éxito! Venta #${sale.id} generada.`);
+        this.sale.set(sale);
+        this.loadReceipt(sale.id);
+        const bId = this.branchId();
+        if (bId) {
+          this.refreshStock(bId);
+          this.loadBranchReservations();
+        }
+        this.notifs.fetchFromBackend();
+        this.activeTab.set('pos');
+      },
+      error: (err: any) => {
+        this.convertingReservationId.set(null);
+        this.error.set(err?.error?.detail || err?.message || 'Error al cobrar reserva.');
+      }
+    });
+  }
+
+  closeSession(): void {
+    this.openArqueoModal();
   }
 
   /** Añade una línea buscando la variante por su código (lector de barras o SKU). */
@@ -340,16 +503,28 @@ export class PosPage {
         client_id: this.clientId,
         items: this.lines(),
         paid: true,
-        payment_provider: this.paymentMethod() === 'efectivo' ? 'cash' : (this.paymentMethod() === 'qr' ? 'qr' : this.paymentMethod())
+        payment_provider: this.paymentMethod() === 'efectivo' ? 'cash' : (this.paymentMethod() === 'qr' ? 'qr' : this.paymentMethod()),
+        tax_id: this.posTaxId().trim() || undefined,
+        business_name: this.posBusinessName().trim() || undefined
       })
       .subscribe({
         next: (sale) => {
           this.submitting.set(false);
           this.sale.set(sale);
+          const totalVal = Number(sale.total);
+          if (this.paymentMethod() === 'efectivo') {
+            this.sessionCashSales.update((v) => v + totalVal);
+          } else if (this.paymentMethod() === 'tarjeta') {
+            this.sessionCardSales.update((v) => v + totalVal);
+          } else {
+            this.sessionQrSales.update((v) => v + totalVal);
+          }
+          this.sessionSalesCount.update((v) => v + 1);
           this.lines.set([]);
           this.message.set('Venta POS registrada.');
           this.loadReceipt(sale.id);
           this.refreshStock(branchId);
+          this.notifs.fetchFromBackend();
         },
         error: (err: any) => {
           // status 0 = fallo de red: se conserva la venta como operación local.
@@ -429,6 +604,8 @@ export class PosPage {
     this.message.set(null);
     this.cashReceived.set('');
     this.qrCodeBase64.set(null);
+    this.posTaxId.set('');
+    this.posBusinessName.set('');
     const branchId = this.branchId();
     if (branchId) {
       this.refreshStock(branchId);

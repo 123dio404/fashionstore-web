@@ -1,10 +1,12 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { BRANDS_LIST, CATEGORIES, FigmaProduct } from '../../core/figma-data';
+import { AuthService } from '../../core/services/auth.service';
 import { CatalogStore } from '../../core/services/catalog-store.service';
+import { ExperienceService } from '../../core/services/experience.service';
 
 interface StyleProfile {
   brand: string;
@@ -26,7 +28,7 @@ const AI_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 /**
  * CU18 — Recomendaciones de IA (vista del cliente, web).
- * Reproduce `design/figma-make/src/web/screens/AIRecsPage.tsx`.
+ * Combina evaluación de perfil de estilo con el motor de recomendaciones IA del backend (`/api/v1/recommendations`).
  */
 @Component({
   selector: 'app-recommendations-page',
@@ -36,9 +38,18 @@ const AI_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 })
 export class RecommendationsPage {
   readonly store = inject(CatalogStore);
+  private readonly experience = inject(ExperienceService);
+  private readonly auth = inject(AuthService);
 
-  readonly categories = CATEGORIES.filter((c) => c !== 'Ofertas');
-  readonly brands = ['Todas las marcas', ...BRANDS_LIST];
+  readonly categories = computed(() => {
+    const fromStore = Array.from(new Set(this.store.products().map((p) => p.category).filter(Boolean)));
+    return fromStore.length > 0 ? ['Todas', ...fromStore] : CATEGORIES.filter((c) => c !== 'Ofertas');
+  });
+
+  readonly brands = computed(() => {
+    const fromStore = Array.from(new Set(this.store.products().map((p) => p.brand).filter(Boolean)));
+    return fromStore.length > 0 ? ['Todas las marcas', ...fromStore] : ['Todas las marcas', ...BRANDS_LIST];
+  });
   readonly seasons = [
     'Todas las temporadas',
     'Otoño-Invierno',
@@ -117,15 +128,45 @@ export class RecommendationsPage {
     const profile: StyleProfile = { ...this.profile, minPrice: min, maxPrice: max };
     this.loading.set(true);
 
-    setTimeout(() => {
+    const computeLocal = (aiReasonsByProductId?: Map<number, { score: number; reason: string }>) => {
       const scored = this.store
         .products()
-        .map((product) => this.evaluate(product, profile))
+        .map((product) => {
+          const item = this.evaluate(product, profile);
+          const aiHit = aiReasonsByProductId?.get(product.id);
+          if (item.score >= 0 && aiHit) {
+            const mergedScore = Math.min(100, Math.max(item.score, Math.round(aiHit.score)));
+            const mergedReasons = [aiHit.reason, ...item.reasons.filter((r) => r !== aiHit.reason)];
+            const barColor =
+              mergedScore >= 70 ? 'var(--success)' : mergedScore >= 40 ? 'var(--brand)' : 'var(--muted)';
+            return { ...item, score: mergedScore, reasons: mergedReasons, barColor };
+          }
+          return item;
+        })
         .filter((item) => item.score >= 0)
         .sort((a, b) => b.score - a.score);
       this.results.set(scored);
       this.loading.set(false);
-    }, 600);
+    };
+
+    if (this.auth.hasToken()) {
+      this.experience.generateRecommendations(8).subscribe({
+        next: (rec) => {
+          const map = new Map<number, { score: number; reason: string }>();
+          for (const it of rec.items || []) {
+            map.set(it.product_id, {
+              score: Number(it.score) || 75,
+              reason: it.reason || 'Recomendado por IA según tu historial',
+            });
+          }
+          computeLocal(map);
+        },
+        error: () => computeLocal(),
+      });
+      return;
+    }
+
+    setTimeout(() => computeLocal(), 400);
   }
 
   adjust(): void {

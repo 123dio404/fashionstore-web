@@ -6,6 +6,8 @@ import { environment } from '../../../environments/environment';
 import {
   CartItemRequest,
   CartResponse,
+  CashCloseRequest,
+  CashCloseResponse,
   CheckoutRequest,
   InvoiceResponse,
   PosSaleCreate,
@@ -95,8 +97,8 @@ export class CommerceService {
   cancelReservation(id: number): Observable<ReservationResponse> {
     return this.http.post<ReservationResponse>(`${this.url}/reservations/${id}/cancel`, {});
   }
-  completeReservation(id: number): Observable<{ message: string; sale_id: number; total: number; reservation: ReservationResponse }> {
-    return this.http.post<any>(`${this.url}/reservations/${id}/complete`, {});
+  completeReservation(id: number): Observable<SaleResponse> {
+    return this.http.post<SaleResponse>(`${this.url}/reservations/${id}/complete`, {});
   }
 
   // ── POLÍTICAS POSTVENTA: CAMBIO DE PRENDAS < 30 DÍAS (RN-06) ──
@@ -128,5 +130,10 @@ export class CommerceService {
     return this.http.post<SaleResponse>(`${this.url}/sales/${saleId}/confirm-delivery`, {
       customer_notes
     });
+  }
+
+  // ── CU12 - ARQUEO Y CIERRE DE CAJA POS CON NOTIFICACIONES AL ADMIN Y CAJERO ──
+  cashClose(data: CashCloseRequest): Observable<CashCloseResponse> {
+    return this.http.post<CashCloseResponse>(`${this.url}/cash-close`, data);
   }
 }

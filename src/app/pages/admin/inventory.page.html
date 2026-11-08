@@ -18,6 +18,17 @@
   <div class="alert alert-success">{{ message() }}</div>
 }
 
+@if (lowStockCount() > 0) {
+  <div class="alert alert-warn" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px;">
+    <div>
+      <strong>⚠️ Alerta de Stock Crítico:</strong> Hay {{ lowStockCount() }} registro(s) con existencias menores o iguales a 3 unidades. El backend envía notificaciones automáticas al Administrador de tienda.
+    </div>
+    <button type="button" class="btn btn-sm" style="background: #D97706; color: #FFF; border: none; cursor: pointer; padding: 4px 12px; border-radius: 4px; font-weight: 600;" (click)="lowOnly = !lowOnly">
+      {{ lowOnly ? 'Ver Todo el Inventario' : 'Filtrar Solo Stock Crítico' }}
+    </button>
+  </div>
+}
+
 <div class="page-toolbar">
   <div class="field" style="margin: 0">
     <label for="i-branch">Sucursal</label>

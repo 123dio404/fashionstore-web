@@ -130,8 +130,8 @@ export class AnalyticalPage {
   }
 
   private format(key: string, value: number): string {
-    const isMoney = /revenue|ingreso|amount|total_spent|average/.test(key);
+    const isMoney = /revenue|ingreso|amount|total_spent|average|value/.test(key);
     const formatted = value.toLocaleString('es-BO', { maximumFractionDigits: 2 });
-    return isMoney ? `$ ${formatted}` : formatted;
+    return isMoney ? `Bs. ${formatted}` : formatted;
   }
 }

@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ICONS } from '../../core/navigation';
+import { AuthService } from '../../core/services/auth.service';
+import { CatalogStore } from '../../core/services/catalog-store.service';
+import { ExperienceService } from '../../core/services/experience.service';
 import { UiIconComponent } from '../../shared/ui/icon.component';
 
 interface Message {
@@ -18,35 +21,33 @@ interface QuickAction {
 }
 
 const SUGGESTIONS = [
-  '¿Cuándo llega mi pedido?',
-  'Política de devoluciones',
-  'Cambio de talla',
-  '¿Tienen envío gratis?',
-  'Sucursales disponibles',
+  '¿Qué prendas tienen en stock disponible?',
+  '¿Cuáles son las sucursales disponibles?',
+  'Estado de mis pedidos y compras',
+  'Promociones y descuentos vigentes',
+  'Cambio de talla o devolución',
 ];
 
 const BOT_RESPONSES: Record<string, string> = {
   pedido:
-    'Puedes seguir tu pedido en la sección "Mis compras". Los envíos a domicilio tardan 3–5 días hábiles. ¿Necesitas el número de seguimiento?',
+    'Puedes revisar el estado de tus compras en la sección "Mis compras". Las reservas O2O se retiran directamente en sucursal presentando tu código.',
   devoluci:
-    'Aceptamos devoluciones hasta 30 días después de la compra. El producto debe estar sin uso y con etiquetas. Te enviamos un rótulo de devolución gratuito.',
+    'Puedes solicitar cambios de talla o prenda dentro de los 30 días posteriores a la compra desde "Mis compras" o en cualquiera de nuestras sucursales presentando tu comprobante.',
   talla:
-    'Puedes consultar nuestra guía de tallas en cada producto. Si tomaste una talla incorrecta, hacemos el cambio sin costo adicional.',
+    'Cada prenda incluye su disponibilidad por talla (XS a XXL) en tiempo real. Si la talla no te queda en el probador, el cajero puede cambiarla al instante.',
   'envío':
-    'El envío es gratuito en compras mayores a $100. De lo contrario el costo es $9.99, con entrega en 3–5 días hábiles. El retiro en tienda es sin costo en 24 hrs.',
-  sucursal:
-    'Tenemos 3 sucursales: Centro (Av. Corrientes 1450), Norte (Av. del Libertador 3200) y Sur (Av. Rivadavia 8900). Horario: Lun–Sáb 10–21 hs.',
+    'El envío estándar a domicilio tiene un costo de Bs. 25.00 (gratis en compras mayores a Bs. 350.00). El retiro y reserva en sucursal es 100% gratuito.',
   oferta:
-    'Usa el código FASHION10 en el carrito para obtener 10% de descuento. Además hay promociones activas de hasta 40%.',
+    'Contamos con descuentos directos en el catálogo y promociones de temporada de hasta 30% en prendas seleccionadas.',
   'ar':
-    'El Probador Virtual te permite ver cómo te queda una prenda. Abre cualquier producto y toca "Probar en Probador Virtual" en el detalle.',
+    'El Probador Virtual 3D y Espejo AR te permite visualizar cómo luce la prenda en tiempo real. Ingresa a cualquier producto y pulsa "Probador Virtual".',
   default:
-    'Hola! Soy Aria, tu asistente de FashionStore 👋 Puedo ayudarte con pedidos, envíos, tallas y más. ¿En qué te ayudo?',
+    '¡Hola! Soy Aria, tu asistente virtual con IA de FashionStore 👋 Puedo consultar stock real en Bolivianos (Bs.), tus pedidos, reservas en tienda, tallas y sucursales. ¿En qué te ayudo?',
 };
 
 /**
  * CU19 — Asistente virtual de la tienda (vista del cliente, web).
- * Reproduce `design/figma-make/src/web/screens/ChatbotPage.tsx`.
+ * Conectado al motor de contexto e IA del backend (`/api/v1/chatbot`) con respaldo local multitenant.
  */
 @Component({
   selector: 'app-chatbot-page',
@@ -57,15 +58,19 @@ const BOT_RESPONSES: Record<string, string> = {
 export class ChatbotPage {
   @ViewChild('endRef') endRef?: ElementRef<HTMLDivElement>;
 
+  private readonly experience = inject(ExperienceService);
+  private readonly auth = inject(AuthService);
+  private readonly store = inject(CatalogStore);
+
   readonly icons = ICONS;
   readonly suggestions = SUGGESTIONS;
   readonly quickActions: QuickAction[] = [
-    { label: 'Estado de mi pedido', icon: ICONS.purchases },
-    { label: 'Política de devoluciones', icon: ICONS.box },
-    { label: 'Guía de tallas', icon: ICONS.catalog },
-    { label: 'Horarios de tiendas', icon: ICONS.store },
-    { label: 'Ofertas del día', icon: ICONS.tag },
-    { label: 'Hablar con un agente', icon: ICONS.users },
+    { label: '¿Qué prendas tienen en stock disponible?', icon: ICONS.catalog },
+    { label: 'Estado de mis pedidos y compras', icon: ICONS.purchases },
+    { label: 'Sucursales disponibles', icon: ICONS.store },
+    { label: 'Promociones y descuentos vigentes', icon: ICONS.tag },
+    { label: 'Cambio de talla o devolución', icon: ICONS.box },
+    { label: '¿Cómo funciona el Probador Virtual?', icon: ICONS.sparkles },
   ];
 
   readonly messages = signal<Message[]>([
@@ -75,10 +80,11 @@ export class ChatbotPage {
 
   input = '';
   private nextId = 2;
+  private conversationId: number | null = null;
 
   send(text?: string): void {
     const value = (text ?? this.input).trim();
-    if (!value) return;
+    if (!value || this.typing()) return;
 
     this.messages.update((list) => [
       ...list,
@@ -88,24 +94,73 @@ export class ChatbotPage {
     this.typing.set(true);
     this.scrollDown();
 
+    if (this.auth.hasToken()) {
+      this.sendViaBackend(value);
+      return;
+    }
+
     setTimeout(() => {
-      this.messages.update((list) => [
-        ...list,
-        { id: this.nextId++, text: this.reply(value), from: 'bot', time: this.now() },
-      ]);
-      this.typing.set(false);
-      this.scrollDown();
-    }, 800);
+      this.pushBotReply(this.reply(value));
+    }, 500);
+  }
+
+  private sendViaBackend(content: string): void {
+    const dispatchMessage = (convId: number) => {
+      this.experience.sendMessage(convId, { content }).subscribe({
+        next: (msg) => this.pushBotReply(msg.content || this.reply(content)),
+        error: () => this.pushBotReply(this.reply(content)),
+      });
+    };
+
+    if (this.conversationId !== null) {
+      dispatchMessage(this.conversationId);
+      return;
+    }
+
+    this.experience.createConversation({ title: 'Asistente Virtual Web' }).subscribe({
+      next: (conv) => {
+        this.conversationId = conv.id;
+        dispatchMessage(conv.id);
+      },
+      error: () => this.pushBotReply(this.reply(content)),
+    });
+  }
+
+  private pushBotReply(text: string): void {
+    this.messages.update((list) => [
+      ...list,
+      { id: this.nextId++, text, from: 'bot', time: this.now() },
+    ]);
+    this.typing.set(false);
+    this.scrollDown();
   }
 
   private reply(text: string): string {
     const lower = text.toLowerCase();
+    if (lower.includes('sucursal') || lower.includes('tienda') || lower.includes('horario') || lower.includes('direcci')) {
+      const firstProd = this.store.products()[0];
+      const branches = firstProd ? Object.keys(firstProd.stock || {}) : [];
+      if (branches.length > 0) {
+        const names = branches.map((b: string) => `Sucursal ${b}`).join(', ');
+        return `Nuestras sucursales habilitadas son: ${names}. Horario de atención: Lunes a Sábado de 09:30 a 21:00 hrs.`;
+      }
+      return 'Contamos con sucursales en Centro, Norte y Sur. Horario de atención: Lunes a Sábado de 09:30 a 21:00 hrs.';
+    }
+    if (lower.includes('stock') || lower.includes('prenda') || lower.includes('disponib') || lower.includes('precio') || lower.includes('catalogo')) {
+      const topProducts = this.store.products().slice(0, 3);
+      if (topProducts.length > 0) {
+        const summary = topProducts
+          .map((p) => `${p.name} (Bs. ${p.price.toFixed(2)}, tallas: ${p.sizes.join(', ')})`)
+          .join('; ');
+        return `Algunas de nuestras prendas destacadas con stock disponible son: ${summary}. Puedes reservarlas para probar en tienda o comprarlas en línea.`;
+      }
+    }
     const key = Object.keys(BOT_RESPONSES).find(
       (candidate) => candidate !== 'default' && lower.includes(candidate)
     );
     return (
       (key ? BOT_RESPONSES[key] : undefined) ??
-      '¡Gracias por tu consulta! Un agente especializado te contactará en breve.'
+      'Puedo ayudarte con disponibilidad de prendas en Bolivianos (Bs.), estado de tus pedidos, reservas de probador en sucursal y cambios de talla.'
     );
   }
 

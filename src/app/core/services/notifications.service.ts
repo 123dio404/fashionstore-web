@@ -14,7 +14,7 @@ export interface NotificationItem {
   transactionRef?: string;
   amount?: number;
   invoiceNumber?: string;
-  type: 'purchase_success' | 'payment_rejected' | 'reservation' | 'billing_reminder' | 'subscription_alert' | 'promotion' | 'system';
+  type: 'purchase_success' | 'payment_rejected' | 'reservation' | 'billing_reminder' | 'subscription_alert' | 'promotion' | 'system' | 'pos_sale' | 'cash_close' | 'stock_critical' | 'tenant_status' | 'subscription_payment';
   isRead: boolean;
   link?: string;
 }
@@ -40,7 +40,17 @@ export class NotificationsService {
   reloadForUser(user: any): void {
     const key = user?.tenant_id ? `tenant_${user.tenant_id}_user_${user.id || 'any'}` : (user?.id ? `user_${user.id}` : 'guest');
     this.currentKey = key;
-    this.notifications.set(this.loadForStorageKey(key));
+    let items = this.loadForStorageKey(key);
+    // Si el usuario es de tipo personal (Cajero, Encargado, Administrador, Superadmin),
+    // limpiar notificaciones residuales o simuladas de cliente ("Tu pedido #...", "¡Compra confirmada!")
+    if (user?.role && user.role !== 'Cliente') {
+      items = items.filter(
+        (n) => !n.title.toLowerCase().includes('compra confirmada') &&
+               !n.message.toLowerCase().includes('tu pedido #')
+      );
+      this.persist(items);
+    }
+    this.notifications.set(items);
     if (user) {
       this.fetchFromBackend();
     }
@@ -150,6 +160,12 @@ export class NotificationsService {
       this.persist(updated);
       return updated;
     });
+    if (id.startsWith('backend-')) {
+      const backendId = parseInt(id.replace('backend-', ''), 10);
+      if (!isNaN(backendId)) {
+        this.http.patch(`${this.apiUrl}/${backendId}/read`, {}).subscribe({ error: () => {} });
+      }
+    }
   }
 
   markAllAsRead(): void {
@@ -158,11 +174,13 @@ export class NotificationsService {
       this.persist(updated);
       return updated;
     });
+    this.http.post(`${this.apiUrl}/read-all`, {}).subscribe({ error: () => {} });
   }
 
   clearAll(): void {
     this.notifications.set([]);
     this.persist([]);
+    this.http.delete(`${this.apiUrl}/clear`).subscribe({ error: () => {} });
   }
 
   success(message: string, title: string = 'Operación Exitosa'): void {
@@ -183,9 +201,10 @@ export class NotificationsService {
 
   /**
    * Sincroniza las ventas reales (`/commerce/sales`) con las notificaciones locales,
-   * de modo que compras realizadas desde el móvil aparezcan automáticamente en la web.
+   * EXCLUSIVAMENTE para clientes que esperan ver sus pedidos realizados desde web o móvil.
    */
-  syncFromSales(sales: Array<{ id: number; total: number | string; sale_date?: string }>): void {
+  syncFromSales(sales: Array<{ id: number; total: number | string; sale_date?: string }>, isCustomer: boolean = true): void {
+    if (!isCustomer) return;
     let changed = false;
     this.notifications.update((current) => {
       let updated = [...current];
