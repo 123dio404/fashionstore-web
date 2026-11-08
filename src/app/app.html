@@ -204,6 +204,10 @@
                           <span>✕</span>
                         } @else if (n.type === 'reservation') {
                           <span>📅</span>
+                        } @else if (n.type === 'billing_reminder' || n.type === 'subscription_alert') {
+                          <span>💳</span>
+                        } @else if (n.type === 'promotion') {
+                          <span>🏷️</span>
                         } @else {
                           <span>ℹ</span>
                         }

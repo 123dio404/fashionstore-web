@@ -54,7 +54,7 @@
           <td>{{ item.tipo === 'reserva' ? 'Reserva' : 'Venta' }}</td>
           <td>{{ item.fecha | date: 'medium' }}</td>
           <td>{{ itemCount(item) }}</td>
-          <td>{{ totalOf(item) | currency: 'USD' }}</td>
+          <td>{{ totalOf(item) | currency: 'BOB' : 'Bs. ' }}</td>
           <td>
             <span class="badge" [ngClass]="badgeClass(item.estado)">
               {{ statusLabels[item.estado] || item.estado }}

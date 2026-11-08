@@ -1,4 +1,7 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface NotificationItem {
   id: string;
@@ -11,7 +14,7 @@ export interface NotificationItem {
   transactionRef?: string;
   amount?: number;
   invoiceNumber?: string;
-  type: 'purchase_success' | 'payment_rejected' | 'reservation' | 'system';
+  type: 'purchase_success' | 'payment_rejected' | 'reservation' | 'billing_reminder' | 'subscription_alert' | 'promotion' | 'system';
   isRead: boolean;
   link?: string;
 }
@@ -20,6 +23,8 @@ const STORAGE_PREFIX = 'fs_notifs_t_';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environment.apiUrl}/notifications`;
   private currentKey = 'guest';
 
   readonly notifications = signal<NotificationItem[]>([]);
@@ -33,9 +38,62 @@ export class NotificationsService {
   }
 
   reloadForUser(user: any): void {
-    const key = user?.tenant_id ? `tenant_${user.tenant_id}` : (user?.id ? `user_${user.id}` : 'guest');
+    const key = user?.tenant_id ? `tenant_${user.tenant_id}_user_${user.id || 'any'}` : (user?.id ? `user_${user.id}` : 'guest');
     this.currentKey = key;
     this.notifications.set(this.loadForStorageKey(key));
+    if (user) {
+      this.fetchFromBackend();
+    }
+  }
+
+  fetchFromBackend(): void {
+    this.http.get<any[]>(`${this.apiUrl}/me`).subscribe({
+      next: (remote) => {
+        if (!remote || remote.length === 0) return;
+        this.notifications.update((current) => {
+          let updated = [...current];
+          for (const item of remote) {
+            const notifId = `backend-${item.id}`;
+            const existingIdx = updated.findIndex((n) => n.id === notifId);
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Hoy';
+            const converted: NotificationItem = {
+              id: notifId,
+              tenantId: item.tenant_id,
+              userId: item.user_id,
+              title: item.title,
+              message: item.message,
+              date: dateStr,
+              type: (item.type as any) || 'system',
+              isRead: item.is_read,
+              link: item.link || undefined,
+            };
+            if (existingIdx >= 0) {
+              updated[existingIdx] = converted;
+            } else {
+              updated = [converted, ...updated];
+            }
+          }
+          updated = updated.slice(0, 40);
+          this.persist(updated);
+          return updated;
+        });
+      },
+      error: () => {
+        // Fallback gracefully on network error
+      }
+    });
+  }
+
+  broadcastToTenants(data: { tenant_ids?: number[]; title: string; message: string; type?: string; link?: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/broadcast-tenants`, data).pipe(
+      tap(() => this.fetchFromBackend())
+    );
+  }
+
+  broadcastToCustomers(data: { title: string; message: string; type?: string; link?: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/broadcast-customers`, data).pipe(
+      tap(() => this.fetchFromBackend())
+    );
   }
 
   private loadForStorageKey(key: string): NotificationItem[] {
@@ -142,7 +200,7 @@ export class NotificationsService {
             id: notifId,
             saleId: sale.id,
             title: '¡Compra confirmada!',
-            message: `Tu pedido #${sale.id} por $${totalNum.toFixed(2)} fue procesado con éxito y el stock fue actualizado.`,
+            message: `Tu pedido #${sale.id} por Bs. ${totalNum.toFixed(2)} fue procesado con éxito y el stock fue actualizado.`,
             date: 'Hoy',
             type: 'purchase_success',
             isRead: false,

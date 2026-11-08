@@ -15,6 +15,7 @@ export const routes: Routes = [
   // CU01 / CU02 - Auth
   { path: 'auth/login', loadComponent: () => import('./pages/auth/login.page').then((m) => m.LoginPage) },
   { path: 'auth/register', loadComponent: () => import('./pages/auth/register.page').then((m) => m.RegisterPage) },
+  { path: 'auth/reset-password', loadComponent: () => import('./pages/auth/reset-password.page').then((m) => m.ResetPasswordPage) },
 
   // CU08 - Public catalog
   { path: 'catalog', loadComponent: () => import('./pages/catalog/catalog.page').then((m) => m.CatalogPage) },

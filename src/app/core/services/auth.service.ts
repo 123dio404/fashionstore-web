@@ -69,6 +69,26 @@ export class AuthService {
     );
   }
 
+  changePassword(current_password: string, new_password: string, confirm_password: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.authUrl}/change-password`, {
+      current_password,
+      new_password,
+      confirm_password
+    });
+  }
+
+  forgotPassword(email: string): Observable<{ detail: string; reset_link?: string; email_sent: boolean }> {
+    return this.http.post<{ detail: string; reset_link?: string; email_sent: boolean }>(`${this.authUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, new_password: string, confirm_password: string): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.authUrl}/reset-password`, {
+      token,
+      new_password,
+      confirm_password
+    });
+  }
+
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);

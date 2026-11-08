@@ -147,14 +147,57 @@
 
 @if (helpOpen()) {
   <div class="modal-backdrop" (click)="helpOpen.set(false)">
-    <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <h3 class="modal-title">Recuperar contraseña</h3>
-      <p class="modal-message">
-        La contraseña la restablece el personal de la tienda: pide a un administrador que la cambie
-        desde «Usuarios» o escríbenos a soporte@fashionstore.com.
+    <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()" style="max-width: 440px;">
+      <h3 class="modal-title">Recuperación de contraseña</h3>
+      <p class="modal-message" style="margin-bottom: 1rem;">
+        Ingresa el correo electrónico asociado a tu cuenta. Te enviaremos un enlace seguro para que puedas definir una nueva contraseña.
       </p>
-      <div class="modal-actions">
-        <button class="btn-primary" type="button" (click)="helpOpen.set(false)">Entendido</button>
+
+      <div class="auth-field" style="margin-bottom: 1rem; text-align: left;">
+        <label for="forgotEmail" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+          Correo electrónico registrado
+        </label>
+        <input
+          id="forgotEmail"
+          name="forgotEmail"
+          type="email"
+          placeholder="ejemplo@fashionstore.com"
+          [(ngModel)]="forgotEmail"
+          style="width: 100%; padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px;"
+        />
+      </div>
+
+      @if (forgotMessage()) {
+        <div class="alert alert-success" style="margin-bottom: 1rem; font-size: 13px; text-align: left;">
+          {{ forgotMessage() }}
+          @if (forgotLink()) {
+            <div style="margin-top: 8px;">
+              <a [href]="forgotLink()" target="_blank" style="color: #2563EB; font-weight: 600; text-decoration: underline;">
+                🔗 Abrir enlace de restablecimiento directo
+              </a>
+            </div>
+          }
+        </div>
+      }
+
+      @if (forgotError()) {
+        <div class="alert alert-error" style="margin-bottom: 1rem; font-size: 13px; text-align: left;">
+          {{ forgotError() }}
+        </div>
+      }
+
+      <div class="modal-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn btn-secondary" type="button" (click)="helpOpen.set(false)">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          (click)="sendRecoveryEmail()"
+          [disabled]="forgotLoading()"
+        >
+          {{ forgotLoading() ? 'Enviando…' : 'Enviar enlace' }}
+        </button>
       </div>
     </div>
   </div>

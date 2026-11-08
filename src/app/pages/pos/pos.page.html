@@ -107,7 +107,7 @@
                   <td>{{ variantOf(line.stock_id)?.productName || '—' }}</td>
                   <td><code>{{ variantOf(line.stock_id)?.codigo || '—' }}</code></td>
                   <td>{{ sizeName(variantOf(line.stock_id)?.sizeId) }}</td>
-                  <td>{{ (variantOf(line.stock_id)?.price ?? 0) | currency: 'USD' }}</td>
+                  <td>{{ (variantOf(line.stock_id)?.price ?? 0) | currency: 'BOB' : 'Bs. ' }}</td>
                   <td>
                     <div class="qty">
                       <button type="button" class="btn btn-sm" (click)="changeQuantity(i, line.quantity - 1)">−</button>
@@ -115,7 +115,7 @@
                       <button type="button" class="btn btn-sm" (click)="changeQuantity(i, line.quantity + 1)">+</button>
                     </div>
                   </td>
-                  <td><strong>{{ lineTotal(line) | currency: 'USD' }}</strong></td>
+                  <td><strong>{{ lineTotal(line) | currency: 'BOB' : 'Bs. ' }}</strong></td>
                   <td><button type="button" class="btn-danger btn-sm" (click)="removeLine(i)">Quitar</button></td>
                 </tr>
               }
@@ -133,11 +133,11 @@
       </div>
       <div class="summary-row">
         <span class="label">Subtotal</span>
-        <span>{{ subtotal() | currency: 'USD' }}</span>
+        <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
       </div>
       <div class="summary-row total">
         <span>Total</span>
-        <span>{{ subtotal() | currency: 'USD' }}</span>
+        <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
       </div>
 
       <div class="field" style="margin-top: 1rem">
@@ -192,7 +192,7 @@
           />
           @if (cashChange() > 0) {
             <p class="field-hint" style="color: var(--success); font-weight: 600">
-              Cambio a entregar: {{ cashChange() | currency: 'USD' }}
+              Cambio a entregar: {{ cashChange() | currency: 'BOB' : 'Bs. ' }}
             </p>
           } @else if (receivedCash() > 0 && cashChange() === 0) {
             <p class="field-hint">Pago exacto, sin cambio.</p>
@@ -308,8 +308,8 @@
             <tr>
               <td>{{ variantOf(item.stock_id)?.productName || ('Stock #' + item.stock_id) }}</td>
               <td>{{ item.quantity }}</td>
-              <td>{{ item.unit_price | currency: 'USD' }}</td>
-              <td>{{ item.quantity * item.unit_price | currency: 'USD' }}</td>
+              <td>{{ item.unit_price | currency: 'BOB' : 'Bs. ' }}</td>
+              <td>{{ item.quantity * item.unit_price | currency: 'BOB' : 'Bs. ' }}</td>
             </tr>
           }
         </tbody>
@@ -317,11 +317,11 @@
 
       <div class="summary-row">
         <span class="label">Subtotal</span>
-        <span>{{ doc.subtotal | currency: 'USD' }}</span>
+        <span>{{ doc.subtotal | currency: 'BOB' : 'Bs. ' }}</span>
       </div>
       <div class="summary-row total">
         <span>Total</span>
-        <span>{{ doc.total | currency: 'USD' }}</span>
+        <span>{{ doc.total | currency: 'BOB' : 'Bs. ' }}</span>
       </div>
       <p class="note">¡Gracias por tu compra! · FashionStore</p>
     </section>

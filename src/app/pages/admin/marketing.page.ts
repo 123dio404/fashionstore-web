@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { NotificationsService } from '../../core/services/notifications.service';
 import { MarketingService } from '../../core/services/marketing.service';
 import {
   CollectionCreate,
@@ -40,6 +41,42 @@ const EMPTY_COLLECTION: CollectionCreate = {
 export class MarketingPage {
   private readonly service = inject(MarketingService);
   private readonly confirm = inject(ConfirmService);
+  private readonly notifications = inject(NotificationsService);
+
+  readonly promoBroadcastOpen = signal(false);
+  readonly promoBroadcasting = signal(false);
+  readonly promoBroadcastSuccess = signal<string | null>(null);
+  promoBroadcastTitle = '¡Gran Promoción de Temporada!';
+  promoBroadcastMessage = 'Disfruta de descuentos exclusivos en nuestras prendas seleccionadas. ¡Visita nuestro catálogo antes de que se agoten!';
+
+  openPromoBroadcast(): void {
+    this.promoBroadcastOpen.set(true);
+    this.promoBroadcastSuccess.set(null);
+  }
+
+  sendPromoBroadcast(): void {
+    if (!this.promoBroadcastTitle || !this.promoBroadcastMessage) {
+      alert('Ingresa título y mensaje de la promoción');
+      return;
+    }
+    this.promoBroadcasting.set(true);
+    this.notifications.broadcastToCustomers({
+      title: this.promoBroadcastTitle,
+      message: this.promoBroadcastMessage,
+      type: 'promotion',
+      link: '/promotions'
+    }).subscribe({
+      next: (res) => {
+        this.promoBroadcasting.set(false);
+        this.promoBroadcastSuccess.set(res.detail || 'Notificación push enviada a todos tus clientes.');
+        setTimeout(() => this.promoBroadcastOpen.set(false), 2500);
+      },
+      error: (err) => {
+        this.promoBroadcasting.set(false);
+        alert(err?.error?.detail || 'Error al enviar notificación promocional');
+      }
+    });
+  }
 
   readonly activeTab = signal<'promotions' | 'collections'>('promotions');
   readonly promotions = signal<PromotionResponse[]>([]);

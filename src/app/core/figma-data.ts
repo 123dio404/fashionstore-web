@@ -689,7 +689,106 @@ export function resolveProductImage(name: string, customUrl?: string | null): st
     return 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80';
   }
 
-  // ── 3. STREETWEAR & MODA URBANA (Moda Urbana) ─────────────────────
+  // ── 3. TENIS & CALZADO URBANO (Tenis Urbanos) ─────────────────────
+  if (n.includes('boost') || n.includes('running') || n.includes('trail') || n.includes('skate') || n.includes('court') || n.includes('tenis')) {
+    if (n.includes('boost') || n.includes('pro')) {
+      return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('vintage') || n.includes('court') || n.includes('leather')) {
+      return 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('skate') || n.includes('canvas')) {
+      return 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('plataforma') || n.includes('chunky bold')) {
+      return 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('trail') || n.includes('outdoor')) {
+      return 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 4. ROPA DEPORTIVA & FITNESS (SportActive) ──────────────────────
+  if (n.includes('dry-fit') || n.includes('técnica') || n.includes('tecnica')) {
+    return 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('legging') || n.includes('seamless')) {
+    return 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('short running') || n.includes('2 en 1')) {
+    return 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('top deportivo') || n.includes('alto impacto')) {
+    return 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 5. JEANS & DENIM (Denim Co.) ──────────────────────────────────
+  if (n.includes('sherpa') || (n.includes('cazadora') && n.includes('denim'))) {
+    return 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('slim fit') || (n.includes('jeans') && n.includes('índigo'))) {
+    return 'https://images.unsplash.com/photo-1542272604-780c96856467?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('mom fit') || n.includes('vintage celeste')) {
+    return 'https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('falda midi denim') || n.includes('falda denim')) {
+    return 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('overol') || n.includes('carpenter')) {
+    return 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 6. PIJAMAS & HOMEWEAR (Relax Homewear) ────────────────────────
+  if (n.includes('pijama franela') || n.includes('cuadros invierno')) {
+    return 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('kimono') || n.includes('bata')) {
+    return 'https://images.unsplash.com/photo-1616091216791-a5360b5fc78a?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('fleece') || n.includes('cloudwear')) {
+    return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('pantufla') || n.includes('pantuflas') || n.includes('nordic acolchadas')) {
+    return 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('modal') || (n.includes('short') && n.includes('pijama'))) {
+    return 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 7. SASTRERÍA MILÁN (Sartoria Milán) ────────────────────────────
+  if (n.includes('príncipe de gales') || n.includes('principe de gales') || n.includes('3 piezas')) {
+    return 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('chal velvet') || (n.includes('smoking') && n.includes('solapa'))) {
+    return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('navy wool') || n.includes('milan')) {
+    return 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('cuello francés') || n.includes('cuello frances') || n.includes('120s')) {
+    return 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('pliegues tiro alto') || n.includes('tailoring')) {
+    return 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 8. ABRIGOS NÓRDICOS (Nordic Winter) ───────────────────────────
+  if (n.includes('trench') || n.includes('gabardina')) {
+    return 'https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('parka') || n.includes('plumífero') || n.includes('expedition')) {
+    return 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('chaquetón') || n.includes('chaqueton') || n.includes('doble faz')) {
+    return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.includes('alpaca') || n.includes('bufanda')) {
+    return 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&auto=format&fit=crop&q=80';
+  }
+
+  // ── 9. STREETWEAR & MODA URBANA (Moda Urbana) ─────────────────────
   if (n.includes('hoodie') || n.includes('sudadera')) {
     return 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
   }

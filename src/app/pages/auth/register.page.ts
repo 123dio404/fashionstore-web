@@ -32,6 +32,15 @@ export class RegisterPage {
   email = '';
   password = '';
 
+  get hasMinLength(): boolean { return this.password.length >= 8; }
+  get hasUpper(): boolean { return /[A-Z]/.test(this.password); }
+  get hasLower(): boolean { return /[a-z]/.test(this.password); }
+  get hasDigit(): boolean { return /[0-9]/.test(this.password); }
+  get hasSpecial(): boolean { return /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/~`';]/.test(this.password); }
+  get isPasswordValid(): boolean {
+    return this.hasMinLength && this.hasUpper && this.hasLower && this.hasDigit && this.hasSpecial;
+  }
+
   constructor() {
     this.products.list().subscribe({
       next: (items) => this.productCount.set(items.filter((item) => item.is_active).length),
@@ -48,6 +57,10 @@ export class RegisterPage {
   }
 
   submit(): void {
+    if (!this.isPasswordValid) {
+      this.error.set('La contraseña debe cumplir con todos los requisitos de seguridad (mayúscula, minúscula, número y símbolo).');
+      return;
+    }
     this.loading.set(true);
     this.error.set(null);
     this.done.set(false);
