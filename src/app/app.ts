@@ -94,6 +94,12 @@ export class App {
     if (email.includes('@mundomedias.com')) return 'Mundo Medias S.R.L.';
     if (email.includes('@elegance.com')) return 'Elegance Boutique S.R.L.';
     if (email.includes('@urbanstyle.com')) return 'Moda Urbana S.A.';
+    if (email.includes('@tenisurbanos.com')) return 'Tenis Urbanos S.R.L.';
+    if (email.includes('@sportactive.com')) return 'SportActive Ropa Deportiva';
+    if (email.includes('@denimco.com')) return 'Denim Co. Jeans Factory';
+    if (email.includes('@relaxhomewear.com')) return 'Relax Homewear & Pijamas';
+    if (email.includes('@sartoriamilan.com')) return 'Sartoria Milán Bespoke';
+    if (email.includes('@nordicwinter.com')) return 'Nordic Winter & Coats';
     return null;
   });
 
@@ -268,7 +274,8 @@ export class App {
     // Recarga reactiva del catálogo y notificaciones al cambiar el usuario o tenant
     effect(() => {
       const u = this.user();
-      this.catalogStore.refreshStock();
+      const key = u ? `${u.id}-${u.tenant_id ?? u.email}` : 'anon';
+      this.catalogStore.onSessionChange(key);
       this.notifs.reloadForUser(u);
     });
 

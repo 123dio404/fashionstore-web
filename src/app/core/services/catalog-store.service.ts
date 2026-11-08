@@ -34,8 +34,24 @@ export class CatalogStore {
   readonly lastCachedAt = signal<string | null>(null);
 
   private toastTimer?: ReturnType<typeof setTimeout>;
+  private activeTenantKey: string | null = null;
 
   constructor() {
+    this.refreshStock();
+  }
+
+  /**
+   * Llamado cuando cambia la sesión o el tenant activo: limpia carrito/favoritos/catálogo
+   * previo para evitar mezclar productos entre empresas y recarga desde la API.
+   */
+  onSessionChange(userOrTenantKey: string | null): void {
+    if (this.activeTenantKey !== null && this.activeTenantKey !== userOrTenantKey) {
+      this.cart.set([]);
+      this.favs.set([]);
+      this.products.set([]);
+      this.stockLoaded.set(false);
+    }
+    this.activeTenantKey = userOrTenantKey;
     this.refreshStock();
   }
 
@@ -51,7 +67,7 @@ export class CatalogStore {
       sizes: this.productsService.listSizes(),
     }).subscribe({
       next: ({ branches, apiProducts, stocks, sizes }) => {
-        this.applySnapshot(branches, apiProducts, stocks);
+        this.applySnapshot(branches, apiProducts, stocks, sizes);
         this.servedFromCache.set(false);
         // Persistencia para CU-09. No bloquea la UI si IndexedDB no está disponible.
         void this.persistSnapshot(branches, apiProducts, stocks, sizes);
@@ -71,12 +87,18 @@ export class CatalogStore {
   private applySnapshot(
     branches: BranchResponse[],
     apiProducts: ProductResponse[],
-    stocks: StockResponse[]
+    stocks: StockResponse[],
+    sizes: SizeResponse[] = []
   ): void {
     if (!apiProducts || apiProducts.length === 0) {
       this.products.set([]);
       this.stockLoaded.set(true);
       return;
+    }
+
+    const sizeMap = new Map<number, string>();
+    for (const sz of sizes) {
+      sizeMap.set(sz.id, sz.name);
     }
 
     const mapped: FigmaProduct[] = apiProducts.map((apiProd) => {
@@ -86,7 +108,7 @@ export class CatalogStore {
       );
 
       const variantIds = new Set(apiProd.variants.map((v) => v.id));
-      const newStockMap: Record<string, number> = existing ? { ...existing.stock } : {};
+      const newStockMap: Record<string, number> = {};
 
       for (const branch of branches) {
         const bKey = branch.name.replace(/^Sucursal\s+/i, '').trim();
@@ -108,6 +130,17 @@ export class CatalogStore {
         : serverImg;
       const img = normalizedImg || resolveProductImage(apiProd.name);
 
+      const resolvedSizes =
+        apiProd.variants.length > 0
+          ? [
+              ...new Set(
+                apiProd.variants.map((v) =>
+                  v.size_id ? (sizeMap.get(v.size_id) ?? 'M') : 'M'
+                )
+              ),
+            ]
+          : ['S', 'M', 'L'];
+
       if (existing) {
         return {
           ...existing,
@@ -117,6 +150,7 @@ export class CatalogStore {
           brand: apiProd.brand || existing.brand,
           image: img,
           images: [img],
+          sizes: resolvedSizes,
           price: Number(apiProd.price),
           wholesalePrice: apiProd.wholesale_price ? Number(apiProd.wholesale_price) : existing.wholesalePrice,
           wholesaleMinQty: apiProd.wholesale_min_quantity ?? existing.wholesaleMinQty,
@@ -125,7 +159,7 @@ export class CatalogStore {
         };
       }
 
-      // Producto exclusivo del Tenant (ej. Medias o Alta Costura)
+      // Producto exclusivo del Tenant (los 9 tenants especializados)
       return {
         id: apiProd.id,
         name: apiProd.name,
@@ -133,15 +167,15 @@ export class CatalogStore {
         category: apiProd.category_name || this.resolveCategory(apiProd.name),
         price: Number(apiProd.price),
         oldPrice: Math.round(Number(apiProd.price) * 1.25 * 100) / 100,
-        discount: 20,
+        discount: Number(apiProd.discount_percentage) > 0 ? Number(apiProd.discount_percentage) : 20,
         image: img,
         images: [img],
         colors: [
-          { name: 'Blanco', hex: '#FFFFFF' },
           { name: 'Negro', hex: '#111827' },
+          { name: 'Blanco', hex: '#F8F9FA' },
           { name: 'Gris', hex: '#6B7280' },
         ],
-        sizes: apiProd.variants.length > 0 ? [...new Set(apiProd.variants.map(v => v.size_id ? String(v.size_id) : 'M'))] : ['S', 'M', 'L'],
+        sizes: resolvedSizes,
         description: this.resolveDescription(apiProd.name),
         stock: newStockMap,
         rating: 4.9,
@@ -149,7 +183,10 @@ export class CatalogStore {
         isFeatured: true,
         wholesalePrice: apiProd.wholesale_price ? Number(apiProd.wholesale_price) : Math.round(Number(apiProd.price) * 0.85 * 100) / 100,
         wholesaleMinQty: apiProd.wholesale_min_quantity ?? 3,
+        material: apiProd.material,
+        secondaryColor: apiProd.secondary_color,
         isClearance: apiProd.is_clearance,
+        model3dUrl: apiProd.model_3d_url,
       } as FigmaProduct;
     });
 

@@ -1,13 +1,14 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AiReportsService } from '../../core/services/ai-reports.service';
 import { AiReportResponse } from '../../models';
 
 @Component({
   selector: 'app-ai-assistant-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './ai-assistant.page.html',
   styleUrls: ['./ai-assistant.page.scss']
 })
@@ -24,6 +25,7 @@ export class AiAssistantPage implements OnInit {
   query = signal('');
   loading = signal(false);
   error = signal<string | null>(null);
+  planLocked = signal(false);
   response = signal<AiReportResponse | null>(null);
   recognizing = signal(false);
 
@@ -60,6 +62,7 @@ export class AiAssistantPage implements OnInit {
     if (!q || this.loading()) return;
     this.loading.set(true);
     this.error.set(null);
+    this.planLocked.set(false);
     this.ai.queryReport(q).subscribe({
       next: (res) => {
         this.response.set(res);
@@ -67,7 +70,11 @@ export class AiAssistantPage implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err?.error?.detail || err?.message || 'No se pudo generar el reporte con IA.');
+        const msg = err?.error?.detail || err?.message || 'No se pudo generar el reporte con IA.';
+        if (err?.status === 403 || String(msg).toLowerCase().includes('plan')) {
+          this.planLocked.set(true);
+        }
+        this.error.set(msg);
       }
     });
   }

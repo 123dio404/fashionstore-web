@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ICONS } from '../../core/navigation';
+import { AuthService } from '../../core/services/auth.service';
 import { NotificationsService } from '../../core/services/notifications.service';
 import { SaasService } from '../../core/services/saas.service';
 import { PlanResponse, TenantResponse } from '../../models';
@@ -84,11 +85,11 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                     @if (sub.subscription?.plan?.has_ai_reports) {
                       <span class="badge-success">✨ Habilitado (Gemini 2.0 + ML)</span>
                     } @else {
-                      <span class="badge-locked">🔒 Bloqueado (Requiere Plan Empresarial)</span>
+                      <span class="badge-locked">🔒 Bloqueado (Requiere Plan Profesional o Empresarial)</span>
                     }
                   </div>
                   <p class="metric-desc">
-                    {{ sub.subscription?.plan?.has_ai_reports ? 'Acceso completo a reportes de lenguaje natural, predicción de demanda y analítica avanzada.' : 'Actualiza al Plan Empresarial para desbloquear analítica predictiva y generativa con IA.' }}
+                    {{ sub.subscription?.plan?.has_ai_reports ? 'Acceso completo a reportes de lenguaje natural, predicción de demanda y analítica avanzada.' : 'Actualiza al Plan Profesional (Bs. 69.99/mes) o Plan Empresarial (Bs. 129.99/mes) para desbloquear analítica predictiva y generativa con IA.' }}
                   </p>
                 </div>
               </div>
@@ -145,6 +146,10 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
                   <li [class.disabled]="!plan.has_ai_reports">
                     <span class="check">{{ plan.has_ai_reports ? '✓' : '✗' }}</span>
                     <span>Exportación instantánea a PDF y Excel</span>
+                  </li>
+                  <li [class.disabled]="plan.name !== 'Empresarial'">
+                    <span class="check">{{ plan.name === 'Empresarial' ? '✓' : '✗' }}</span>
+                    <span>Expansión nacional multi-ciudad (hasta 15 sedes) y soporte 24/7</span>
                   </li>
                 </ul>
 
@@ -438,6 +443,7 @@ import { UiIconComponent } from '../../shared/ui/icon.component';
 export class SubscriptionPage implements OnInit {
   private readonly saasService = inject(SaasService);
   private readonly notifs = inject(NotificationsService);
+  private readonly auth = inject(AuthService);
 
   readonly subscription = signal<TenantResponse | null>(null);
   readonly plans = signal<PlanResponse[]>([]);
@@ -488,6 +494,7 @@ export class SubscriptionPage implements OnInit {
         this.notifs.success(`Plan actualizado con éxito al Plan ${planName}`);
         this.subscription.set(tenant);
         this.switching.set(false);
+        this.auth.getCurrentUser().subscribe();
       },
       error: (err) => {
         this.notifs.error(err.error?.detail || 'Error al cambiar de plan');
