@@ -54,6 +54,12 @@ export class App {
   /** Login y registro se muestran a sangre, sin la barra pública (diseño de Figma). */
   readonly isAuthRoute = computed(() => this.url().startsWith('/auth/'));
 
+  /** La landing pública trae su propia cabecera y ocupa todo el ancho. */
+  readonly isLandingRoute = computed(() => {
+    const path = this.url().split('?')[0];
+    return path === '/' || path === '';
+  });
+
   /** Etiqueta y color de la insignia de rol. */
   readonly roleMeta = computed(() => {
     const role = this.user()?.role;
@@ -379,7 +385,7 @@ export class App {
   logout(): void {
     this.userMenuOpen.set(false);
     this.auth.logout();
-    this.router.navigate(['/catalog']);
+    this.router.navigate(['/']);
   }
 
   private refreshCart(): void {

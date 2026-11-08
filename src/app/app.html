@@ -288,13 +288,14 @@
     </div>
   </div>
 } @else {
-  @if (!isAuthRoute()) {
+  @if (!isAuthRoute() && !isLandingRoute()) {
     <header class="guestbar">
-      <a class="brand" routerLink="/catalog">
+      <a class="brand" routerLink="/">
         <img src="/img/brand/logo.svg" alt="" height="30" />
         <span class="brand-name">FashionStore</span>
       </a>
       <nav class="guestnav">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
         <a routerLink="/catalog" routerLinkActive="active">Catálogo</a>
         <a routerLink="/promotions" routerLinkActive="active">Promociones</a>
         <a routerLink="/cart" routerLinkActive="active">Carrito</a>
@@ -305,7 +306,7 @@
     </header>
   }
 
-  <main class="container" [class.bleed]="isAuthRoute()">
+  <main class="container" [class.bleed]="isAuthRoute() || isLandingRoute()">
     <router-outlet />
   </main>
 }

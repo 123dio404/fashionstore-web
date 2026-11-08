@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Role } from './models';
 import { authGuard } from './core/guards/auth.guard';
+import { guestGuard } from './core/guards/guest.guard';
 import { roleGuard } from './core/guards/role.guard';
 
 const ADMIN = [Role.Administrador];
@@ -8,6 +9,9 @@ const MANAGER = [Role.Administrador, Role.Encargado];
 const STAFF = [Role.Administrador, Role.Encargado, Role.Cajero];
 
 export const routes: Routes = [
+  // Landing pública (página por defecto sin sesión)
+  { path: '', pathMatch: 'full', canActivate: [guestGuard], loadComponent: () => import('./pages/public/landing.page').then((m) => m.LandingPage) },
+
   // CU01 / CU02 - Auth
   { path: 'auth/login', loadComponent: () => import('./pages/auth/login.page').then((m) => m.LoginPage) },
   { path: 'auth/register', loadComponent: () => import('./pages/auth/register.page').then((m) => m.RegisterPage) },
@@ -73,6 +77,5 @@ export const routes: Routes = [
   { path: 'reports/ai-assistant', canActivate: [authGuard, roleGuard], data: { roles: ADMIN }, loadComponent: () => import('./pages/reports/ai-assistant.page').then((m) => m.AiAssistantPage) },
 
   { path: 'forbidden', loadComponent: () => import('./pages/shared/forbidden.page').then((m) => m.ForbiddenPage) },
-  { path: '', pathMatch: 'full', redirectTo: 'catalog' },
-  { path: '**', redirectTo: 'catalog' }
+  { path: '**', redirectTo: '' }
 ];

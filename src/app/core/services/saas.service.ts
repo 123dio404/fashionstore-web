@@ -56,6 +56,11 @@ export class SaasService {
     return this.http.post<TenantResponse>(`${this.url}/tenants`, data);
   }
 
+  /** Autoservicio público: crea la tienda (tenant), su suscripción y la cuenta de administrador. */
+  registerStore(data: TenantCreateRequest): Observable<TenantResponse> {
+    return this.http.post<TenantResponse>(`${this.url}/register-store`, data);
+  }
+
   updateTenantStatus(tenantId: number, status: 'Activo' | 'Suspendido'): Observable<TenantResponse> {
     return this.http.patch<TenantResponse>(`${this.url}/tenants/${tenantId}/status`, { status });
   }
