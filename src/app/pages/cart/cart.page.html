@@ -25,14 +25,14 @@
       <div class="invoice-card">
         <p class="section-label">Factura {{ doc.invoice_number }}</p>
         <div class="invoice-row">
-          <span>Subtotal</span><span>{{ doc.subtotal | currency: 'USD' }}</span>
+          <span>Subtotal</span><span>{{ doc.subtotal | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
         <div class="invoice-row">
           <span>IVA ({{ taxPercent(doc.tax_rate) }}%)</span>
-          <span>{{ doc.tax | currency: 'USD' }}</span>
+          <span>{{ doc.tax | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
         <div class="invoice-row total">
-          <span>Total</span><span>{{ doc.total | currency: 'USD' }}</span>
+          <span>Total</span><span>{{ doc.total | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
         <p class="invoice-note">Comprobante electrónico de venta emitido por FashionStore. Factura oficial digital.</p>
         <button type="button" class="btn btn-dark" (click)="downloadInvoice()">
@@ -78,17 +78,17 @@
             @if (item.wholesalePrice && item.qty >= (item.wholesaleMinQty || 3)) {
               <div style="margin: 0.25rem 0;">
                 <span style="background: #ecfdf5; color: #047857; font-weight: bold; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block;">
-                  🔥 ¡Precio mayorista aplicado! {{ item.wholesalePrice | currency: 'USD' }} c/u
+                  🔥 ¡Precio mayorista aplicado! {{ item.wholesalePrice | currency: 'BOB' : 'Bs. ' }} c/u
                 </span>
               </div>
             } @else if (item.wholesalePrice) {
               <div style="margin: 0.25rem 0; font-size: 0.72rem; color: #059669;">
-                Lleva {{ (item.wholesaleMinQty || 3) - item.qty }} más para precio mayorista de {{ item.wholesalePrice | currency: 'USD' }} c/u
+                Lleva {{ (item.wholesaleMinQty || 3) - item.qty }} más para precio mayorista de {{ item.wholesalePrice | currency: 'BOB' : 'Bs. ' }} c/u
               </div>
             }
             <div class="cart-foot">
               <span class="cart-price">
-                {{ ((item.wholesalePrice && item.qty >= (item.wholesaleMinQty || 3) ? item.wholesalePrice : item.price) * item.qty) | currency: 'USD' }}
+                {{ ((item.wholesalePrice && item.qty >= (item.wholesaleMinQty || 3) ? item.wholesalePrice : item.price) * item.qty) | currency: 'BOB' : 'Bs. ' }}
               </span>
               <div class="qty">
                 <button type="button" (click)="dec(item.productId, item.size)" aria-label="Quitar uno">−</button>
@@ -122,7 +122,7 @@
           >
             <span class="opt-label">Envío a domicilio</span>
             <span class="opt-sub">3–5 días hábiles</span>
-            <span class="opt-price">{{ shippingHome | currency: 'USD' }}</span>
+            <span class="opt-price">{{ shippingHome | currency: 'BOB' : 'Bs. ' }}</span>
           </button>
           <button
             type="button"
@@ -247,7 +247,7 @@
                 </div>
                 <p class="qr-title">Escanea para pagar con Stripe</p>
                 <p class="qr-desc">
-                  Monto total: <strong>{{ total() | currency: 'USD' }}</strong>. Escanea con tu móvil o cámara para abonar.
+                  Monto total: <strong>{{ total() | currency: 'BOB' : 'Bs. ' }}</strong>. Escanea con tu móvil o cámara para abonar.
                 </p>
                 @if (qrPaymentUrl(); as url) {
                   <a [href]="url" target="_blank" rel="noopener noreferrer" class="qr-link">
@@ -341,23 +341,23 @@
 
         <div class="sum-row">
           <span>Subtotal ({{ cartCount() }} art.)</span>
-          <span>{{ subtotal() | currency: 'USD' }}</span>
+          <span>{{ subtotal() | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
         <div class="sum-row">
           <span>Envío</span>
           <span class="free" [class.on]="shipping() === 0">
-            {{ shipping() === 0 ? 'Gratis' : (shipping() | currency: 'USD') }}
+            {{ shipping() === 0 ? 'Gratis' : (shipping() | currency: 'BOB' : 'Bs. ') }}
           </span>
         </div>
         @if (couponApplied()) {
           <div class="sum-row">
             <span>Descuento FASHION10</span>
-            <span class="free on">-{{ discount() | currency: 'USD' }}</span>
+            <span class="free on">-{{ discount() | currency: 'BOB' : 'Bs. ' }}</span>
           </div>
         }
         <div class="sum-total">
           <span>Total</span>
-          <span>{{ total() | currency: 'USD' }}</span>
+          <span>{{ total() | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
         <button type="button" class="btn btn-accent full" [disabled]="hasStockError()" (click)="checkout()">
           {{ checkoutButtonLabel() }}

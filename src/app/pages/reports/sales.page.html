@@ -42,11 +42,11 @@
       <div class="label">Unidades vendidas</div>
     </div>
     <div class="stat">
-      <div class="value">{{ report.total_revenue | currency: 'USD' }}</div>
+      <div class="value">{{ report.total_revenue | currency: 'BOB' : 'Bs. ' }}</div>
       <div class="label">Ingresos</div>
     </div>
     <div class="stat">
-      <div class="value">{{ report.average_order_value | currency: 'USD' }}</div>
+      <div class="value">{{ report.average_order_value | currency: 'BOB' : 'Bs. ' }}</div>
       <div class="label">Ticket promedio</div>
     </div>
   </div>
@@ -80,7 +80,7 @@
             <td class="cell-strong">{{ row.key }}</td>
             <td>{{ row.orders }}</td>
             <td>{{ row.units }}</td>
-            <td>{{ row.revenue | currency: 'USD' }}</td>
+            <td>{{ row.revenue | currency: 'BOB' : 'Bs. ' }}</td>
           </tr>
         }
       </tbody>
@@ -104,7 +104,7 @@
             <td class="cell-strong">{{ row.key }}</td>
             <td>{{ row.orders }}</td>
             <td>{{ row.units }}</td>
-            <td>{{ row.revenue | currency: 'USD' }}</td>
+            <td>{{ row.revenue | currency: 'BOB' : 'Bs. ' }}</td>
           </tr>
         }
       </tbody>
@@ -128,7 +128,7 @@
             <td class="cell-strong">{{ row.key }}</td>
             <td>{{ row.orders }}</td>
             <td>{{ row.units }}</td>
-            <td>{{ row.revenue | currency: 'USD' }}</td>
+            <td>{{ row.revenue | currency: 'BOB' : 'Bs. ' }}</td>
           </tr>
         }
       </tbody>

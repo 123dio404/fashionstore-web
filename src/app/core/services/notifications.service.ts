@@ -33,7 +33,7 @@ export class NotificationsService {
   }
 
   reloadForUser(user: any): void {
-    const key = user?.tenant_id ? `tenant_${user.tenant_id}` : (user?.id ? `user_${user.id}` : 'guest');
+    const key = user?.tenant_id ? `tenant_${user.tenant_id}_user_${user.id || 'any'}` : (user?.id ? `user_${user.id}` : 'guest');
     this.currentKey = key;
     this.notifications.set(this.loadForStorageKey(key));
   }
@@ -142,7 +142,7 @@ export class NotificationsService {
             id: notifId,
             saleId: sale.id,
             title: '¡Compra confirmada!',
-            message: `Tu pedido #${sale.id} por $${totalNum.toFixed(2)} fue procesado con éxito y el stock fue actualizado.`,
+            message: `Tu pedido #${sale.id} por Bs. ${totalNum.toFixed(2)} fue procesado con éxito y el stock fue actualizado.`,
             date: 'Hoy',
             type: 'purchase_success',
             isRead: false,

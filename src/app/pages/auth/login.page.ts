@@ -65,22 +65,12 @@ export interface DemoTenant {
 }
 
 export const DEMO_TENANTS: DemoTenant[] = [
-  {
-    name: 'Mundo Medias S.R.L.',
-    shortName: 'Mundo Medias',
-    plan: 'Plan Profesional (Tienda de Medias)',
-    color: '#0284c7',
-    accounts: [
-      { label: 'Admin', roleText: 'Administrador', email: 'admin@mundomedias.com', portal: 'admin' },
-      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@mundomedias.com', portal: 'pos' },
-      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@mundomedias.com', portal: 'cliente' }
-    ]
-  },
+  // ── PLAN BÁSICO ($29.99/mes) ──
   {
     name: 'Moda Urbana S.A.',
     shortName: 'Moda Urbana',
-    plan: 'Plan Básico (Ropa Urbana)',
-    color: '#e05a47',
+    plan: 'Plan Básico (Ropa Casual & Streetwear)',
+    color: '#6366f1',
     accounts: [
       { label: 'Admin', roleText: 'Administrador', email: 'admin@urbanstyle.com', portal: 'admin' },
       { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@urbanstyle.com', portal: 'pos' },
@@ -88,16 +78,99 @@ export const DEMO_TENANTS: DemoTenant[] = [
     ]
   },
   {
+    name: 'Tenis Urbanos S.R.L.',
+    shortName: 'Tenis Urbanos',
+    plan: 'Plan Básico (Sneakers & Calzado Urbano)',
+    color: '#0891b2',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@tenisurbanos.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@tenisurbanos.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@tenisurbanos.com', portal: 'cliente' }
+    ]
+  },
+  {
+    name: 'SportActive Ropa Deportiva',
+    shortName: 'SportActive',
+    plan: 'Plan Básico (Ropa Deportiva & Fitness)',
+    color: '#ea580c',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@sportactive.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@sportactive.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@sportactive.com', portal: 'cliente' }
+    ]
+  },
+
+  // ── PLAN PROFESIONAL ($69.99/mes) ──
+  {
+    name: 'Mundo Medias S.R.L.',
+    shortName: 'Mundo Medias',
+    plan: 'Plan Profesional (Especialista en Medias)',
+    color: '#10b981',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@mundomedias.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@mundomedias.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@mundomedias.com', portal: 'cliente' }
+    ]
+  },
+  {
+    name: 'Denim Co. Jeans Factory',
+    shortName: 'Denim Co.',
+    plan: 'Plan Profesional (Jeans & Mezclilla)',
+    color: '#2563eb',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@denimco.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@denimco.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@denimco.com', portal: 'cliente' }
+    ]
+  },
+  {
+    name: 'Relax Homewear & Pijamas',
+    shortName: 'Relax Homewear',
+    plan: 'Plan Profesional (Ropa de Descanso & Pijamas)',
+    color: '#db2777',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@relaxhomewear.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@relaxhomewear.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@relaxhomewear.com', portal: 'cliente' }
+    ]
+  },
+
+  // ── PLAN EMPRESARIAL ($129.99/mes) ──
+  {
     name: 'Elegance Boutique S.R.L.',
     shortName: 'Elegance',
-    plan: 'Plan Empresarial (Alta Costura e IA)',
-    color: '#7c3aed',
+    plan: 'Plan Empresarial (Alta Costura & Lujo con IA)',
+    color: '#d97706',
     accounts: [
       { label: 'Admin', roleText: 'Administrador', email: 'admin@elegance.com', portal: 'admin' },
       { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@elegance.com', portal: 'pos' },
       { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@elegance.com', portal: 'cliente' }
     ]
   },
+  {
+    name: 'Sartoria Milán Bespoke',
+    shortName: 'Sartoria Milán',
+    plan: 'Plan Empresarial (Sastrería Fina & Trajes a Medida)',
+    color: '#b45309',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@sartoriamilan.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@sartoriamilan.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@sartoriamilan.com', portal: 'cliente' }
+    ]
+  },
+  {
+    name: 'Nordic Winter & Coats',
+    shortName: 'Nordic Winter',
+    plan: 'Plan Empresarial (Abrigos de Lujo & Invierno)',
+    color: '#0284c7',
+    accounts: [
+      { label: 'Admin', roleText: 'Administrador', email: 'admin@nordicwinter.com', portal: 'admin' },
+      { label: 'Cajero', roleText: 'Punto de Venta', email: 'cajero@nordicwinter.com', portal: 'pos' },
+      { label: 'Cliente', roleText: 'Cliente Tienda', email: 'cliente@nordicwinter.com', portal: 'cliente' }
+    ]
+  },
+
+  // ── SUPERADMIN GLOBAL ──
   {
     name: 'FashionStore SaaS Global',
     shortName: 'SaaS Global',

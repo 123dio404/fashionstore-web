@@ -101,38 +101,25 @@ export class App {
     const u = this.user();
     if (u?.plan_name) return u.plan_name;
     const email = u?.email?.toLowerCase() || '';
-    if (email.includes('@mundomedias.com')) return 'Plan Profesional';
-    if (email.includes('@elegance.com')) return 'Plan Empresarial';
-    if (email.includes('@urbanstyle.com')) return 'Plan Básico';
+    if (email.includes('@urbanstyle.com') || email.includes('@tenisurbanos.com') || email.includes('@sportactive.com')) {
+      return 'Plan Básico';
+    }
+    if (email.includes('@mundomedias.com') || email.includes('@denimco.com') || email.includes('@relaxhomewear.com')) {
+      return 'Plan Profesional';
+    }
+    if (email.includes('@elegance.com') || email.includes('@sartoriamilan.com') || email.includes('@nordicwinter.com')) {
+      return 'Plan Empresarial';
+    }
     return null;
   });
 
   readonly tenantBadge = computed(() => {
     const tenant = this.tenantName();
     if (!tenant) return null;
-    if (tenant.includes('Mundo Medias')) {
-      return {
-        name: 'Mundo Medias S.R.L.',
-        tag: 'Especialista en Medias',
-        plan: this.planName() || 'Plan Profesional',
-        initials: 'MM',
-        color: '#10B981',
-        bgColor: '#064E3B',
-        borderColor: '#059669'
-      };
-    }
-    if (tenant.includes('Elegance')) {
-      return {
-        name: 'Elegance Boutique S.R.L.',
-        tag: 'Alta Costura & Lujo',
-        plan: this.planName() || 'Plan Empresarial',
-        initials: 'EB',
-        color: '#F59E0B',
-        bgColor: '#78350F',
-        borderColor: '#D97706'
-      };
-    }
-    if (tenant.includes('Moda Urbana')) {
+    const t = tenant.toLowerCase();
+
+    // ── PLAN BÁSICO ──
+    if (t.includes('moda urbana')) {
       return {
         name: 'Moda Urbana S.A.',
         tag: 'Moda Casual & Streetwear',
@@ -140,9 +127,102 @@ export class App {
         initials: 'MU',
         color: '#6366F1',
         bgColor: '#312E81',
-        borderColor: '#4F46E5'
+        borderColor: '#4F46E5',
       };
     }
+    if (t.includes('tenis urbanos')) {
+      return {
+        name: 'Tenis Urbanos S.R.L.',
+        tag: 'Sneakers & Calzado Urbano',
+        plan: this.planName() || 'Plan Básico',
+        initials: 'TU',
+        color: '#06B6D4',
+        bgColor: '#164E63',
+        borderColor: '#0891B2',
+      };
+    }
+    if (t.includes('sportactive')) {
+      return {
+        name: 'SportActive Ropa Deportiva',
+        tag: 'Ropa Fitness & Training',
+        plan: this.planName() || 'Plan Básico',
+        initials: 'SA',
+        color: '#F97316',
+        bgColor: '#7C2D12',
+        borderColor: '#EA580C',
+      };
+    }
+
+    // ── PLAN PROFESIONAL ──
+    if (t.includes('mundo medias')) {
+      return {
+        name: 'Mundo Medias S.R.L.',
+        tag: 'Especialista en Medias',
+        plan: this.planName() || 'Plan Profesional',
+        initials: 'MM',
+        color: '#10B981',
+        bgColor: '#064E3B',
+        borderColor: '#059669',
+      };
+    }
+    if (t.includes('denim co')) {
+      return {
+        name: 'Denim Co. Jeans Factory',
+        tag: 'Jeans & Ropa de Mezclilla',
+        plan: this.planName() || 'Plan Profesional',
+        initials: 'DC',
+        color: '#3B82F6',
+        bgColor: '#1E3A8A',
+        borderColor: '#2563EB',
+      };
+    }
+    if (t.includes('relax homewear')) {
+      return {
+        name: 'Relax Homewear & Pijamas',
+        tag: 'Ropa de Descanso & Confort',
+        plan: this.planName() || 'Plan Profesional',
+        initials: 'RH',
+        color: '#EC4899',
+        bgColor: '#831843',
+        borderColor: '#DB2777',
+      };
+    }
+
+    // ── PLAN EMPRESARIAL ──
+    if (t.includes('elegance')) {
+      return {
+        name: 'Elegance Boutique S.R.L.',
+        tag: 'Alta Costura & Lujo',
+        plan: this.planName() || 'Plan Empresarial',
+        initials: 'EB',
+        color: '#F59E0B',
+        bgColor: '#78350F',
+        borderColor: '#D97706',
+      };
+    }
+    if (t.includes('sartoria')) {
+      return {
+        name: 'Sartoria Milán Bespoke',
+        tag: 'Sastrería & Trajes a Medida',
+        plan: this.planName() || 'Plan Empresarial',
+        initials: 'SM',
+        color: '#D97706',
+        bgColor: '#451A03',
+        borderColor: '#B45309',
+      };
+    }
+    if (t.includes('nordic winter')) {
+      return {
+        name: 'Nordic Winter & Coats',
+        tag: 'Abrigos & Colección Invierno',
+        plan: this.planName() || 'Plan Empresarial',
+        initials: 'NW',
+        color: '#38BDF8',
+        bgColor: '#0C4A6E',
+        borderColor: '#0284C7',
+      };
+    }
+
     return {
       name: tenant,
       tag: 'Empresa Contratante',
@@ -150,7 +230,7 @@ export class App {
       initials: tenant.slice(0, 2).toUpperCase(),
       color: '#38BDF8',
       bgColor: '#0C4A6E',
-      borderColor: '#0284C7'
+      borderColor: '#0284C7',
     };
   });
 

@@ -94,10 +94,10 @@
             <td>{{ categoryName(product) }}</td>
             <td>{{ seasonName(product) }}</td>
             <td>
-              <div><strong>{{ product.price | currency: 'USD' }}</strong></div>
+              <div><strong>{{ product.price | currency: 'BOB' : 'Bs. ' }}</strong></div>
               @if (product.wholesale_price) {
                 <div style="font-size: 0.75rem; color: #059669; font-weight: 600;">
-                  Mayor: {{ product.wholesale_price | currency: 'USD' }} (≥{{ product.wholesale_min_quantity || 3 }}u)
+                  Mayor: {{ product.wholesale_price | currency: 'BOB' : 'Bs. ' }} (≥{{ product.wholesale_min_quantity || 3 }}u)
                 </div>
               }
               @if (product.is_clearance) {
@@ -291,7 +291,7 @@
                 <td>{{ sizeName(variant.size_id) }}</td>
                 <td>{{ colorName(variant.color_id) }}</td>
                 <td><code>{{ variant.codigo }}</code></td>
-                <td>{{ (variant.price ?? product.price) | currency: 'USD' }}</td>
+                <td>{{ (variant.price ?? product.price) | currency: 'BOB' : 'Bs. ' }}</td>
               </tr>
             }
           </tbody>

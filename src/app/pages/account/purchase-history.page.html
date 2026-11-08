@@ -4,7 +4,7 @@
 <div class="stats">
   <div class="stat-card">
     <span class="stat-label">Total gastado</span>
-    <span class="stat-value">{{ totalSpent() | currency: 'USD' }}</span>
+    <span class="stat-value">{{ totalSpent() | currency: 'BOB' : 'Bs. ' }}</span>
   </div>
   <div class="stat-card">
     <span class="stat-label">Pedidos</span>
@@ -50,7 +50,7 @@
             <img [src]="item.image" [alt]="item.name" loading="lazy" />
           }
         </div>
-        <span class="order-total">{{ p.total | currency: 'USD' }}</span>
+        <span class="order-total">{{ p.total | currency: 'BOB' : 'Bs. ' }}</span>
       </div>
 
       @if (isOpen(p.id)) {
@@ -87,7 +87,7 @@
                 </span>
               </div>
               <span class="item-price">
-                {{ (item.price * item.qty) | currency: 'USD' }}
+                {{ (item.price * item.qty) | currency: 'BOB' : 'Bs. ' }}
               </span>
             </div>
           }
@@ -95,12 +95,12 @@
           <div class="totals">
             <div class="tot-row">
               <span>Subtotal</span>
-              <span>{{ p.subtotal | currency: 'USD' }}</span>
+              <span>{{ p.subtotal | currency: 'BOB' : 'Bs. ' }}</span>
             </div>
             <div class="tot-row">
               <span>Envío</span>
               <span [class.free]="p.shipping === 0">
-                {{ p.shipping === 0 ? 'Gratis' : (p.shipping | currency: 'USD') }}
+                {{ p.shipping === 0 ? 'Gratis' : (p.shipping | currency: 'BOB' : 'Bs. ') }}
               </span>
             </div>
             <div class="tot-row">
@@ -109,7 +109,7 @@
             </div>
             <div class="tot-row total">
               <span>Total</span>
-              <span>{{ p.total | currency: 'USD' }}</span>
+              <span>{{ p.total | currency: 'BOB' : 'Bs. ' }}</span>
             </div>
           </div>
 

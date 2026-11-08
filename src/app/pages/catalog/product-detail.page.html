@@ -64,10 +64,10 @@
       </p>
 
       <div class="price-row">
-        <span class="price">{{ p.price | currency: 'USD' }}</span>
-        <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
+        <span class="price">{{ p.price | currency: 'BOB' : 'Bs. ' }}</span>
+        <span class="was">{{ p.oldPrice | currency: 'BOB' : 'Bs. ' }}</span>
         <span class="save">
-          Ahorrás {{ (p.oldPrice - p.price) | currency: 'USD' }}
+          Ahorrás {{ (p.oldPrice - p.price) | currency: 'BOB' : 'Bs. ' }}
         </span>
       </div>
 
@@ -75,7 +75,7 @@
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.5rem 0.75rem; border-radius: 8px; margin: 0.5rem 0 0.75rem; display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-weight: 700; color: #047857; font-size: 0.9rem;">
-              Precio al por mayor: {{ p.wholesalePrice | currency: 'USD' }}
+              Precio al por mayor: {{ p.wholesalePrice | currency: 'BOB' : 'Bs. ' }}
             </div>
             <div style="font-size: 0.75rem; color: #065f46;">
               A partir de {{ p.wholesaleMinQty || 3 }} unidades (aplicado automáticamente al carrito)

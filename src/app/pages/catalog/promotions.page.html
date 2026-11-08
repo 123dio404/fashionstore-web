@@ -39,8 +39,8 @@
         <p class="product-brand">{{ p.brand }}</p>
         <p class="sale-name">{{ p.name }}</p>
         <p class="sale-price">
-          <span class="now">{{ p.price | currency: 'USD' }}</span>
-          <span class="was">{{ p.oldPrice | currency: 'USD' }}</span>
+          <span class="now">{{ p.price | currency: 'BOB' : 'Bs. ' }}</span>
+          <span class="was">{{ p.oldPrice | currency: 'BOB' : 'Bs. ' }}</span>
         </p>
       </div>
     </a>
