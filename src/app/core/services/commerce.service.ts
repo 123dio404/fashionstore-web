@@ -6,6 +6,8 @@ import { environment } from '../../../environments/environment';
 import {
   CartItemRequest,
   CartResponse,
+  CashCloseRequest,
+  CashCloseResponse,
   CheckoutRequest,
   InvoiceResponse,
   PosSaleCreate,
@@ -128,5 +130,10 @@ export class CommerceService {
     return this.http.post<SaleResponse>(`${this.url}/sales/${saleId}/confirm-delivery`, {
       customer_notes
     });
+  }
+
+  // ── CU12 - ARQUEO Y CIERRE DE CAJA POS CON NOTIFICACIONES AL ADMIN Y CAJERO ──
+  cashClose(data: CashCloseRequest): Observable<CashCloseResponse> {
+    return this.http.post<CashCloseResponse>(`${this.url}/cash-close`, data);
   }
 }

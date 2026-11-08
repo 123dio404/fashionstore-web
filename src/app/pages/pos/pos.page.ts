@@ -7,6 +7,7 @@ import { BranchesService } from '../../core/services/branches.service';
 import { CommerceService } from '../../core/services/commerce.service';
 import { IndexedDbService } from '../../core/services/indexed-db.service';
 import { InventoryService } from '../../core/services/inventory.service';
+import { NotificationsService } from '../../core/services/notifications.service';
 import { ProductsService } from '../../core/services/products.service';
 import { SyncManagerService } from '../../core/services/sync-manager.service';
 import {
@@ -43,6 +44,7 @@ export class PosPage {
   private readonly commerce = inject(CommerceService);
   private readonly products = inject(ProductsService);
   private readonly auth = inject(AuthService);
+  private readonly notifs = inject(NotificationsService);
   readonly syncManager = inject(SyncManagerService);
   private readonly db = inject(IndexedDbService);
 
@@ -358,6 +360,27 @@ export class PosPage {
       cashier: this.auth.currentUser()?.full_name || 'Cajero de Turno'
     });
 
+    const bId = this.branchId();
+    if (bId) {
+      this.commerce.cashClose({
+        branch_id: bId,
+        initial_amount: this.initialCashAmount(),
+        cash_sales: this.sessionCashSales(),
+        card_sales: this.sessionCardSales(),
+        qr_sales: this.sessionQrSales(),
+        total_sales: this.sessionCashSales() + this.sessionCardSales() + this.sessionQrSales(),
+        sales_count: this.sessionSalesCount(),
+        counted_amount: counted,
+        difference: diff,
+        status_text: statusText
+      }).subscribe({
+        next: () => {
+          this.notifs.fetchFromBackend();
+        },
+        error: (err) => console.warn('Error al registrar cierre de caja en backend:', err)
+      });
+    }
+
     this.showArqueoModal.set(false);
     this.sessionOpen.set(false);
     this.lines.set([]);
@@ -408,6 +431,7 @@ export class PosPage {
           this.refreshStock(bId);
           this.loadBranchReservations();
         }
+        this.notifs.fetchFromBackend();
         this.activeTab.set('pos');
       },
       error: (err: any) => {
@@ -500,6 +524,7 @@ export class PosPage {
           this.message.set('Venta POS registrada.');
           this.loadReceipt(sale.id);
           this.refreshStock(branchId);
+          this.notifs.fetchFromBackend();
         },
         error: (err: any) => {
           // status 0 = fallo de red: se conserva la venta como operación local.

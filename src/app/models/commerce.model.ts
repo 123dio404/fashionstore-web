@@ -230,3 +230,24 @@ export interface ReservationResponse {
   refunded_at: string | null;
   items: ReservationItemResponse[];
 }
+
+export interface CashCloseRequest {
+  branch_id: number;
+  initial_amount?: number;
+  cash_sales?: number;
+  card_sales?: number;
+  qr_sales?: number;
+  total_sales?: number;
+  sales_count?: number;
+  counted_amount?: number;
+  difference?: number;
+  status_text?: string;
+}
+
+export interface CashCloseResponse {
+  status: string;
+  message: string;
+  branch_id: number;
+  total_sales: number;
+  closed_at: string;
+}

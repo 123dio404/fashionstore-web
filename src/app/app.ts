@@ -310,6 +310,7 @@ export class App {
     this.notifsOpen.update((open) => !open);
     if (this.notifsOpen()) {
       this.userMenuOpen.set(false);
+      this.notifs.fetchFromBackend();
       this.syncSalesNotifs();
     }
   }
@@ -319,7 +320,9 @@ export class App {
   }
 
   syncSalesNotifs(): void {
-    if (this.auth.hasToken()) {
+    // La sincronización de compras personales como "¡Compra confirmada! Tu pedido..."
+    // SOLO aplica para clientes, NUNCA para cajeros, encargados o administradores.
+    if (this.auth.hasToken() && this.user()?.role === Role.Cliente) {
       this.commerce.listSales().subscribe({
         next: (sales) => this.notifs.syncFromSales(sales),
         error: () => {},
