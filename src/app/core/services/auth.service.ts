@@ -11,6 +11,7 @@ export class AuthService {
   private readonly authUrl = `${environment.apiUrl}/auth`;
   private readonly usersUrl = `${environment.apiUrl}/users`;
   private readonly tokenKey = 'fashionstore_access_token';
+  private readonly userKey = 'fashionstore_cached_user';
   readonly currentUser = signal<UserResponse | null>(null);
 
   register(data: RegisterRequest): Observable<UserResponse> {
@@ -28,27 +29,49 @@ export class AuthService {
 
   getCurrentUser(): Observable<UserResponse> {
     return this.http.get<UserResponse>(`${this.usersUrl}/me`).pipe(
-      tap((user) => this.currentUser.set(user))
+      tap((user) => {
+        this.currentUser.set(user);
+        localStorage.setItem(this.userKey, JSON.stringify(user));
+      })
     );
   }
 
   restoreSession(): Observable<UserResponse | null> {
-    return this.hasToken()
-      ? this.getCurrentUser().pipe(catchError(() => {
+    if (!this.hasToken()) return of(null);
+    return this.getCurrentUser().pipe(
+      catchError((err: { status?: number }) => {
+        // Si el fallo es por falta de red (status 0 o sin internet), mantener sesión localmente
+        if (err?.status === 0 || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+          const raw = localStorage.getItem(this.userKey);
+          if (raw) {
+            try {
+              const cachedUser = JSON.parse(raw) as UserResponse;
+              this.currentUser.set(cachedUser);
+              return of(cachedUser);
+            } catch {}
+          }
+        }
+        // Solo si es un 401 real de backend se expira la sesión
+        if (err?.status === 401) {
           this.logout();
-          return of(null);
-        }))
-      : of(null);
+        }
+        return of(null);
+      })
+    );
   }
 
   updateProfile(data: ProfileUpdate): Observable<UserResponse> {
     return this.http.put<UserResponse>(`${this.usersUrl}/me`, data).pipe(
-      tap((user) => this.currentUser.set(user))
+      tap((user) => {
+        this.currentUser.set(user);
+        localStorage.setItem(this.userKey, JSON.stringify(user));
+      })
     );
   }
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
     this.currentUser.set(null);
   }
 
@@ -62,6 +85,7 @@ export class AuthService {
 
   private setSession(response: LoginResponse): void {
     localStorage.setItem(this.tokenKey, response.access_token);
+    localStorage.setItem(this.userKey, JSON.stringify(response.user));
     this.currentUser.set(response.user);
   }
 }
