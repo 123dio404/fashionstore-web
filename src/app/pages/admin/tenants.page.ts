@@ -106,4 +106,19 @@ export class TenantsPage implements OnInit {
       }
     });
   }
+
+  toggleTenantStatus(t: TenantResponse): void {
+    const newStatus = t.status === 'Activo' ? 'Suspendido' : 'Activo';
+    const actionLabel = newStatus === 'Suspendido' ? 'suspender (bloqueará transacciones y checkout POS)' : 'reactivar';
+    if (!confirm(`¿Estás seguro de que deseas ${actionLabel} la empresa "${t.name}"?`)) return;
+
+    this.saas.updateTenantStatus(t.id, newStatus).subscribe({
+      next: (updated) => {
+        this.tenants.update(list => list.map(item => item.id === t.id ? updated : item));
+      },
+      error: (err) => {
+        alert(err?.error?.detail || 'Error al actualizar estado del tenant');
+      }
+    });
+  }
 }

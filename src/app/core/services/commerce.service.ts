@@ -95,8 +95,8 @@ export class CommerceService {
   cancelReservation(id: number): Observable<ReservationResponse> {
     return this.http.post<ReservationResponse>(`${this.url}/reservations/${id}/cancel`, {});
   }
-  completeReservation(id: number): Observable<{ message: string; sale_id: number; total: number; reservation: ReservationResponse }> {
-    return this.http.post<any>(`${this.url}/reservations/${id}/complete`, {});
+  completeReservation(id: number): Observable<SaleResponse> {
+    return this.http.post<SaleResponse>(`${this.url}/reservations/${id}/complete`, {});
   }
 
   // ── POLÍTICAS POSTVENTA: CAMBIO DE PRENDAS < 30 DÍAS (RN-06) ──

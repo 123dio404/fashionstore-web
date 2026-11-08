@@ -137,6 +137,10 @@ export class CartPage {
   readonly progress = signal('');
   readonly warnings = signal<string[]>([]);
 
+  // Datos opcionales de facturación
+  taxId = '';
+  businessName = '';
+
   coupon = '';
 
   readonly cartCount = this.store.cartCount;
@@ -300,6 +304,8 @@ export class CartPage {
           payment_status: PaymentStatus.Completado,
           card_token: cardToken,
           simulate_rejection: simulateRejection,
+          tax_id: this.taxId.trim() || undefined,
+          business_name: this.businessName.trim() || undefined,
         })
       );
       this.saleId.set(sale.id);
@@ -366,6 +372,8 @@ export class CartPage {
           issuer_name: 'FashionStore S.A.S.',
           issuer_tax_id: null,
           customer_id: 1,
+          customer_tax_id: this.taxId.trim() || '0',
+          customer_business_name: this.businessName.trim() || 'Consumidor Final',
           tax_rate: 0.19,
           subtotal: subtotalAmount,
           tax: Number((totalAmount - subtotalAmount).toFixed(2)),

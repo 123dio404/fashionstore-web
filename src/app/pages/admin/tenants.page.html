@@ -89,18 +89,45 @@
           <th>Sucursales</th>
           <th>Estado</th>
           <th>Vencimiento</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let t of tenants()">
           <td>{{t.id}}</td>
-          <td>{{t.name}}</td>
-          <td>{{t.slug}}</td>
+          <td><strong>{{t.name}}</strong></td>
+          <td><code>{{t.slug}}</code></td>
           <td>{{t.tax_id || '-'}}</td>
-          <td>{{t.subscription?.plan?.name || '-'}}</td>
+          <td><span class="chip" style="font-size: 11px;">{{t.subscription?.plan?.name || '-'}}</span></td>
           <td>{{t.active_branches_count}} / {{t.subscription?.plan?.max_branches || '-'}}</td>
-          <td>{{t.status}}</td>
+          <td>
+            <span
+              [style.background]="t.status === 'Activo' ? '#DCFCE7' : '#FEE2E2'"
+              [style.color]="t.status === 'Activo' ? '#166534' : '#991B1B'"
+              style="padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 11px; display: inline-block;"
+            >
+              {{ t.status }}
+            </span>
+          </td>
           <td>{{t.subscription?.end_date | date:'short'}}</td>
+          <td>
+            <button
+              *ngIf="t.status === 'Activo'"
+              class="btn-danger btn-sm"
+              style="padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer;"
+              (click)="toggleTenantStatus(t)"
+            >
+              ⏸ Suspender
+            </button>
+            <button
+              *ngIf="t.status !== 'Activo'"
+              class="btn-primary btn-sm"
+              style="padding: 4px 10px; font-size: 11px; border-radius: 4px; background: #16A34A; border: none; color: #FFF; cursor: pointer;"
+              (click)="toggleTenantStatus(t)"
+            >
+              ▶ Reactivar
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>

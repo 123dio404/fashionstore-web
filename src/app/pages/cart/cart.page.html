@@ -24,6 +24,12 @@
     @if (invoice(); as doc) {
       <div class="invoice-card">
         <p class="section-label">Factura {{ doc.invoice_number }}</p>
+        @if (doc.customer_tax_id || doc.customer_business_name) {
+          <div class="invoice-row" style="font-size: 0.85rem; color: var(--muted); border-bottom: 1px dashed var(--border); padding-bottom: 6px; margin-bottom: 8px;">
+            <span>Datos Fiscales</span>
+            <span style="text-align: right;"><strong>{{ doc.customer_business_name || 'Consumidor Final' }}</strong><br><small>NIT/CI: {{ doc.customer_tax_id || '0' }}</small></span>
+          </div>
+        }
         <div class="invoice-row">
           <span>Subtotal</span><span>{{ doc.subtotal | currency: 'BOB' : 'Bs. ' }}</span>
         </div>
@@ -305,6 +311,34 @@
           >
             {{ couponApplied() ? 'Aplicado' : 'Aplicar' }}
           </button>
+        </div>
+      </div>
+
+      <!-- Datos de Facturación (Opcional) -->
+      <div class="side-card">
+        <p class="side-title">Facturación (NIT / C.I.)</p>
+        <p style="font-size: 12px; color: var(--muted); margin: -4px 0 10px;">
+          Si requiere factura comercial con datos fiscales, ingrese su NIT/CI y Razón Social.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 2px;">NIT o C.I.</label>
+            <input
+              type="text"
+              placeholder="Ej: 1020304050 (0 para Consumidor Final)"
+              [(ngModel)]="taxId"
+              style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);"
+            />
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 2px;">Razón Social / Nombre Completo</label>
+            <input
+              type="text"
+              placeholder="Ej: Juan Pérez o Empresa S.R.L."
+              [(ngModel)]="businessName"
+              style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);"
+            />
+          </div>
         </div>
       </div>
 

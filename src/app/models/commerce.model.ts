@@ -71,6 +71,8 @@ export interface CheckoutRequest {
   idempotency_key?: string | null;
   card_token?: string | null;
   simulate_rejection?: boolean;
+  tax_id?: string | null;
+  business_name?: string | null;
 }
 
 export interface QrPaymentRequest {
@@ -100,6 +102,8 @@ export interface PosSaleCreate {
   payment_provider?: string;
   payment_status?: PaymentStatus | null;
   payment_reference?: string | null;
+  tax_id?: string | null;
+  business_name?: string | null;
 }
 
 export interface SaleItemResponse {
@@ -136,6 +140,8 @@ export interface SaleResponse {
   delivery_status: 'PAGADO' | 'POR_DESPACHAR' | 'ENVIADO' | 'ENTREGADO_CONFORME' | string;
   customer_notes?: string | null;
   delivered_at?: string | null;
+  tax_id?: string | null;
+  business_name?: string | null;
   items: SaleItemResponse[];
   payments: SalePaymentResponse[];
 }
@@ -157,6 +163,8 @@ export interface ReceiptResponse {
   sale_type: SaleType;
   branch_id: Id;
   client_id: Id;
+  tax_id?: string | null;
+  business_name?: string | null;
   subtotal: number;
   total: number;
   payment_status: PaymentStatus;
@@ -172,6 +180,8 @@ export interface InvoiceResponse {
   issuer_name: string;
   issuer_tax_id: string | null;
   customer_id: Id;
+  customer_tax_id?: string | null;
+  customer_business_name?: string | null;
   tax_rate: number;
   subtotal: number;
   tax: number;

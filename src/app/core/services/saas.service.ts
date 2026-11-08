@@ -55,4 +55,8 @@ export class SaasService {
   createTenant(data: TenantCreateRequest): Observable<TenantResponse> {
     return this.http.post<TenantResponse>(`${this.url}/tenants`, data);
   }
+
+  updateTenantStatus(tenantId: number, status: 'Activo' | 'Suspendido'): Observable<TenantResponse> {
+    return this.http.patch<TenantResponse>(`${this.url}/tenants/${tenantId}/status`, { status });
+  }
 }
