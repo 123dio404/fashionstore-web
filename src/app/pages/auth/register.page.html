@@ -65,11 +65,27 @@
           name="password"
           type="password"
           autocomplete="new-password"
-          placeholder="Mínimo 8 caracteres"
+          placeholder="Ej: Fashion2026!"
           [(ngModel)]="password"
           required
         />
-        <p class="note">La contraseña debe tener al menos 8 caracteres.</p>
+        <div class="pwd-requirements" style="margin-top: 8px; font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+          <span [style.color]="hasMinLength ? '#10B981' : '#9CA3AF'">
+            {{ hasMinLength ? '✓' : '○' }} Mínimo 8 caracteres
+          </span>
+          <span [style.color]="hasUpper ? '#10B981' : '#9CA3AF'">
+            {{ hasUpper ? '✓' : '○' }} 1 mayúscula (A-Z)
+          </span>
+          <span [style.color]="hasLower ? '#10B981' : '#9CA3AF'">
+            {{ hasLower ? '✓' : '○' }} 1 minúscula (a-z)
+          </span>
+          <span [style.color]="hasDigit ? '#10B981' : '#9CA3AF'">
+            {{ hasDigit ? '✓' : '○' }} 1 número (0-9)
+          </span>
+          <span [style.color]="hasSpecial ? '#10B981' : '#9CA3AF'" style="grid-column: span 2;">
+            {{ hasSpecial ? '✓' : '○' }} 1 carácter especial (!@#$%...)
+          </span>
+        </div>
       </div>
 
       @if (error()) {

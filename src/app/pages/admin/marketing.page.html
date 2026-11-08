@@ -5,7 +5,10 @@
       Agrupa prendas en colecciones y configura descuentos por temporada.
     </p>
   </div>
-  <div class="page-actions">
+  <div class="page-actions" style="display: flex; gap: 8px;">
+    <button type="button" class="btn btn-secondary" style="border: 1px solid #D1D5DB; background: #FFF; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer;" (click)="openPromoBroadcast()">
+      📢 Notificar Push a Clientes
+    </button>
     @if (activeTab() === 'promotions') {
       <button type="button" class="btn-primary" (click)="openPromotionCreate()">Nueva promoción</button>
     } @else {
@@ -255,3 +258,55 @@
     </button>
   </div>
 </app-ui-drawer>
+
+@if (promoBroadcastOpen()) {
+  <div class="modal-backdrop" (click)="promoBroadcastOpen.set(false)">
+    <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()" style="max-width: 480px; padding: 24px; background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+      <h3 style="margin-top: 0; color: #111827; font-size: 18px;">📢 Enviar Notificación Push a Clientes</h3>
+      <p style="font-size: 13px; color: #6B7280; margin-bottom: 16px;">
+        Esta notificación llegará a todos los clientes registrados en tu tienda (campaña de descuentos, liquidación de temporada o novedades).
+      </p>
+
+      <div class="field" style="margin-bottom: 12px;">
+        <label for="promoTitle" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Título de la Notificación</label>
+        <input
+          id="promoTitle"
+          [(ngModel)]="promoBroadcastTitle"
+          style="width: 100%; padding: 8px 12px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 14px;"
+          placeholder="Ej: ¡25% OFF en Calcetines Térmicos!"
+        />
+      </div>
+
+      <div class="field" style="margin-bottom: 14px;">
+        <label for="promoMessage" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Mensaje de la Campaña</label>
+        <textarea
+          id="promoMessage"
+          [(ngModel)]="promoBroadcastMessage"
+          rows="3"
+          style="width: 100%; padding: 8px 12px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 14px;"
+          placeholder="Escribe el mensaje de la notificación..."
+        ></textarea>
+      </div>
+
+      @if (promoBroadcastSuccess()) {
+        <div class="alert alert-success" style="margin-bottom: 14px; font-size: 13px;">
+          ✓ {{ promoBroadcastSuccess() }}
+        </div>
+      }
+
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+        <button type="button" class="btn btn-secondary" (click)="promoBroadcastOpen.set(false)">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="sendPromoBroadcast()"
+          [disabled]="promoBroadcasting()"
+        >
+          {{ promoBroadcasting() ? 'Enviando push…' : 'Enviar Push a Clientes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

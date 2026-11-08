@@ -1,7 +1,60 @@
 <div class="page-container">
-  <div class="page-header">
+  <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <h1>Empresas (Tenants) - SaaS</h1>
-    <button class="btn-primary" (click)="toggleCreate()">+ Nueva Empresa</button>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn btn-secondary" style="border: 1px solid #D1D5DB; background: #FFF; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer;" (click)="openBroadcastModal()">
+        📢 Recordar Pagos / Push a Dueños
+      </button>
+      <button class="btn-primary" (click)="toggleCreate()">+ Nueva Empresa</button>
+    </div>
+  </div>
+
+  <!-- Modal Push a Dueños de Tienda -->
+  <div class="card" *ngIf="showBroadcast()" style="border: 2px solid #2563EB; background: #F8FAFC; margin-bottom: 20px;">
+    <h2 style="margin-top: 0; color: #1E3A8A;">📢 Enviar Notificación Push a Dueños de Tienda (Admins)</h2>
+    <p style="font-size: 13px; color: #4B5563; margin-top: -6px;">
+      Emite un aviso push directo a los administradores de los tenants (ej: recordatorio de pago mensual, vencimiento de plan, mantenimiento de plataforma).
+    </p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Empresa Destinataria</label>
+        <select [(ngModel)]="broadcastTargetTenantId" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E1;">
+          <option [ngValue]="null">🌐 Todos los dueños de tiendas (Todas las empresas activas)</option>
+          <option *ngFor="let t of tenants()" [ngValue]="t.id">{{ t.name }} ({{ t.subscription?.plan?.name || 'Plan' }})</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Tipo de Aviso</label>
+        <select [(ngModel)]="broadcastType" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E1;">
+          <option value="billing_reminder">💳 Recordatorio de Pago de Suscripción</option>
+          <option value="subscription_alert">⚠️ Alerta de Vencimiento de Plan</option>
+          <option value="system">🔧 Mantenimiento / Actualización del Sistema</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Título de la Notificación</label>
+      <input [(ngModel)]="broadcastTitle" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Ej: Recordatorio de Pago de Suscripción" />
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Mensaje / Detalle</label>
+      <textarea [(ngModel)]="broadcastMessage" rows="3" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Escribe el mensaje..."></textarea>
+    </div>
+
+    <div *ngIf="broadcastSuccess()" style="padding: 10px; background: #DCFCE7; color: #166534; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
+      ✓ {{ broadcastSuccess() }}
+    </div>
+
+    <div class="actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn-secondary" (click)="showBroadcast.set(false)">Cancelar</button>
+      <button class="btn-primary" (click)="sendBroadcast()" [disabled]="broadcasting()" style="background: #2563EB;">
+        {{ broadcasting() ? 'Enviando push…' : 'Enviar Notificación Push' }}
+      </button>
+    </div>
   </div>
 
   <div class="card" *ngIf="showCreate()">

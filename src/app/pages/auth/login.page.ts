@@ -318,6 +318,37 @@ export class LoginPage {
   email = '';
   password = '';
 
+  forgotEmail = '';
+  readonly forgotLoading = signal(false);
+  readonly forgotMessage = signal<string | null>(null);
+  readonly forgotError = signal<string | null>(null);
+  readonly forgotLink = signal<string | null>(null);
+
+  sendRecoveryEmail(): void {
+    if (!this.forgotEmail || !this.forgotEmail.includes('@')) {
+      this.forgotError.set('Ingresa un correo electrónico válido.');
+      return;
+    }
+    this.forgotLoading.set(true);
+    this.forgotMessage.set(null);
+    this.forgotError.set(null);
+    this.forgotLink.set(null);
+
+    this.auth.forgotPassword(this.forgotEmail).subscribe({
+      next: (res) => {
+        this.forgotLoading.set(false);
+        this.forgotMessage.set(res.detail);
+        if (res.reset_link) {
+          this.forgotLink.set(res.reset_link);
+        }
+      },
+      error: (err: Error) => {
+        this.forgotLoading.set(false);
+        this.forgotError.set(err.message || 'Error al procesar la solicitud.');
+      }
+    });
+  }
+
   constructor() {
     this.products.list().subscribe({
       next: (items) => {

@@ -40,7 +40,82 @@
       }
 
       <button class="btn-primary" type="submit" [disabled]="loading()">
-        {{ loading() ? 'Guardando…' : 'Guardar cambios' }}
+        {{ loading() ? 'Guardando…' : 'Guardar datos' }}
+      </button>
+    </form>
+
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-light, #E5E7EB);" />
+
+    <h3 style="margin-top: 0">Seguridad: Cambiar contraseña</h3>
+    <form (ngSubmit)="changePasswordSubmit()">
+      <div class="field">
+        <label for="currentPassword">Contraseña actual</label>
+        <input
+          id="currentPassword"
+          name="currentPassword"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          [(ngModel)]="currentPassword"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="newPassword">Nueva contraseña</label>
+        <input
+          id="newPassword"
+          name="newPassword"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Ej: Fashion2026!"
+          [(ngModel)]="newPassword"
+          required
+        />
+        <div class="pwd-requirements" style="margin-top: 8px; font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+          <span [style.color]="hasPwdMinLength ? '#10B981' : '#9CA3AF'">
+            {{ hasPwdMinLength ? '✓' : '○' }} Mínimo 8 caracteres
+          </span>
+          <span [style.color]="hasPwdUpper ? '#10B981' : '#9CA3AF'">
+            {{ hasPwdUpper ? '✓' : '○' }} 1 mayúscula (A-Z)
+          </span>
+          <span [style.color]="hasPwdLower ? '#10B981' : '#9CA3AF'">
+            {{ hasPwdLower ? '✓' : '○' }} 1 minúscula (a-z)
+          </span>
+          <span [style.color]="hasPwdDigit ? '#10B981' : '#9CA3AF'">
+            {{ hasPwdDigit ? '✓' : '○' }} 1 número (0-9)
+          </span>
+          <span [style.color]="hasPwdSpecial ? '#10B981' : '#9CA3AF'" style="grid-column: span 2;">
+            {{ hasPwdSpecial ? '✓' : '○' }} 1 carácter especial (!@#$%...)
+          </span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Confirmar nueva contraseña</label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Repite la nueva contraseña"
+          [(ngModel)]="confirmPassword"
+          required
+        />
+        @if (confirmPassword.length > 0 && !passwordsMatch) {
+          <p class="field-hint" style="color: #EF4444;">Las contraseñas no coinciden.</p>
+        }
+      </div>
+
+      @if (pwdSuccess()) {
+        <div class="alert alert-success">{{ pwdSuccess() }}</div>
+      }
+      @if (pwdError()) {
+        <div class="alert alert-error">{{ pwdError() }}</div>
+      }
+
+      <button class="btn-primary" type="submit" [disabled]="pwdLoading() || !isNewPasswordValid">
+        {{ pwdLoading() ? 'Actualizando…' : 'Actualizar contraseña' }}
       </button>
     </form>
   </div>
