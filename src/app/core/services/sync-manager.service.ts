@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { OfflineQueueItem, SyncBatchResponse } from '../../models';
+import { AuthService } from './auth.service';
 import { IndexedDbService } from './indexed-db.service';
 import { NotificationsService } from './notifications.service';
 
@@ -22,6 +23,7 @@ export class SyncManagerService {
   private readonly http = inject(HttpClient);
   private readonly db = inject(IndexedDbService);
   private readonly notifs = inject(NotificationsService);
+  private readonly auth = inject(AuthService);
 
   readonly isOnline = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
   readonly isSyncing = signal<boolean>(false);
@@ -82,6 +84,7 @@ export class SyncManagerService {
     items: Array<{ stock_id: number; quantity: number; unit_price?: number }>;
     total?: number;
   }): Promise<OfflineQueueItem> {
+    const tenantId = this.currentTenantId();
     const uuid = this.newUuid();
     const items = data.items.map((item) => ({
       stock_id: item.stock_id,
@@ -94,7 +97,7 @@ export class SyncManagerService {
     const queueItem = await this.db.addToQueue({
       uuid,
       tipo: 'venta',
-      datos: { ...data, items, total },
+      datos: { ...data, tenant_id: tenantId, items, total },
       fecha: new Date().toISOString(),
       estado: 'LOCAL'
     });
@@ -119,6 +122,7 @@ export class SyncManagerService {
     created_at?: string;
     items: Array<{ stock_id: number; quantity: number; unit_price?: number }>;
   }): Promise<OfflineQueueItem> {
+    const tenantId = this.currentTenantId();
     const uuid = this.newUuid();
     const items = data.items.map((item) => ({
       stock_id: item.stock_id,
@@ -129,7 +133,7 @@ export class SyncManagerService {
     const queueItem = await this.db.addToQueue({
       uuid,
       tipo: 'reserva',
-      datos: { ...data, items, total: 0 },
+      datos: { ...data, tenant_id: tenantId, items, total: 0 },
       fecha: new Date().toISOString(),
       estado: 'LOCAL'
     });
@@ -150,10 +154,22 @@ export class SyncManagerService {
     if (this.isSyncing() || !this.isOnline()) return null;
 
     const allItems = await this.db.getQueue();
-    // Un CONFLICTO requiere revisión manual; se reintentan solo las locales.
-    const localItems = allItems.filter((i) => i.estado === 'LOCAL');
+    const tenantId = this.auth.currentUser()?.tenant_id;
+    if (!tenantId) {
+      this.lastError.set('Inicia sesión en una empresa para sincronizar las operaciones offline.');
+      return null;
+    }
+
+    // A tenant's offline operation must never be retried under another tenant's session.
+    const pendingItems = allItems.filter((i) => i.estado === 'LOCAL');
+    const localItems = pendingItems.filter((i) => i.datos?.tenant_id === tenantId);
 
     if (localItems.length === 0) {
+      if (pendingItems.length > 0) {
+        this.lastError.set(
+          'Hay operaciones offline de otra empresa o sin tenant asociado. Inicia sesión en la empresa correspondiente para sincronizarlas.'
+        );
+      }
       await this.refreshQueue();
       return null;
     }
@@ -238,5 +254,13 @@ export class SyncManagerService {
     return typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `offline-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  private currentTenantId(): number {
+    const tenantId = this.auth.currentUser()?.tenant_id;
+    if (!tenantId) {
+      throw new Error('No se puede registrar una operación offline sin una empresa activa.');
+    }
+    return tenantId;
   }
 }

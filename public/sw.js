@@ -1,17 +1,16 @@
-const CACHE_NAME = 'fashionstore-pwa-v2';
+const CACHE_NAME = 'fashionstore-pwa-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/favicon.ico',
-  '/manifest.webmanifest'
+  '/manifest.webmanifest',
+  '/img/brand/logo.svg',
+  '/img/pwa/icon-192.png',
+  '/img/pwa/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
   self.skipWaiting();
 });
 
@@ -20,7 +19,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith('fashionstore-pwa-') && key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -33,32 +32,49 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // No interceptar peticiones a la API backend (se gestionan vía IndexedDB / SyncManager)
-  if (requestUrl.pathname.startsWith('/api/')) {
+  if (
+    event.request.method !== 'GET' ||
+    requestUrl.origin !== self.location.origin ||
+    requestUrl.pathname.startsWith('/api/')
+  ) {
     return;
   }
 
-  // Network-first con fallback a caché para navegación y assets
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy)));
+          }
+          return response;
+        })
+          .catch(async () =>
+            (await caches.match(event.request)) ||
+            (await caches.match('/index.html')) ||
+            Response.error()
+          )
+    );
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+    caches.match(event.request).then((cached) => {
+      const update = fetch(event.request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          return caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).then(() => response);
         }
-        return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        });
-      })
+        return response;
+      });
+
+      if (cached) {
+        event.waitUntil(update.then(() => undefined).catch(() => undefined));
+        return cached;
+      }
+
+      return update;
+    })
   );
 });

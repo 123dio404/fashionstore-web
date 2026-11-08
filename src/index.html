@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#e05a47">
   <meta name="description" content="FashionStore: gestión integral de inventario, ventas y atención al cliente en una sola plataforma.">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="/img/pwa/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -19,7 +20,9 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+          console.error('No se pudo registrar el Service Worker de FashionStore.', error);
+        });
       });
     }
   </script>
