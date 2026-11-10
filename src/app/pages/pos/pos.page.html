@@ -273,20 +273,38 @@
     <!-- VENTA DIRECTA EN MOSTRADOR -->
     <div class="two-col">
       <div>
-        <div class="page-toolbar">
-          <div class="field" style="margin: 0; min-width: 16rem">
+        <div class="page-toolbar" style="flex-wrap: wrap; gap: 10px;">
+          <div class="field" style="margin: 0; min-width: 14rem; flex: 1;">
             <label for="pos-scan">Código de barras / SKU</label>
             <input
               id="pos-scan"
-              placeholder="Escanea o escribe el código y pulsa Enter"
+              placeholder="Escanea o escribe código y Enter"
               [ngModel]="scan()"
               (ngModelChange)="scan.set($event)"
               (keyup.enter)="scanAdd()"
             />
           </div>
-          <button type="button" class="btn" (click)="scanAdd()">Añadir por código</button>
-          <span class="spacer"></span>
-          <span class="muted">{{ availableVariants().length }} variantes con stock</span>
+          <button type="button" class="btn" (click)="scanAdd()" style="margin-top: auto;">Añadir por código</button>
+
+          <!-- SELECTOR VISUAL DE PRENDAS PARA EL CAJERO -->
+          <div class="field" style="margin: 0; min-width: 18rem; flex: 1.5;">
+            <label for="pos-catalog-select">Seleccionar Prenda / Variante Disponible</label>
+            <select
+              id="pos-catalog-select"
+              #selectStock
+              (change)="addStockItem(selectStock.value); selectStock.value = ''"
+              style="padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88rem; width: 100%;"
+            >
+              <option value="">-- Elige una prenda disponible en sucursal --</option>
+              @for (st of availableVariants(); track st.id) {
+                <option [value]="st.id">
+                  {{ variantOf(st.id)?.productName || 'Prenda' }} ({{ variantOf(st.id)?.codigo || 'SKU' }} - {{ sizeName(variantOf(st.id)?.sizeId) }}) · Bs. {{ variantOf(st.id)?.price }} [Stock: {{ st.available_stock }}]
+                </option>
+              }
+            </select>
+          </div>
+
+          <span class="muted" style="align-self: center; font-size: 0.82rem;">{{ availableVariants().length }} variantes con stock</span>
         </div>
 
         <div class="table-card">

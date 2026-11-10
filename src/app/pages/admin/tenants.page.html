@@ -77,6 +77,41 @@
     </div>
   </div>
 
+  <!-- Modal Cambiar Plan a Empresa (SuperAdmin) -->
+  <div class="card" *ngIf="showChangePlanModal()" style="border: 2px solid #F59E0B; background: #FFFBEB; margin-bottom: 20px;">
+    <h2 style="margin-top: 0; color: #92400E;">⭐ Modificar Plan Comercial: {{ selectedTenantForPlan?.name }}</h2>
+    <p style="font-size: 13px; color: #78350F; margin-top: -6px;">
+      Como Superadministrador puedes asignar o ascender directamente el plan SaaS de esta empresa contratante (validando límites de sucursales).
+    </p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Nuevo Plan a Asignar</label>
+        <select [(ngModel)]="selectedNewPlan" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #FCD34D; font-weight: 600;">
+          <option value="Básico">Plan Básico (Máx. 2 sucursales · Bs. 29.99/mes)</option>
+          <option value="Profesional">Plan Profesional (Máx. 5 sucursales · Bs. 69.99/mes)</option>
+          <option value="Empresarial">Plan Empresarial (Sucursales Ilimitadas · Bs. 149.99/mes)</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Ciclo / Meses de Vigencia</label>
+        <select [(ngModel)]="planMonths" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #FCD34D;">
+          <option [ngValue]="1">1 mes</option>
+          <option [ngValue]="6">6 meses (10% descuento)</option>
+          <option [ngValue]="12">12 meses / 1 año (15% descuento)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn-secondary" (click)="showChangePlanModal.set(false)">Cancelar</button>
+      <button class="btn-primary" (click)="saveChangePlan()" [disabled]="changingPlan()" style="background: #D97706; border: none; color: #FFF;">
+        {{ changingPlan() ? 'Actualizando plan…' : 'Confirmar y Asignar Plan' }}
+      </button>
+    </div>
+  </div>
+
   <div class="card">
     <table class="table">
       <thead>
@@ -111,22 +146,32 @@
           </td>
           <td>{{t.subscription?.end_date | date:'short'}}</td>
           <td>
-            <button
-              *ngIf="t.status === 'Activo'"
-              class="btn-danger btn-sm"
-              style="padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer;"
-              (click)="toggleTenantStatus(t)"
-            >
-              ⏸ Suspender
-            </button>
-            <button
-              *ngIf="t.status !== 'Activo'"
-              class="btn-primary btn-sm"
-              style="padding: 4px 10px; font-size: 11px; border-radius: 4px; background: #16A34A; border: none; color: #FFF; cursor: pointer;"
-              (click)="toggleTenantStatus(t)"
-            >
-              ▶ Reactivar
-            </button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button
+                class="btn-secondary btn-sm"
+                style="padding: 4px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; border: 1px solid #CBD5E1; background: #F1F5F9; font-weight: 600;"
+                (click)="openChangePlan(t)"
+                title="Cambiar plan contratado"
+              >
+                ⭐ Cambiar Plan
+              </button>
+              <button
+                *ngIf="t.status === 'Activo'"
+                class="btn-danger btn-sm"
+                style="padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer;"
+                (click)="toggleTenantStatus(t)"
+              >
+                ⏸ Suspender
+              </button>
+              <button
+                *ngIf="t.status !== 'Activo'"
+                class="btn-primary btn-sm"
+                style="padding: 4px 10px; font-size: 11px; border-radius: 4px; background: #16A34A; border: none; color: #FFF; cursor: pointer;"
+                (click)="toggleTenantStatus(t)"
+              >
+                ▶ Reactivar
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>

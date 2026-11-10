@@ -29,6 +29,13 @@ export class TenantsPage implements OnInit {
   broadcastMessage = 'Estimado administrador, le recordamos que la facturación de su plan SaaS está próxima a vencer. Por favor verifique su estado de cuenta en el módulo de Suscripción.';
   broadcastType = 'billing_reminder';
 
+  // Modal para cambiar plan de un tenant (SuperAdmin)
+  showChangePlanModal = signal(false);
+  changingPlan = signal(false);
+  selectedTenantForPlan: TenantResponse | null = null;
+  selectedNewPlan = 'Profesional';
+  planMonths = 1;
+
   form: TenantCreateRequest = {
     name: '',
     slug: '',
@@ -118,6 +125,33 @@ export class TenantsPage implements OnInit {
       },
       error: (err) => {
         alert(err?.error?.detail || 'Error al actualizar estado del tenant');
+      }
+    });
+  }
+
+  openChangePlan(t: TenantResponse): void {
+    this.selectedTenantForPlan = t;
+    this.selectedNewPlan = t.subscription?.plan?.name === 'Básico' ? 'Profesional' : (t.subscription?.plan?.name === 'Profesional' ? 'Empresarial' : 'Básico');
+    this.planMonths = 1;
+    this.showChangePlanModal.set(true);
+  }
+
+  saveChangePlan(): void {
+    if (!this.selectedTenantForPlan) return;
+    this.changingPlan.set(true);
+    this.saas.changePlan(this.selectedNewPlan, {
+      months: this.planMonths,
+      tenantId: this.selectedTenantForPlan.id
+    }).subscribe({
+      next: (res) => {
+        this.changingPlan.set(false);
+        this.showChangePlanModal.set(false);
+        alert(`Plan de "${this.selectedTenantForPlan?.name}" actualizado a ${this.selectedNewPlan} exitosamente.`);
+        this.load();
+      },
+      error: (err) => {
+        this.changingPlan.set(false);
+        alert(err?.error?.detail || 'Error al cambiar plan del tenant');
       }
     });
   }

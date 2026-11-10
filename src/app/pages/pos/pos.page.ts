@@ -471,7 +471,15 @@ export class PosPage {
     this.scan.set('');
   }
 
-  private addLine(stockId: number, quantity: number): void {
+  /** Permite añadir directamente un stock desde el selector visual del POS */
+  addStockItem(stockId: number | string): void {
+    const id = Number(stockId);
+    if (!id) return;
+    this.addLine(id, 1);
+    this.error.set(null);
+  }
+
+  addLine(stockId: number, quantity: number): void {
     const existing = this.lines().find((line) => line.stock_id === stockId);
     if (existing) {
       const index = this.lines().indexOf(existing);
