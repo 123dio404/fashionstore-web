@@ -11,9 +11,9 @@
   </div>
   <div class="page-actions">
     @if (!syncManager.isOnline()) {
-      <span class="chip" style="border-color: #f59e0b; color: #b45309">
-        Sin conexión · {{ syncManager.pendingCount() }} pendiente(s)
-      </span>
+      <button type="button" class="chip" (click)="syncManager.toggleOnline()" style="border-color: #f59e0b; color: #b45309; cursor: pointer; background: #fffbeb;" title="Modo sin conexión activo · Haz clic para reconectar y sincronizar">
+        📡 Sin conexión · {{ syncManager.pendingCount() }} pendiente(s) (Reconectar)
+      </button>
     }
     @if (sessionOpen()) {
       <span class="chip selected">Caja abierta · {{ branchName() }}</span>

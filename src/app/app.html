@@ -132,15 +132,20 @@
           <div
             class="sync-indicator"
             [class.offline]="!syncManager.isOnline()"
-            [title]="syncManager.isOnline() ? (syncManager.isSyncing() ? 'Sincronizando con backend SaaS...' : 'Conectado al servidor SaaS') : 'Modo Offline: datos almacenados localmente en IndexedDB'"
+            (click)="syncManager.toggleOnline()"
+            role="button"
+            tabindex="0"
+            style="cursor: pointer; user-select: none;"
+            [title]="syncManager.isOnline() ? (syncManager.isSyncing() ? 'Sincronizando con backend SaaS...' : 'Conectado al servidor SaaS · Haz clic para simular Modo Offline') : 'Modo Offline: datos almacenados localmente en IndexedDB · Haz clic para reconectar y sincronizar'"
           >
             <span class="sync-dot" [class.online]="syncManager.isOnline()" [class.pulse]="syncManager.isSyncing()"></span>
             <span class="sync-text">{{ syncManager.isOnline() ? (syncManager.isSyncing() ? 'Sincronizando' : 'Online') : 'Offline' }}</span>
+            <span style="font-size: 10px; opacity: 0.65; margin-left: 2px;" title="Haz clic para alternar Online/Offline">⇄</span>
             @if (syncManager.pendingCount() > 0) {
               <button
                 type="button"
                 class="sync-pill-btn"
-                (click)="syncManager.triggerManualSync()"
+                (click)="$event.stopPropagation(); syncManager.triggerManualSync()"
                 [disabled]="!syncManager.isOnline() || syncManager.isSyncing()"
                 title="Presione para sincronizar transacciones pendientes"
               >

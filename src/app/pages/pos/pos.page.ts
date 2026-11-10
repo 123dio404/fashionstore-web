@@ -600,6 +600,7 @@ export class PosPage {
   private applyStock(rows: StockResponse[]): void {
     this.stocks.set(rows);
     this.stockIndex.set(new Map(rows.map((row) => [row.id, row.variant_id])));
+    void this.db.saveInventory(rows);
   }
 
   printReceipt(): void {

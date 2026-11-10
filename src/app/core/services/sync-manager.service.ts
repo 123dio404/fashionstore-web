@@ -49,6 +49,21 @@ export class SyncManagerService {
     void this.refreshQueue();
   }
 
+  /**
+   * Alterna manualmente el estado online/offline.
+   * Ideal para demostraciones y defensas sin depender de desconectar cables físicos o configuración del SO.
+   */
+  toggleOnline(): void {
+    const nextState = !this.isOnline();
+    this.isOnline.set(nextState);
+    if (nextState) {
+      this.notifs.info('Conexión reestablecida (Online). Sincronizando operaciones pendientes...');
+      void this.syncAll();
+    } else {
+      this.notifs.warning('Modo Offline activado (Simulado). Las ventas y reservas se almacenarán localmente en IndexedDB.');
+    }
+  }
+
   async refreshQueue(): Promise<void> {
     const items = await this.db.getQueue();
     // Más recientes primero para la pantalla de monitoreo (CU-12).
