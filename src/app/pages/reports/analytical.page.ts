@@ -76,6 +76,86 @@ export class AnalyticalPage {
     this.ask();
   }
 
+  readonly recording = signal(false);
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private recognition: any = null;
+
+  toggleLiveRecording(): void {
+    if (this.recording()) {
+      this.stopLiveRecording();
+    } else {
+      this.startLiveRecording();
+    }
+  }
+
+  private startLiveRecording(): void {
+    this.error.set(null);
+    this.audioChunks = [];
+
+    // Transcripción en vivo en español si el navegador cuenta con SpeechRecognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      try {
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = 'es-BO';
+        this.recognition.continuous = false;
+        this.recognition.interimResults = true;
+        this.recognition.onresult = (event: any) => {
+          let text = '';
+          for (let i = 0; i < event.results.length; i++) {
+            text += event.results[i][0].transcript;
+          }
+          if (text) {
+            this.query = text;
+            this.transcript.set(text);
+          }
+        };
+        this.recognition.start();
+      } catch (e) {
+        console.warn('SpeechRecognition no iniciado:', e);
+      }
+    }
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) this.audioChunks.push(e.data);
+        };
+        this.mediaRecorder.onstop = () => {
+          const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+          const blob = new Blob(this.audioChunks, { type: mimeType });
+          this.audio = new File([blob], `pregunta_voz_${Date.now()}.webm`, { type: mimeType });
+          stream.getTracks().forEach((track) => track.stop());
+
+          if (this.query.trim()) {
+            this.ask();
+          } else {
+            this.askVoice();
+          }
+        };
+        this.mediaRecorder.start();
+        this.recording.set(true);
+      }).catch((err) => {
+        this.error.set('No se pudo acceder al micrófono: ' + (err.message || 'Permiso denegado'));
+        this.recording.set(false);
+      });
+    } else {
+      this.error.set('Tu navegador no soporta grabación directa de audio.');
+    }
+  }
+
+  private stopLiveRecording(): void {
+    this.recording.set(false);
+    if (this.recognition) {
+      try { this.recognition.stop(); } catch (_) {}
+    }
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+  }
+
   onFile(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.audio = input.files?.[0] ?? null;
