@@ -25,14 +25,14 @@ export class SyncManagerService {
   private readonly notifs = inject(NotificationsService);
   private readonly auth = inject(AuthService);
 
-  readonly isOnline = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  readonly isOnline = signal<boolean>(true);
   readonly isSyncing = signal<boolean>(false);
   readonly pendingCount = signal<number>(0);
   readonly lastSync = signal<Date | null>(null);
   readonly lastError = signal<string | null>(null);
   readonly queue = signal<OfflineQueueItem[]>([]);
 
-  private readonly healthUrl = (environment.apiUrl || '').replace(/\/api\/v1\/?$/, '') + '/health';
+  private readonly pingUrl = '/favicon.ico';
   private heartbeatInterval: any = null;
   private isCheckingConnection = false;
 
@@ -61,19 +61,18 @@ export class SyncManagerService {
   /**
    * Monitor activo de conectividad (Heartbeat).
    * Detecta inmediatamente cortes de Wi-Fi, modo avión o desconexiones físicas
-   * sin depender de que el sistema operativo informe al navegador.
+   * contactando el CDN estático sin latencia ni dependencias de backend.
    */
   private startHeartbeat(): void {
     if (typeof window === 'undefined') return;
-    // Ping inicial y luego cada 3.5 segundos
     setTimeout(() => void this.checkRealConnectivity(), 500);
     this.heartbeatInterval = setInterval(() => {
       void this.checkRealConnectivity();
-    }, 3500);
+    }, 4000);
   }
 
   /**
-   * Verifica activamente si hay salida real a internet contactando el backend.
+   * Verifica activamente si hay salida real a internet contactando el CDN estático de la app.
    */
   async checkRealConnectivity(): Promise<boolean> {
     if (typeof window === 'undefined') return true;
@@ -90,8 +89,8 @@ export class SyncManagerService {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch(`${this.healthUrl}?_t=${Date.now()}`, {
-        method: 'GET',
+      const res = await fetch(`${this.pingUrl}?_t=${Date.now()}`, {
+        method: 'HEAD',
         cache: 'no-store',
         signal: controller.signal
       });
