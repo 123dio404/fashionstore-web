@@ -164,8 +164,20 @@ export class PosPage {
 
   constructor() {
     this.branchesService.list().subscribe({
-      next: (items) => this.branches.set(items),
-      error: () => void this.loadCachedBranches()
+      next: (items) => {
+        this.branches.set(items);
+        this.restoreActiveSession();
+        // Si no hay sesión previa guardada, preseleccionar la primera sucursal disponible
+        if (!this.branchId() && items.length > 0) {
+          const userBranch = (this.auth.currentUser() as any)?.branch_id;
+          const found = items.find((b) => b.id === userBranch) || items[0];
+          this.branchId.set(found.id);
+        }
+      },
+      error: () => {
+        void this.loadCachedBranches();
+        this.restoreActiveSession();
+      }
     });
     this.products.listSizes().subscribe({
       next: (items) => this.sizes.set(items),
@@ -176,6 +188,67 @@ export class PosPage {
       next: (items) => this.indexCatalog(items),
       error: () => void this.loadCachedCatalog()
     });
+  }
+
+  private get sessionKey(): string {
+    const tenantId = this.auth.currentUser()?.tenant_id || 'default';
+    return `fs_pos_session_${tenantId}`;
+  }
+
+  /** Persiste el turno de caja en localStorage para no perderlo al cambiar de pestaña */
+  private persistSession(): void {
+    const bId = this.branchId();
+    if (!this.sessionOpen() || !bId) return;
+    try {
+      const data = {
+        branchId: bId,
+        initialCash: this.initialCashAmount(),
+        cashSales: this.sessionCashSales(),
+        cardSales: this.sessionCardSales(),
+        qrSales: this.sessionQrSales(),
+        salesCount: this.sessionSalesCount(),
+        openedAt: new Date().toISOString()
+      };
+      localStorage.setItem(this.sessionKey, JSON.stringify(data));
+    } catch {
+      // LocalStorage protegido
+    }
+  }
+
+  /** Restaura la caja abierta previamente si el cajero navegó a otra pantalla */
+  private restoreActiveSession(): void {
+    try {
+      const raw = localStorage.getItem(this.sessionKey);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data && data.branchId) {
+        this.branchId.set(data.branchId);
+        this.initialCashAmount.set(data.initialCash ?? 100);
+        this.sessionCashSales.set(data.cashSales ?? 0);
+        this.sessionCardSales.set(data.cardSales ?? 0);
+        this.sessionQrSales.set(data.qrSales ?? 0);
+        this.sessionSalesCount.set(data.salesCount ?? 0);
+        this.sessionOpen.set(true);
+
+        if (this.syncManager.isOnline()) {
+          this.refreshStock(data.branchId);
+          this.loadBranchReservations();
+        } else {
+          void this.openSessionFromCache(data.branchId);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /** Limpia la sesión local al cerrar turno y completar arqueo */
+  private clearActiveSession(): void {
+    try {
+      localStorage.removeItem(this.sessionKey);
+    } catch {
+      // ignore
+    }
   }
 
   /** CU-09/CU-10: la caja puede abrirse y vender con la copia local de IndexedDB. */
@@ -284,6 +357,8 @@ export class PosPage {
     this.sessionQrSales.set(0);
     this.sessionSalesCount.set(0);
     this.arqueoSummary.set(null);
+    this.sessionOpen.set(true);
+    this.persistSession();
 
     if (!this.syncManager.isOnline()) {
       void this.openSessionFromCache(branchId);
@@ -296,6 +371,33 @@ export class PosPage {
         this.sessionOpen.set(true);
         this.message.set('Caja abierta. Stock de la sucursal cargado.');
         this.loadBranchReservations();
+        this.persistSession();
+
+        // Consulta si ya hubo ventas previas hoy en esta sucursal para incorporarlas al turno
+        this.commerce.listSales().subscribe({
+          next: (allSales) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const todayBranchSales = allSales.filter(
+              (s) => s.branch_id === branchId && s.sale_date && s.sale_date.startsWith(today)
+            );
+            if (todayBranchSales.length > 0 && this.sessionSalesCount() === 0) {
+              let cash = 0, card = 0, qr = 0;
+              for (const s of todayBranchSales) {
+                const tot = Number(s.total) || 0;
+                const pm = ((s.payments?.[0] as any)?.payment_method || (s.payments?.[0] as any)?.reference || '').toLowerCase();
+                if (pm.includes('cash') || pm.includes('efectivo')) cash += tot;
+                else if (pm.includes('card') || pm.includes('tarjeta')) card += tot;
+                else qr += tot;
+              }
+              this.sessionCashSales.set(cash);
+              this.sessionCardSales.set(card);
+              this.sessionQrSales.set(qr);
+              this.sessionSalesCount.set(todayBranchSales.length);
+              this.persistSession();
+            }
+          },
+          error: () => undefined
+        });
       },
       error: () => void this.openSessionFromCache(branchId)
     });
@@ -381,6 +483,7 @@ export class PosPage {
       });
     }
 
+    this.clearActiveSession();
     this.showArqueoModal.set(false);
     this.sessionOpen.set(false);
     this.lines.set([]);
@@ -528,6 +631,7 @@ export class PosPage {
             this.sessionQrSales.update((v) => v + totalVal);
           }
           this.sessionSalesCount.update((v) => v + 1);
+          this.persistSession();
           this.lines.set([]);
           this.message.set('Venta POS registrada.');
           this.loadReceipt(sale.id);
@@ -537,6 +641,7 @@ export class PosPage {
         error: (err: any) => {
           // status 0 = fallo de red: se conserva la venta como operación local.
           if (!err?.status) {
+            this.syncManager.setOnline(false);
             void this.queueOfflineSale(branchId);
             return;
           }
@@ -566,6 +671,33 @@ export class PosPage {
         items,
         total
       });
+
+      // Sumar al arqueo de caja local de turno
+      if (this.paymentMethod() === 'efectivo') {
+        this.sessionCashSales.update((v) => v + total);
+      } else if (this.paymentMethod() === 'tarjeta') {
+        this.sessionCardSales.update((v) => v + total);
+      } else {
+        this.sessionQrSales.update((v) => v + total);
+      }
+      this.sessionSalesCount.update((v) => v + 1);
+      this.persistSession();
+
+      // Descontar inmediatamente existencias locales para que el cajero vea el stock actualizado
+      for (const line of items) {
+        this.stocks.update((list) =>
+          list.map((st) =>
+            st.id === line.stock_id
+              ? {
+                  ...st,
+                  available_stock: Math.max(0, st.available_stock - line.quantity),
+                  physical_stock: Math.max(0, st.physical_stock - line.quantity)
+                }
+              : st
+          )
+        );
+      }
+      void this.db.saveInventory(this.stocks());
 
       this.lines.set([]);
       this.sale.set(null);

@@ -1,13 +1,18 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
+import { SyncManagerService } from '../services/sync-manager.service';
 
-export const errorInterceptor: HttpInterceptorFn = (request, next) =>
-  next(request).pipe(
+export const errorInterceptor: HttpInterceptorFn = (request, next) => {
+  const sync = inject(SyncManagerService);
+
+  return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       let message = 'No fue posible completar la solicitud.';
 
       if (error.status === 0) {
-        message = 'No se pudo conectar con el servidor. Si el backend en Render estaba suspendido, puede tardar ~40s en encender. Reintenta en unos instantes.';
+        sync.setOnline(false);
+        message = 'No se pudo conectar con el servidor (sin conexión o backend suspendido). Las operaciones se conservan localmente.';
       } else if (error.status === 502 || error.status === 503 || error.status === 504) {
         message = 'El servidor en Render se está iniciando. Por favor espera 30 segundos y vuelve a intentar.';
       } else if (error.status === 401) {
@@ -28,3 +33,4 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) =>
       return throwError(() => new Error(message));
     })
   );
+};

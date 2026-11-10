@@ -32,36 +32,102 @@ export class SyncManagerService {
   readonly lastError = signal<string | null>(null);
   readonly queue = signal<OfflineQueueItem[]>([]);
 
+  private readonly healthUrl = (environment.apiUrl || '').replace(/\/api\/v1\/?$/, '') + '/health';
+  private heartbeatInterval: any = null;
+  private isCheckingConnection = false;
+
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
-        this.isOnline.set(true);
-        this.notifs.info('Conexión reestablecida. Sincronizando operaciones pendientes...');
-        void this.syncAll();
+        void this.checkRealConnectivity();
       });
 
       window.addEventListener('offline', () => {
-        this.isOnline.set(false);
-        this.notifs.warning('Modo sin conexión activo (PWA). Las operaciones se guardarán localmente en IndexedDB.');
+        this.setOnline(false);
       });
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          void this.checkRealConnectivity();
+        }
+      });
+
+      this.startHeartbeat();
     }
 
     void this.refreshQueue();
   }
 
   /**
-   * Alterna manualmente el estado online/offline.
-   * Ideal para demostraciones y defensas sin depender de desconectar cables físicos o configuración del SO.
+   * Monitor activo de conectividad (Heartbeat).
+   * Detecta inmediatamente cortes de Wi-Fi, modo avión o desconexiones físicas
+   * sin depender de que el sistema operativo informe al navegador.
    */
-  toggleOnline(): void {
-    const nextState = !this.isOnline();
-    this.isOnline.set(nextState);
-    if (nextState) {
-      this.notifs.info('Conexión reestablecida (Online). Sincronizando operaciones pendientes...');
+  private startHeartbeat(): void {
+    if (typeof window === 'undefined') return;
+    // Ping inicial y luego cada 3.5 segundos
+    setTimeout(() => void this.checkRealConnectivity(), 500);
+    this.heartbeatInterval = setInterval(() => {
+      void this.checkRealConnectivity();
+    }, 3500);
+  }
+
+  /**
+   * Verifica activamente si hay salida real a internet contactando el backend.
+   */
+  async checkRealConnectivity(): Promise<boolean> {
+    if (typeof window === 'undefined') return true;
+
+    // Si el navegador ya reporta offline de forma nativa:
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.setOnline(false);
+      return false;
+    }
+
+    if (this.isCheckingConnection) return this.isOnline();
+    this.isCheckingConnection = true;
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      await fetch(`${this.healthUrl}?_t=${Date.now()}`, {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      this.setOnline(true);
+      return true;
+    } catch {
+      this.setOnline(false);
+      return false;
+    } finally {
+      this.isCheckingConnection = false;
+    }
+  }
+
+  /**
+   * Actualiza el estado online/offline garantizando reactividad en toda la app.
+   */
+  setOnline(online: boolean): void {
+    const prev = this.isOnline();
+    if (prev === online) return;
+
+    this.isOnline.set(online);
+    if (online) {
+      this.notifs.info('Conexión a internet reestablecida (Online). Sincronizando operaciones pendientes...');
       void this.syncAll();
     } else {
-      this.notifs.warning('Modo Offline activado (Simulado). Las ventas y reservas se almacenarán localmente en IndexedDB.');
+      this.notifs.warning('Modo sin conexión detectado (Offline). Las ventas y reservas se guardarán localmente en IndexedDB.');
     }
+  }
+
+  /**
+   * Alterna manualmente el estado online/offline.
+   */
+  toggleOnline(): void {
+    this.setOnline(!this.isOnline());
   }
 
   async refreshQueue(): Promise<void> {
