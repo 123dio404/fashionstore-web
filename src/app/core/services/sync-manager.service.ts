@@ -89,16 +89,19 @@ export class SyncManagerService {
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 2000);
-      await fetch(`${this.healthUrl}?_t=${Date.now()}`, {
-        method: 'HEAD',
-        mode: 'no-cors',
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(`${this.healthUrl}?_t=${Date.now()}`, {
+        method: 'GET',
         cache: 'no-store',
         signal: controller.signal
       });
       clearTimeout(timer);
-      this.setOnline(true);
-      return true;
+      if (res.ok) {
+        this.setOnline(true);
+        return true;
+      }
+      this.setOnline(false);
+      return false;
     } catch {
       this.setOnline(false);
       return false;

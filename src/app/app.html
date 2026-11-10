@@ -316,7 +316,7 @@
   </main>
 }
 
-@if (offline() || !syncManager.isOnline()) {
+@if (!syncManager.isOnline()) {
   <div class="offline-banner" role="status">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <line x1="1" y1="1" x2="23" y2="23" />
