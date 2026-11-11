@@ -388,6 +388,11 @@
 
         <div class="field" style="margin-top: 1rem">
           <label>Método de pago</label>
+          @if (offline()) {
+            <p class="field-hint" style="color: #b45309; font-weight: 600; margin: 0 0 0.5rem;">
+              📡 Sin conexión: solo se permite cobro en efectivo (RN-03). Tarjeta, QR y datáfono requieren red.
+            </p>
+          }
           <div class="seg" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
             <button
               type="button"
@@ -401,6 +406,9 @@
               type="button"
               class="chip"
               [class.selected]="paymentMethod() === 'tarjeta'"
+              [disabled]="offline()"
+              [style.opacity]="offline() ? 0.45 : 1"
+              [title]="offline() ? 'Requiere conexión a internet (RN-03)' : 'Cobro con tarjeta vía Stripe'"
               (click)="setPaymentMethod('tarjeta')"
             >
               💳 Tarjeta (Stripe)
@@ -409,6 +417,9 @@
               type="button"
               class="chip"
               [class.selected]="paymentMethod() === 'qr'"
+              [disabled]="offline()"
+              [style.opacity]="offline() ? 0.45 : 1"
+              [title]="offline() ? 'Requiere conexión a internet (RN-03)' : 'Cobro con QR vía Stripe'"
               (click)="setPaymentMethod('qr')"
             >
               📱 QR (Stripe)
@@ -417,6 +428,9 @@
               type="button"
               class="chip"
               [class.selected]="paymentMethod() === 'datafono'"
+              [disabled]="offline()"
+              [style.opacity]="offline() ? 0.45 : 1"
+              [title]="offline() ? 'Requiere conexión a internet (RN-03)' : 'Cobro con datáfono'"
               (click)="setPaymentMethod('datafono')"
             >
               📟 Datáfono
@@ -575,6 +589,75 @@
         <span>{{ doc.total | currency: 'BOB' : 'Bs. ' }}</span>
       </div>
       <p class="note">¡Gracias por tu compra! · FashionStore</p>
+    </section>
+  }
+
+  @if (offlineReceipt(); as off) {
+    <section class="receipt" style="border: 1px dashed #f59e0b;">
+      <header class="receipt-head">
+        <img src="/img/brand/logo.svg" alt="" />
+        <div>
+          <strong>Comprobante provisional offline</strong>
+          <p class="note" style="margin: 0">UUID {{ off.uuid }}</p>
+        </div>
+        <span class="spacer"></span>
+        <span class="badge" style="background: #fffbeb; color: #b45309; border: 1px solid #f59e0b;">Pendiente de sincronizar</span>
+      </header>
+
+      <p class="note" style="margin: 0 0 0.75rem;">
+        📡 Venta registrada sin conexión en efectivo. El comprobante definitivo se emite cuando el
+        dispositivo recupere la red y el backend sincronice la operación (CU-10 / CU-12).
+      </p>
+
+      <div class="summary-row">
+        <span class="label">Fecha</span>
+        <span>{{ off.createdAt | date: 'medium' }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Sucursal</span>
+        <span>{{ off.branchName }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Cajero / Cliente</span>
+        <span>{{ off.cashier }} · cliente #{{ off.clientId }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Método de pago</span>
+        <span>Efectivo (RN-03)</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Artículo</th>
+            <th>Código / Talla</th>
+            <th>Cantidad</th>
+            <th>Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of off.items; track item.codigo + item.quantity) {
+            <tr>
+              <td>{{ item.name }}</td>
+              <td>{{ item.codigo }} · {{ item.size }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.quantity * item.unitPrice | currency: 'BOB' : 'Bs. ' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="summary-row total">
+        <span>Total</span>
+        <span>{{ off.total | currency: 'BOB' : 'Bs. ' }}</span>
+      </div>
+      <p class="note">Conserva este comprobante hasta que la venta se sincronice.</p>
+      <button type="button" class="btn btn-block" style="margin-top: 0.75rem" (click)="printReceipt()">
+        Imprimir comprobante provisional
+      </button>
+      <button type="button" class="btn-ghost btn-block" style="margin-top: 0.5rem" (click)="newSale()">
+        Nueva venta
+      </button>
     </section>
   }
 }

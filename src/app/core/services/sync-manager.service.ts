@@ -167,6 +167,15 @@ export class SyncManagerService {
     items: Array<{ stock_id: number; quantity: number; unit_price?: number }>;
     total?: number;
   }): Promise<OfflineQueueItem> {
+    // RN-03: sin conexión solo se cobra en efectivo. Tarjeta, QR y datáfono
+    // necesitan la pasarela online; encolarlos como "pagados" sería incorrecto.
+    const requestedMethod = (data.payment_method ?? 'efectivo').trim().toLowerCase();
+    if (requestedMethod !== 'efectivo' && requestedMethod !== 'cash') {
+      throw new Error(
+        'Sin conexión solo se permiten ventas en efectivo (RN-03). Conéctate para cobrar con tarjeta, QR o datáfono.'
+      );
+    }
+    const paymentMethod = 'efectivo';
     const tenantId = this.currentTenantId();
     const uuid = this.newUuid();
     const items = data.items.map((item) => ({
@@ -174,13 +183,16 @@ export class SyncManagerService {
       quantity: item.quantity,
       unit_price: Number(item.unit_price ?? 0)
     }));
+    if (items.length === 0) {
+      throw new Error('La venta offline no tiene líneas asociadas a inventario.');
+    }
     const total =
       data.total ?? items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
 
     const queueItem = await this.db.addToQueue({
       uuid,
       tipo: 'venta',
-      datos: { ...data, tenant_id: tenantId, items, total },
+      datos: { ...data, payment_method: paymentMethod, tenant_id: tenantId, items, total },
       fecha: new Date().toISOString(),
       estado: 'LOCAL'
     });

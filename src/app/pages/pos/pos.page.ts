@@ -27,6 +27,24 @@ interface VariantInfo {
   sizeId: number | null;
 }
 
+/** Comprobante provisional emitido localmente cuando no hay conexión (CU-10). */
+interface OfflineReceipt {
+  uuid: string;
+  createdAt: string;
+  branchName: string;
+  cashier: string;
+  clientId: number;
+  paymentMethod: string;
+  total: number;
+  items: Array<{
+    name: string;
+    codigo: string;
+    size: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+}
+
 /**
  * CU12 — Registrar venta presencial en caja (POS, web).
  * Flujo real: apertura de caja (carga el stock de la sucursal) → armado de la venta por código o
@@ -60,6 +78,7 @@ export class PosPage {
   readonly sessionOpen = signal(false);
   readonly sale = signal<SaleResponse | null>(null);
   readonly receipt = signal<ReceiptResponse | null>(null);
+  readonly offlineReceipt = signal<OfflineReceipt | null>(null);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
@@ -126,6 +145,11 @@ export class PosPage {
 
   readonly tenantName = computed(() => this.auth.currentUser()?.tenant_name ?? null);
   readonly planName = computed(() => this.auth.currentUser()?.plan_name ?? null);
+  /** RN-03: sin red la caja solo puede cobrar en efectivo. */
+  readonly offline = computed(() => !this.syncManager.isOnline());
+  readonly selectedBranch = computed(() =>
+    this.branches().find((branch) => branch.id === this.branchId()) ?? null
+  );
 
   readonly branchName = computed(
     () => this.branches().find((branch) => branch.id === this.branchId())?.name ?? '—'
@@ -158,6 +182,8 @@ export class PosPage {
   /** Cobro habilitado: en efectivo, el efectivo recibido debe cubrir el total (vacío = pago exacto). */
   readonly canPay = computed(() => {
     if (!this.canSubmit() || this.submitting()) return false;
+    // RN-03: offline solo se permite efectivo.
+    if (this.offline() && this.paymentMethod() !== 'efectivo') return false;
     if (this.paymentMethod() !== 'efectivo') return true;
     return this.receivedCash() === 0 || this.receivedCash() >= this.subtotal();
   });
@@ -321,6 +347,14 @@ export class PosPage {
   }
 
   setPaymentMethod(method: string): void {
+    // RN-03: si la terminal está offline, solo se puede cobrar en efectivo.
+    if (!this.syncManager.isOnline() && method !== 'efectivo') {
+      this.error.set(
+        'Sin conexión solo se permiten ventas en efectivo (RN-03). Reconecta para cobrar con tarjeta, QR o datáfono.'
+      );
+      return;
+    }
+    this.error.set(null);
     this.paymentMethod.set(method);
     if (method === 'qr' && !this.qrCodeBase64()) {
       this.generateQr();
@@ -350,15 +384,28 @@ export class PosPage {
   /** Apertura de caja: habilita la terminal y carga el stock de la sucursal. */
   openSession(): void {
     const branchId = this.branchId();
-    if (!branchId) return;
+    if (!branchId) {
+      this.error.set('Selecciona una sucursal activa para abrir la caja.');
+      return;
+    }
+    const branch = this.selectedBranch();
+    if (!branch) {
+      this.error.set('La sucursal seleccionada no existe en la empresa activa.');
+      return;
+    }
+    if (!branch.is_active) {
+      this.error.set('La sucursal está inactiva. Selecciona una sucursal activa para vender.');
+      return;
+    }
+
     this.error.set(null);
     this.sessionCashSales.set(0);
     this.sessionCardSales.set(0);
     this.sessionQrSales.set(0);
     this.sessionSalesCount.set(0);
     this.arqueoSummary.set(null);
-    this.sessionOpen.set(true);
-    this.persistSession();
+    // La caja solo se marca abierta cuando el stock local/central se cargó bien.
+    this.sessionOpen.set(false);
 
     if (!this.syncManager.isOnline()) {
       void this.openSessionFromCache(branchId);
@@ -367,6 +414,13 @@ export class PosPage {
 
     this.inventory.listStock(branchId).subscribe({
       next: (rows) => {
+        if (rows.length === 0) {
+          this.error.set(
+            'La sucursal no tiene existencias cargadas. No se puede abrir caja sin inventario.'
+          );
+          this.sessionOpen.set(false);
+          return;
+        }
         this.applyStock(rows);
         this.sessionOpen.set(true);
         this.message.set('Caja abierta. Stock de la sucursal cargado.');
@@ -406,6 +460,7 @@ export class PosPage {
   /** CU-09: apertura de caja sin red usando las existencias guardadas en IndexedDB. */
   private async openSessionFromCache(branchId: number): Promise<void> {
     try {
+      this.sessionOpen.set(false);
       if (this.variants().size === 0) {
         await this.loadCachedCatalog();
       }
@@ -421,10 +476,12 @@ export class PosPage {
       this.applyStock(rows);
       this.sessionOpen.set(true);
       this.message.set(
-        'Caja abierta en modo offline con las existencias guardadas en el dispositivo.'
+        'Caja abierta en modo offline con las existencias guardadas en el dispositivo. Solo se permite cobro en efectivo.'
       );
       this.loadBranchReservations();
+      this.persistSession();
     } catch {
+      this.sessionOpen.set(false);
       this.error.set('No se pudo abrir la caja sin conexión: no hay datos locales.');
     }
   }
@@ -489,6 +546,7 @@ export class PosPage {
     this.lines.set([]);
     this.sale.set(null);
     this.receipt.set(null);
+    this.offlineReceipt.set(null);
     this.message.set('Turno de caja cerrado exitosamente. Comprobante de arqueo emitido.');
   }
 
@@ -651,9 +709,59 @@ export class PosPage {
       });
   }
 
-  /** Guarda la venta en la cola offline con el contrato que espera `POST /sync/batch`. */
+  /**
+   * Guarda la venta en la cola offline con el contrato que espera `POST /sync/batch`
+   * y emite un comprobante provisional (CU-10).
+   *
+   * Validaciones previas obligatorias:
+   *  - La sucursal debe existir y estar activa.
+   *  - Debe existir una copia local de existencias de esa sucursal.
+   *  - Cada línea debe tener disponibilidad suficiente en la copia local.
+   *  - RN-03: sin red solo se permite efectivo.
+   */
   private async queueOfflineSale(branchId: number): Promise<void> {
     try {
+      const branch = this.selectedBranch();
+      if (!branch || branch.id !== branchId) {
+        this.error.set('La sucursal seleccionada no existe en la empresa activa.');
+        return;
+      }
+      if (!branch.is_active) {
+        this.error.set('La sucursal está inactiva. No se puede registrar una venta offline.');
+        return;
+      }
+
+      if (this.lines().length === 0) {
+        this.error.set('Agrega al menos una prenda antes de cobrar.');
+        return;
+      }
+
+      const branchStock = this.stocks().filter((row) => row.branch_id === branchId);
+      if (branchStock.length === 0) {
+        this.error.set(
+          'No hay existencias guardadas para esta sucursal. Abre la caja con conexión al menos una vez.'
+        );
+        return;
+      }
+
+      // Validar disponibilidad local antes de encolar (la copia local puede estar desactualizada).
+      for (const line of this.lines()) {
+        const stock = branchStock.find((row) => row.id === line.stock_id);
+        if (!stock) {
+          this.error.set(
+            `La línea con inventario #${line.stock_id} no pertenece a la sucursal seleccionada.`
+          );
+          return;
+        }
+        if (line.quantity > stock.available_stock) {
+          this.error.set(
+            `Stock local insuficiente para ${this.variantOf(line.stock_id)?.productName ?? 'la prenda'}: ` +
+              `disponible ${stock.available_stock}, solicitado ${line.quantity}. Ajusta la cantidad o reconecta.`
+          );
+          return;
+        }
+      }
+
       const items = this.lines().map((line) => ({
         stock_id: line.stock_id,
         quantity: line.quantity,
@@ -667,19 +775,14 @@ export class PosPage {
       const queued = await this.syncManager.recordOfflineSale({
         branch_id: branchId,
         client_id: this.clientId || undefined,
-        payment_method: this.paymentMethod(),
+        // RN-03: el servicio normaliza y rechaza cualquier método distinto de efectivo.
+        payment_method: 'efectivo',
         items,
         total
       });
 
-      // Sumar al arqueo de caja local de turno
-      if (this.paymentMethod() === 'efectivo') {
-        this.sessionCashSales.update((v) => v + total);
-      } else if (this.paymentMethod() === 'tarjeta') {
-        this.sessionCardSales.update((v) => v + total);
-      } else {
-        this.sessionQrSales.update((v) => v + total);
-      }
+      // Arqueo de caja local: toda venta offline es en efectivo (RN-03).
+      this.sessionCashSales.update((v) => v + total);
       this.sessionSalesCount.update((v) => v + 1);
       this.persistSession();
 
@@ -699,9 +802,33 @@ export class PosPage {
       }
       void this.db.saveInventory(this.stocks());
 
+      // Comprobante provisional emitido localmente: no reemplaza al comprobante
+      // definitivo que genera el backend al sincronizar, pero respalda la venta.
+      this.offlineReceipt.set({
+        uuid: queued.uuid,
+        createdAt: queued.fecha ?? new Date().toISOString(),
+        branchName: branch.name,
+        cashier: this.auth.currentUser()?.full_name ?? 'Cajero',
+        clientId: this.clientId,
+        paymentMethod: 'efectivo',
+        total,
+        items: this.lines().map((line) => {
+          const info = this.variantOf(line.stock_id);
+          return {
+            name: info?.productName ?? `Inventario #${line.stock_id}`,
+            codigo: info?.codigo ?? '—',
+            size: this.sizeName(info?.sizeId ?? null),
+            quantity: line.quantity,
+            unitPrice: info?.price ?? 0
+          };
+        })
+      });
+
       this.lines.set([]);
       this.sale.set(null);
       this.receipt.set(null);
+      this.cashReceived.set('');
+      this.qrCodeBase64.set(null);
       this.message.set(
         `Venta registrada offline (UUID ${queued.uuid}). Se sincronizará automáticamente al recuperar la conexión.`
       );
@@ -742,6 +869,7 @@ export class PosPage {
   newSale(): void {
     this.sale.set(null);
     this.receipt.set(null);
+    this.offlineReceipt.set(null);
     this.message.set(null);
     this.cashReceived.set('');
     this.qrCodeBase64.set(null);
